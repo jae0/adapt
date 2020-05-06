@@ -52,7 +52,7 @@ Finally, individual trajectories of stochastic simulations are shown. These are 
 
 ---
 
-# What this is:
+# What is "adapt"?
 
 A set of routines to analyze publicly available disease epidemic data such as COVID-19 that you can customize for your town, province or state or country. This data tends to be rather crude counts of cases and recovered people and deaths. Your area of interest probably has these announcements and the information is likely captured by concerned citizens. To make sense of this information, beyond the daily ups and downs, you need to model it.
 
@@ -74,7 +74,7 @@ Jae
 
 # Installation
 
-ADAPT (Areal Disease Analysis and Predicion Tools) attempts to assimilate disease spread data for COVID-19 and other similar diseases and estimate model parameters of classical epidemiological models using Bayesian methods (MCMC via STAN: https://mc-stan.org/) and then simulate/forcast disease progression using stochastic simulation modelling approaches (via the Gillespie method, implemented beautifully by SimInf: https://github.com/stewid/SimInf). Small area-based approach using CAR/BYM models (via INLA) are also used to model and support spatial patterns (this part is not yet developed).
+adapt (Areal Disease Analysis and Predicion Tools) attempts to assimilate disease spread data for COVID-19 and other similar diseases and estimate model parameters of classical epidemiological models using Bayesian methods (MCMC via STAN: https://mc-stan.org/) and then simulate/forcast disease progression using stochastic simulation modelling approaches (via the Gillespie method, implemented beautifully by SimInf: https://github.com/stewid/SimInf). Small area-based approach using CAR/BYM models (via INLA) are also used to model and support spatial patterns (this part is not yet developed).
 
 To install you need to install R, and then bootstrap from github directly:
 

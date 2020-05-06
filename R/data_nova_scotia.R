@@ -22,21 +22,25 @@ data_nova_scotia = function( output="stan_data", Npop=971395, Npreds=5, ... ) {
   i = match( gsdata$dayno, daily$dayno )
   daily[i, c("Sobs", "Iobs", "Robs", "Dobs")] = gsdata[,c("Sobs", "Iobs",  "Robs", "Dobs")]
 
+
+  if (0) {
   # these are cummulative counts .. linear approximation where missing
-  j = which( !is.finite(daily$Robs) )
-  if (length(j) > 0) {
-    o = approx( x=daily$dayno , y=daily$Robs, xout = daily$dayno, method="linear")
-    daily$Robs[j] = trunc(o$y[j])
-  }
 
-  j = which( !is.finite(daily$Sobs) )
-  if (length(j) > 0) {
-    o = approx( x=daily$dayno , y=daily$Sobs, xout = daily$dayno, method="linear")
-    daily$Sobs[j] = trunc(o$y[j])
-  }
+    j = which( !is.finite(daily$Robs) )
+    if (length(j) > 0) {
+      o = approx( x=daily$dayno , y=daily$Robs, xout = daily$dayno, method="linear")
+      daily$Robs[j] = trunc(o$y[j])
+    }
 
-  j = which( !is.finite(daily$Iobs) )
-  if (length(j) > 0) daily$Iobs[j] = Npop - daily$Sobs[j] - daily$Robs[j]
+    j = which( !is.finite(daily$Sobs) )
+    if (length(j) > 0) {
+      o = approx( x=daily$dayno , y=daily$Sobs, xout = daily$dayno, method="linear")
+      daily$Sobs[j] = trunc(o$y[j])
+    }
+
+    j = which( !is.finite(daily$Iobs) )
+    if (length(j) > 0) daily$Iobs[j] = Npop - daily$Sobs[j] - daily$Robs[j]
+  }
 
   # final check
   j = which( !is.finite(daily$Sobs) ); if (length(j) > 0) daily$Sobs[j] = -1

@@ -21,19 +21,19 @@ stan_data = data_nova_scotia(
   Npop = 971395,  # total population
   Npreds = 30,   # number of days for forward projectins
   BNP = 3,        # beta number of days to average for forward projections
-  GAMMA_prior = 1/21,  # approx scale of GAMMA ("effective recovery rate") ~ 1/ recovery time (about 21 to 28 days)
+  GAMMA_prior = 1/28,  # approx scale of GAMMA ("effective recovery rate") ~ 1/ recovery time (about 21 to 28 days)
   BETA_prior = 0.9,    # approx scale of BETA  ("effective infection rate", 1 -> 100%)
-  modelname = "discrete_autoregressive_with_observation_error"
-  #modelname = "continuous" # ODE form  really slow ... and does not work that well .. huge error bars
-  #modelname = "discrete_basic"   # poor fit ..  latent .. similar to continuous .. ie. model is too simple and params too static
-  # modelname = "discrete_autoregressive"  # no obsrevation error, only process error
+  # modelname = "discrete_autoregressive_with_observation_error_structured_beta"
+  # modelname = "discrete_autoregressive_with_observation_error_unstructured_beta"  # slow
+  # modelname = "continuous" # ODE form  really slow ... and does not work that well .. huge error bars
+  # modelname = "discrete_basic"   # poor fit ..  latent .. similar to continuous .. ie. model is too simple and params too static
+  modelname = "discrete_autoregressive_without_observation_error"  # no obsrevation error, only process error
 )
-
 
 
 stancode_compiled = rstan::stan_model( model_code=sir_stan_model_code( selection=stan_data$modelname ) )  # compile the code
 
-f = rstan::sampling( stancode_compiled, data=stan_data, chains=3, warmup=4000, iter=6000, control= list(adapt_delta = 0.95, max_treedepth=14 ))
+f = rstan::sampling( stancode_compiled, data=stan_data, chains=3, warmup=4000, iter=6500, control= list(adapt_delta = 0.95, max_treedepth=14 ))
 
 
 if (0) {
@@ -48,9 +48,7 @@ M = extract(f)
 
 plot_model_fit( stan_data=stan_data, M=M )
 
-
 outdir = file.path( "~/bio/adapt/inst/doc/")
-
 nx = stan_data$Nobs + stan_data$Npreds - 1
 
 
@@ -61,9 +59,9 @@ png(filename = file.path(outdir, "fit_with_projections_infected.png"))
   xrange = c(0, nx)
   yrange = c(0, max(M$I[, 1:nx]))
   plot( io ~ stan_data$time, xlim=xrange, ylim=yrange, ylab="Infected", xlab="Days (day 1 is 2020-03-17)", type="n" )
-  lines( apply(M$I[,1:nx], 2, median) ~ seq(1,nx), lwd =3, col="slateblue" )
-  lines( apply(M$I[,1:nx], 2, quantile, probs=0.025) ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
-  lines( apply(M$I[,1:nx], 2, quantile, probs=0.975) ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
+  lines( apply(M$I, 2, median)[1:nx] ~ seq(1,nx), lwd =3, col="slateblue" )
+  lines( apply(M$I, 2, quantile, probs=0.025)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
+  lines( apply(M$I, 2, quantile, probs=0.975)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
   points( io ~ stan_data$time, col="darkgray", cex=1.2 )
   abline( v=stan_data$time[stan_data$Nobs], col="grey", lty="dashed" )
   legend( "topright", "", paste( "Current date: ", Sys.Date(), "   "), bty="n")
@@ -76,9 +74,9 @@ png(filename = file.path(outdir, "fit_with_projections_recovered.png"))
   xrange = c(0, nx)
   yrange = c(0, max(M$R[, 1:nx]))
   plot( ro ~ stan_data$time, xlim=xrange, ylim=yrange, ylab="Recovered", xlab="Days (day 1 is 2020-03-17)", type="n" )
-  lines( apply(M$R[,1:nx], 2, median) ~ seq(1,nx), lwd =3, col="slateblue" )
-  lines( apply(M$R[,1:nx], 2, quantile, probs=0.025) ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
-  lines( apply(M$R[,1:nx], 2, quantile, probs=0.975) ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
+  lines( apply(M$R, 2, median)[1:nx] ~ seq(1,nx), lwd =3, col="slateblue" )
+  lines( apply(M$R, 2, quantile, probs=0.025)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
+  lines( apply(M$R, 2, quantile, probs=0.975)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
   points( ro ~ stan_data$time, col="darkgray", cex=1.2 )
   abline( v=stan_data$time[stan_data$Nobs], col="grey", lty="dashed" )
   legend( "topright", "", paste( "Current date: ", Sys.Date(), "   "), bty="n")
@@ -91,9 +89,9 @@ png(filename = file.path(outdir, "fit_with_projections_susceptible.png"))
   xrange = c(0, nx)
   yrange = c(min(M$S[, 1:nx]), max(M$S[, 1:nx]))
   plot( so ~ stan_data$time, xlim=xrange, ylim=yrange, ylab="Susceptible", xlab="Days (day 1 is 2020-03-17)", type="n" )
-  lines( apply(M$S[,1:nx], 2, median) ~ seq(1,nx), lwd =3, col="slateblue" )
-  lines( apply(M$S[,1:nx], 2, quantile, probs=0.025) ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
-  lines( apply(M$S[,1:nx], 2, quantile, probs=0.975) ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
+  lines( apply(M$S, 2, median)[1:nx] ~ seq(1,nx), lwd =3, col="slateblue" )
+  lines( apply(M$S, 2, quantile, probs=0.025)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
+  lines( apply(M$S, 2, quantile, probs=0.975)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
   points( so ~ stan_data$time, col="darkgray", cex=1.2 )
   abline( v=stan_data$time[stan_data$Nobs], col="grey", lty="dashed" )
   legend( "topright", "", paste( "Current date: ", Sys.Date(), "   "), bty="n")
@@ -101,11 +99,10 @@ dev.off()
 
 
 
-
 png(filename = file.path(outdir, "reproductive_number.png"))
   plot( apply(M$K[,1:nx], 2, median) ~ seq(1,nx), lwd =3, col="darkgray", ylim=c(0,10), ylab="Reproductive number", xlab="Days (day 1 is 2020-03-17)" )
-  lines( apply(M$K[,1:nx], 2, quantile, probs=0.025) ~ seq(1,nx), col="darkorange", lty="dashed" )
-  lines( apply(M$K[,1:nx], 2, quantile, probs=0.975) ~ seq(1,nx), col="darkorange", lty="dashed" )
+  lines( apply(M$K, 2, quantile, probs=0.025)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed" )
+  lines( apply(M$K, 2, quantile, probs=0.975)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed" )
   abline( h=1, col="red", lwd=3 )
   abline( v=stan_data$Nob, , col="grey", lty="dashed" )
   legend( "topright", "", paste( "Current date: ", Sys.Date(), "   "), bty="n")
@@ -145,12 +142,11 @@ png(filename = file.path(outdir, "fit_with_projections_and_stochastic_simulation
   xrange = c(0, max(nx, simxval) )
   yrange = c(0, max(M$I[, 1:nx]))
   yrange = c(0, 1250)
-
   plot( io ~ stan_data$time, xlim=xrange, ylim=yrange,  type="n", ylab="Infected", xlab="Days (day 1 is 2020-03-17)")
   for ( i in 1:min(nsims, 1500)) lines( sim[i,2,] ~ simxval, col=alpha("slategray", 0.1), ltyp="dashed" )
-  lines( apply(M$I[,1:nx], 2, median) ~ seq(1,nx), lwd = 3, col="slateblue" )
-  lines( apply(M$I[,1:nx], 2, quantile, probs=0.025) ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
-  lines( apply(M$I[,1:nx], 2, quantile, probs=0.975) ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
+  lines( apply(M$I, 2, median)[1:nx] ~ seq(1,nx), lwd = 3, col="slateblue" )
+  lines( apply(M$I, 2, quantile, probs=0.025)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
+  lines( apply(M$I, 2, quantile, probs=0.975)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
   abline( v=stan_data$time[stan_data$Nobs], col="grey", lty="dashed" )
   points( io ~ stan_data$time, xlim=xrange, ylim=yrange, col="darkgray", cex=1.2 )
   legend( "topright", "", paste( "Current date: ", Sys.Date(), "   "), bty="n")
