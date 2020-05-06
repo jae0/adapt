@@ -10,6 +10,7 @@ data_nova_scotia = function( output="stan_data", Npop=971395, Npreds=5, ... ) {
   gsdata$Iobs = gsdata$InfectedCurrently
   gsdata$Robs = gsdata$Recoveries + gsdata$Deaths
   gsdata$Sobs = Npop - gsdata$Robs - gsdata$Iobs
+  gsdata$Dobs = gsdata$Deaths
 
   gsdata$dayno = lubridate::date( gsdata$Date)
   gsdata$dayno = gsdata$dayno - min(gsdata$dayno) + 1
@@ -17,12 +18,11 @@ data_nova_scotia = function( output="stan_data", Npop=971395, Npreds=5, ... ) {
   if (output=="raw_data") return (gsdata)
 
   daily = expand.grid( dayno=1:max(gsdata$dayno ))
-  daily[, c("Iobs", "Sobs", "Robs")] = NA
+  daily[, c("Iobs", "Sobs", "Robs", "Dobs")] = NA
   i = match( gsdata$dayno, daily$dayno )
-  daily[i, c("Sobs", "Iobs", "Robs")] = gsdata[,c("Sobs", "Iobs",  "Robs")]
+  daily[i, c("Sobs", "Iobs", "Robs", "Dobs")] = gsdata[,c("Sobs", "Iobs",  "Robs", "Dobs")]
 
   # these are cummulative counts .. linear approximation where missing
-
   j = which( !is.finite(daily$Robs) )
   if (length(j) > 0) {
     o = approx( x=daily$dayno , y=daily$Robs, xout = daily$dayno, method="linear")
@@ -36,11 +36,12 @@ data_nova_scotia = function( output="stan_data", Npop=971395, Npreds=5, ... ) {
   }
 
   j = which( !is.finite(daily$Iobs) )
-  if (length(j) > 0) {
-    # daily$Iobs[j] = Npop - daily$Sobs[j] - daily$Robs[j]
-    daily$Iobs[j] = -1
-  }
+  if (length(j) > 0) daily$Iobs[j] = Npop - daily$Sobs[j] - daily$Robs[j]
 
+  # final check
+  j = which( !is.finite(daily$Sobs) ); if (length(j) > 0) daily$Sobs[j] = -1
+  j = which( !is.finite(daily$Iobs) ); if (length(j) > 0) daily$Iobs[j] = -1
+  j = which( !is.finite(daily$Robs) ); if (length(j) > 0) daily$Robs[j] = -1
 
   if (output=="daily_data") return (daily)
 
