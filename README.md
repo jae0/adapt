@@ -52,19 +52,19 @@ Finally, individual trajectories of stochastic simulations are shown. These are 
 
 ---
 
-# What this is, in lay person terms
+# What this is:
 
 A set of routines to analyze publicly available disease epidemic data such as COVID-19 that you can customize for your town, province or state or country. This data tends to be rather crude counts of cases and recovered people and deaths. Your area of interest probably has these announcements and the information is likely captured by concerned citizens. To make sense of this information, beyond the daily ups and downs, you need to model it.
 
-A basic model appropriate for such crude data is the SIR (Susceptible-Infecter-Recovered) compartmental model. This is a well understood model that has its share of limitations but still sufficient to get a crude sense of what is going on. Look it up if you want to know details. The programs here are used to fit this information to a variation of this model, as best we can. It relies upon some advanced statistical and mathematical engines developed by many cutting edge programs (R, STAN, SimInf, and many others, see below) and solutions to similar problems using in fisheries-modelling. However, to use ADAPT requires only some minimal understanding of programming, especially R.
+A basic model appropriate for such crude data is the SIR (Susceptible-Infecter-Recovered) compartmental model. This is a well understood model that has its share of limitations but still sufficient to get a crude sense of what is going on. Look it up if you want to know details. The programs here are used to fit a variation of this model to the crude data, as best we can. It relies upon some advanced statistical and mathematical engines developed by opensourced, cutting edge (R, STAN, SimInf, and many others, see below) and approaches the problem as a "latent, state-space" model, often encountered in fisheries-modelling problems. Use of "adapt", however, requires only some minimal understanding of programming, mostly R (https://cran.r-project.org/).
 
 If you just want to get a sense of what things are like for your area of interest, you need to change only the data. Right now, it is accessing a Google sheet that stores the required information:
 
 https://docs.google.com/spreadsheets/d/1tgf2H9gDmRnGDGeQE-fC9IPhrmNxP8-JC7Nnnob_vuY/edit#gid=1323236978
 
-This data was manually compiled and upated by J. Strang and N. St-Jacques. You can use this as a template. You need to calculate the number of infected people on a daily basis ("InfectedCurrently" in the spreadsheet) as well as the cummulative number of "Recoveries" and "Deaths" and dates or simply day number. You will also need the total population size of your area of interest. Look inside the function (https://github.com/jae0/adapt/blob/master/R/data_nova_scotia.R) to see how it is done here. Or, you can just manually create the "stan_data" list manually any way you like, using the Nova Scotia example as a template. Thereafter, you can probably run the short code in https://github.com/jae0/adapt/blob/master/inst/scripts/example_parameter_estimation_SIR_nova_scotia.R with minimal modification.
+This data was manually compiled and upated by J. Strang and N. St-Jacques. You can use this as a template. Alternatively, you can estimate the number of infected people on a daily basis ("InfectedCurrently" in the spreadsheet) as well as the cummulative number of "Recoveries" and "Deaths" and dates. You will also need the total population size of your area of interest. Look inside the function (https://github.com/jae0/adapt/blob/master/R/data_nova_scotia.R) to see how it is done here. Use the Nova Scotia example as a template. Thereafter, you can probably run the short code in https://github.com/jae0/adapt/blob/master/inst/scripts/example_parameter_estimation_SIR_nova_scotia.R with minimal modification.
 
-Please note: No guarantees are being made here. There are always errors in models, programs and data. However, this is a crude way of helping make sense of information such that we can engage in more informed discussions with your community on next steps in thee trying times.
+Please note: No guarantees are being made here. There are always errors in models, programs that implement such models and in the data itself. However, this is a functional way of helping make sense of information such that we can engage in more informed discussions with your community on next steps in these trying times.
 
 Good luck,
 
