@@ -33,7 +33,7 @@ stan_data = data_nova_scotia(
 
 stancode_compiled = rstan::stan_model( model_code=sir_stan_model_code( selection=stan_data$modelname ) )  # compile the code
 
-f = rstan::sampling( stancode_compiled, data=stan_data, chains=3, warmup=4000, iter=6500, control= list(adapt_delta = 0.95, max_treedepth=14 ))
+f = rstan::sampling( stancode_compiled, data=stan_data, chains=3, warmup=8000, iter=10000, control= list(adapt_delta = 0.95, max_treedepth=14 ))
 
 
 if (0) {

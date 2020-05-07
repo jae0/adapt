@@ -10,7 +10,7 @@ data_nova_scotia = function( output="stan_data", Npop=971395, Npreds=5, ... ) {
   gsdata$Iobs = gsdata$InfectedCurrently
   gsdata$Robs = gsdata$Recoveries + gsdata$Deaths
   gsdata$Sobs = Npop - gsdata$Robs - gsdata$Iobs
-  gsdata$Dobs = gsdata$Deaths
+  gsdata$Mobs = gsdata$Deaths   # mortalities
 
   gsdata$dayno = lubridate::date( gsdata$Date)
   gsdata$dayno = gsdata$dayno - min(gsdata$dayno) + 1
@@ -18,9 +18,9 @@ data_nova_scotia = function( output="stan_data", Npop=971395, Npreds=5, ... ) {
   if (output=="raw_data") return (gsdata)
 
   daily = expand.grid( dayno=1:max(gsdata$dayno ))
-  daily[, c("Iobs", "Sobs", "Robs", "Dobs")] = NA
+  daily[, c("Iobs", "Sobs", "Robs", "Mobs")] = NA
   i = match( gsdata$dayno, daily$dayno )
-  daily[i, c("Sobs", "Iobs", "Robs", "Dobs")] = gsdata[,c("Sobs", "Iobs",  "Robs", "Dobs")]
+  daily[i, c("Sobs", "Iobs", "Robs", "Mobs")] = gsdata[,c("Sobs", "Iobs",  "Robs", "Mobs")]
 
 
   if (0) {
