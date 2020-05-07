@@ -66,7 +66,7 @@ If you just want to get a sense of what things are like for your area of interes
 
 https://docs.google.com/spreadsheets/d/1tgf2H9gDmRnGDGeQE-fC9IPhrmNxP8-JC7Nnnob_vuY/edit#gid=1323236978
 
-This data was manually compiled and upated by J. Strang and N. St-Jacques. You can use this as a template. Alternatively, you can estimate the numbers required (see example below).
+This data was manually compiled and upated by Jennifer Strang and Nathalie Saint-Jacques. You can use this as a template. Alternatively, you can estimate the numbers required (see example below).
 
 Please note: No guarantees are being made here. There are always errors in models, programs that implement such models and in the data itself. However, this is a functional way of helping make sense of information such that we can engage in more informed discussions with your community on next steps in these trying times.
 
@@ -102,11 +102,10 @@ List of 14
  $ Sobs       : num [1:51] 971394 971392 971390 971390 -1 ...
  $ Iobs       : num [1:51] 1 3 5 5 -1 28 41 51 68 73 ...
  $ Robs       : num [1:51] 0 0 0 0 -1 0 0 0 0 0 ...
- $ time       : int [1:51] 1 2 3 4 5 6 7 8 9 10 ...
- $ time_pred  : int [1:81] 1 2 3 4 5 6 7 8 9 10 ...
- $ t0         : num -0.01
+ $ Mobs       : num [1:51] 0 0 0 0 -1 0 0 0 0 0 ...
  $ BNP        : num 3
  $ GAMMA_prior: num 0.0357
+ $ EPSILON_prior: num 0.0357
  $ BETA_prior : num 0.9
  $ modelname  : chr "discrete_autoregressive_without_observation_error"
 

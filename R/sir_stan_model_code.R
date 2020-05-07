@@ -654,6 +654,7 @@ data {
   int<lower=0> BNP; // the last no days to use for BETA to project forward
   real<lower=0> BETA_prior;
   real<lower=0> GAMMA_prior;
+  real<lower=0> EPSILON_prior;
   int Sobs[Nobs]; // observed S
   int Iobs[Nobs]; // observed I
   int Robs[Nobs]; // observed Recovered (including deaths)
@@ -701,8 +702,9 @@ parameters {
   real<lower = 0, upper=1> BETA[Ntimeall-1];  // == beta in SIR , here we do *not* separate out the Encounter Rate from the infection rate
   real<lower=-0.2, upper =0.2>  MSErrorI;  // fractional mis-specification error due to latent, asymptompatic cases, reporting irregularities
   real<lower = 1e-9, upper =0.2>  Ssd;  // these are fractional .. i.e CV's
-  real<lower = 1e-9, upper =0.2>  Isd ;
+  real<lower = 1e-9, upper =0.2>  Isd;
   real<lower = 1e-9, upper =0.2>  Rsd;
+  real<lower = 1e-9, upper =0.2>  Msd;
   real<lower = -1, upper =1> ar1;
   real<lower = 0 > ar1sd;
   real ar1k;
@@ -755,6 +757,7 @@ model {
   MSErrorI ~ normal( 0, 0.1 );  // proportion of I that are asymtomatic
 
   GAMMA ~ normal( GAMMA_prior, 1.0 );  // recovery of I ... always < 1
+  EPSILON ~ normal( EPSILON_prior, 1.0 );  // recovery of I ... always < 1
   BETA[1] ~ normal( BETA_prior, 1.0 );  // # 10% CV
   for (i in 1:(Nobs-1)) {
     BETA[i+1] ~ normal( ar1k + ar1 * BETA[i], ar1sd );

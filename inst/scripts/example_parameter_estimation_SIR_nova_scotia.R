@@ -11,16 +11,15 @@
 require(adapt)
 
 require(rstan)
-require(SimInf)
 rstan_options(auto_write = TRUE)
 options(mc.cores = parallel::detectCores())
 
 
 stan_data = data_nova_scotia(
-  output = "stan_data",
   Npop = 971395,  # total population
   Npreds = 30,   # number of days for forward projectins
   BNP = 3,        # beta number of days to average for forward projections
+  EPSILON_prior = 5/100,  # porportion of positive tested that die
   GAMMA_prior = 1/28,  # approx scale of GAMMA ("effective recovery rate") ~ 1/ recovery time (about 21 to 28 days)
   BETA_prior = 0.9,    # approx scale of BETA  ("effective infection rate", 1 -> 100%)
   # modelname = "discrete_autoregressive_with_observation_error_structured_beta"
@@ -45,7 +44,6 @@ if (0) {
 
 
 M = extract(f)
-
 
 plot_model_fit( stan_data=stan_data, M=M )
 
@@ -84,6 +82,21 @@ png(filename = file.path(outdir, "fit_with_projections_recovered.png"))
 dev.off()
 
 
+mo = stan_data$Robs
+mo[mo < 0] = NA
+png(filename = file.path(outdir, "fit_with_projections_mortalities.png"))
+  xrange = c(0, nx)
+  yrange = c(0, max(M$M[, 1:nx]))
+  plot( mo ~ stan_data$time, xlim=xrange, ylim=yrange, ylab="Mortalities", xlab="Days (day 1 is 2020-03-17)", type="n" )
+  lines( apply(M$M, 2, median)[1:nx] ~ seq(1,nx), lwd =3, col="slateblue" )
+  lines( apply(M$M, 2, quantile, probs=0.025)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
+  lines( apply(M$M, 2, quantile, probs=0.975)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
+  points( mo ~ stan_data$time, col="darkgray", cex=1.2 )
+  abline( v=stan_data$time[stan_data$Nobs], col="grey", lty="dashed" )
+  legend( "topright", "", paste( "Current date: ", Sys.Date(), "   "), bty="n")
+dev.off()
+
+
 so = stan_data$Sobs
 so[so < 0] = NA
 png(filename = file.path(outdir, "fit_with_projections_susceptible.png"))
@@ -115,6 +128,7 @@ png(filename = file.path(outdir, "reproductive_number_today.png"))
   abline( v=1, col="red", lwd=3 )
   legend( "topright", "", paste( "Current date: ", Sys.Date(), "   "), bty="n")
 dev.off()
+
 
 
 

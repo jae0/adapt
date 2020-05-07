@@ -1,4 +1,4 @@
-data_nova_scotia = function( output="stan_data", Npop=971395, Npreds=5, ... ) {
+data_nova_scotia = function( output="stan_data", Npop=971395, Npreds=5, interpolate_missing_data=FALSE, ... ) {
 
   # install.packages("googlesheets4")
   library(googlesheets4)
@@ -8,9 +8,9 @@ data_nova_scotia = function( output="stan_data", Npop=971395, Npreds=5, ... ) {
   gsdata = gsdata[ is.finite(gsdata$InfectedCurrently), ]
 
   gsdata$Iobs = gsdata$InfectedCurrently
-  gsdata$Robs = gsdata$Recoveries + gsdata$Deaths
+  gsdata$Robs = gsdata$Recoveries + gsdata$Deaths  # note: recovered = deaths+recoveries
   gsdata$Sobs = Npop - gsdata$Robs - gsdata$Iobs
-  gsdata$Mobs = gsdata$Deaths   # mortalities
+  gsdata$Mobs = gsdata$Deaths   # mortalities .. this is redundant here but in some models, recoveries is split apart from mortalities and so useful
 
   gsdata$dayno = lubridate::date( gsdata$Date)
   gsdata$dayno = gsdata$dayno - min(gsdata$dayno) + 1
@@ -23,13 +23,19 @@ data_nova_scotia = function( output="stan_data", Npop=971395, Npreds=5, ... ) {
   daily[i, c("Sobs", "Iobs", "Robs", "Mobs")] = gsdata[,c("Sobs", "Iobs",  "Robs", "Mobs")]
 
 
-  if (0) {
+  if (interpolate_missing_data) {
   # these are cummulative counts .. linear approximation where missing
 
     j = which( !is.finite(daily$Robs) )
     if (length(j) > 0) {
       o = approx( x=daily$dayno , y=daily$Robs, xout = daily$dayno, method="linear")
       daily$Robs[j] = trunc(o$y[j])
+    }
+
+    j = which( !is.finite(daily$Mobs) )
+    if (length(j) > 0) {
+      o = approx( x=daily$dayno , y=daily$Mobs, xout = daily$dayno, method="linear")
+      daily$Mobs[j] = trunc(o$y[j])
     }
 
     j = which( !is.finite(daily$Sobs) )
@@ -39,13 +45,14 @@ data_nova_scotia = function( output="stan_data", Npop=971395, Npreds=5, ... ) {
     }
 
     j = which( !is.finite(daily$Iobs) )
-    if (length(j) > 0) daily$Iobs[j] = Npop - daily$Sobs[j] - daily$Robs[j]
+    if (length(j) > 0) daily$Iobs[j] = Npop - daily$Sobs[j] - daily$Robs[j] - daily$Mobs[j]
   }
 
-  # final check
+  # final check .. set missing values as -1
   j = which( !is.finite(daily$Sobs) ); if (length(j) > 0) daily$Sobs[j] = -1
   j = which( !is.finite(daily$Iobs) ); if (length(j) > 0) daily$Iobs[j] = -1
   j = which( !is.finite(daily$Robs) ); if (length(j) > 0) daily$Robs[j] = -1
+  j = which( !is.finite(daily$Mobs) ); if (length(j) > 0) daily$Mobs[j] = -1
 
   if (output=="daily_data") return (daily)
 
@@ -57,19 +64,25 @@ data_nova_scotia = function( output="stan_data", Npop=971395, Npreds=5, ... ) {
     Sobs = daily$Sobs,
     Iobs = daily$Iobs,
     Robs = daily$Robs,
-    time = as.integer(daily$dayno),
-    time_pred = as.integer( c(daily$dayno, max(daily$dayno)+c(1:Npreds)) ) ,
-    t0 = -0.01
+    Mobs = daily$Mobs
   )
+
+
   stan_data = c( stan_data, list(...) )
 
-  if (!exists("modelname", stan_data)) stan_data$modelname="discrete_autoregressive_with_observation_error"
+  if (!exists("modelname", stan_data)) stan_data$modelname="discrete_autoregressive_with_observation_error_structured_beta_mortality"
+
+  if ( stan_data$modelname %in% c("continuous")) {
+    if (!exists("time", stan_data)) stan_data$time = as.integer(daily$dayno),  # used by ODE-based methods
+    if (!exists("time_pred", stan_data)) stan_data$time_pred = as.integer( c(daily$dayno, max(daily$dayno)+c(1:Npreds)) ) , # used by ODE-based methods
+    if (!exists("t0", stan_data)) stan_data$t0 = -0.01   # used by ODE-based methods
+  }
 
   # add a few more flags for discrete_variable_encounter_rate and
   if (!exists("BETA_prior", stan_data)) stan_data$BETA_prior = 0.5
   if (!exists("GAMMA_prior", stan_data)) stan_data$GAMMA_prior = 1/28
-  if (!exists("me_prior", stan_data)) stan_data$me_prior = 0.05  # % of Infected that are asymptomatic
-  if (!exists("BNP", stan_data)) stan_data$BNP = 3 # % of Infected that are asymptomatic
+  if (!exists("EPSILON_prior", stan_data)) stan_data$me_prior = 0.05  # % of positively Infected that die
+  if (!exists("BNP", stan_data)) stan_data$BNP = 3 # number of days to use for beta averaging for projections
 
   if (output=="stan_data") return (stan_data)
 
