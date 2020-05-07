@@ -38,7 +38,7 @@ The number of recovered (and dead) people as a function of time (days; day 1 is 
 
 ![](./inst/doc/reproductive_number.png)
 
-How th reproductive number has been changing over the course of the epidemic. Currently it is below the critical value of 1.
+How the reproductive number has been changing over the course of the epidemic. Currently it is below the critical value of 1. Above this number, an epidemic is more likely.
 
 ![](./inst/doc/reproductive_number_today.png)
 
