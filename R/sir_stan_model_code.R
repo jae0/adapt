@@ -282,7 +282,8 @@ transformed parameters{
   Smu[1] = sir0[1] ; //latent S
   Imu[1] = sir0[2] ; //latent I
   Rmu[1] = sir0[3] ; //latent R
-   for (i in 1:(Ntimeall-1) ) {
+
+  for (i in 1:(Ntimeall-1) ) {
     real dS = BETA[i] * Smu[i] * Imu[i];
     real dI = GAMMA * Imu[i];
     Smu[i+1] = Smu[i] - dS ;
@@ -700,7 +701,7 @@ parameters {
   real<lower=0.0, upper =1> GAMMA;     // recovery rate .. proportion of infected recovering
   real<lower=0.0, upper =1> EPSILON;   // death rate .. proportion of infected dying
   real<lower = 0, upper=1> BETA[Ntimeall-1];  // == beta in SIR , here we do *not* separate out the Encounter Rate from the infection rate
-  real<lower=-0.2, upper =0.2>  MSErrorI;  // fractional mis-specification error due to latent, asymptompatic cases, reporting irregularities
+  real<lower=0, upper =0.25>  MSErrorI;  // fractional mis-specification error due to latent, asymptompatic cases, reporting irregularities
   real<lower = 1e-9, upper =0.2>  Ssd;  // these are fractional .. i.e CV's
   real<lower = 1e-9, upper =0.2>  Isd;
   real<lower = 1e-9, upper =0.2>  Rsd;
@@ -738,27 +739,28 @@ transformed parameters{
 
 model {
 
-  // non informative hyperpriors
+  // non-informative hyperpriors
   Ssd ~ cauchy( 0.5, 1.0 );
   Isd ~ cauchy( 0.5, 1.0 );
   Rsd ~ cauchy( 0.5, 1.0 );
   Msd ~ cauchy( 0.5, 1.0 );
 
-  sir0[1] ~ normal(Sprop[1], 0.25) ;
-  sir0[2] ~ normal(Iprop[1], 0.25) ;
-  sir0[3] ~ normal(Rprop[1], 0.25) ;
-  sir0[4] ~ normal(Mprop[1], 0.25) ;
-
-  ar1 ~ normal( 0, 1.0 ); // autoregression
-  ar1sd ~ normal( 0, 1.0 );
-  ar1k ~ normal( 0, 1.0 );
+  sir0[1] ~ normal(Sprop[1], 0.1) ;
+  sir0[2] ~ normal(Iprop[1], 0.1) ;
+  sir0[3] ~ normal(Rprop[1], 0.1) ;
+  sir0[4] ~ normal(Mprop[1], 0.1) ;
 
   // .. MSErrorI  is the mis-specification dur to asymptomatic cases
-  MSErrorI ~ normal( 0, 0.1 );  // proportion of I that are asymtomatic
+  MSErrorI ~ cauchy( 0.5, 1.0 );  // proportion of I that are asymtomatic
 
-  GAMMA ~ normal( GAMMA_prior, 1.0 );  // recovery of I ... always < 1
-  EPSILON ~ normal( EPSILON_prior, 1.0 );  // recovery of I ... always < 1
-  BETA[1] ~ normal( BETA_prior, 1.0 );  // # 10% CV
+  GAMMA ~ normal( GAMMA_prior, 0.1 );  // recovery of I ... always < 1
+  EPSILON ~ normal( EPSILON_prior, 0.1 );  // recovery of I ... always < 1
+
+  // autoregressive BETA
+  ar1 ~ cauchy( 0.5, 1.0 );
+  ar1sd ~ cauchy( 0.5, 1.0 );
+  ar1k ~ cauchy( 0.5, 1.0 );
+  BETA[1] ~ normal( BETA_prior, 0.1 );  // # 10% CV
   for (i in 1:(Nobs-1)) {
     BETA[i+1] ~ normal( ar1k + ar1 * BETA[i], ar1sd );
   }
@@ -770,13 +772,13 @@ model {
   // observation model:
   for (i in 1:Nobs) {
     if (Sobs[i] >= 0 ) {  // to handle missing values in SI
-      (Sprop[i] + Imu[i]*MSErrorI) ~ normal( Smu[i] , Ssd );
+      (Sprop[i] - Iprop[i]*MSErrorI) ~ normal( Smu[i] , Ssd );  // latent, non-asymptomatics
     }
     if (Iobs[i] >= 0 ) {
-      (Iprop[i] - Imu[i]*MSErrorI ) ~ normal( Imu[i], Isd );
+      (Iprop[i] + Iprop[i]*MSErrorI ) ~ normal( Imu[i], Isd );  // latent, non-asymptomatics
     }
     if (Robs[i] >= 0 ) {
-      Rprop[i]  ~ normal( Rmu[i], Rsd );  // assume no observation error / mis-specification error
+      Rprop[i]  ~ normal( Rmu[i], Rsd );  // assume no observation error nor mis-specification error
     }
     if (Mobs[i] >= 0 ) {
       Mprop[i]  ~ normal( Mmu[i], Msd );  // assume no observation error / mis-specification error

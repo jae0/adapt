@@ -28,7 +28,15 @@ The number of infected people as a function of time (days; day 1 is 2020-03-17) 
 
 ![](./inst/doc/fit_with_projections_recovered.png)
 
-The number of recovered (and dead) people as a function of time (days; day 1 is 2020-03-17) in circles. Vertical line represents "today". The blue line shown is the model fit to a modified SIR model with 95% Credible Intervals in orange. Simple deterministic (mean-field) forecasts from the recursive model are shown.
+The number of recovered people as a function of time (days; day 1 is 2020-03-17) in circles. Vertical line represents "today". The blue line shown is the model fit to a modified SIR model with 95% Credible Intervals in orange. Simple deterministic (mean-field) forecasts from the recursive model are shown.
+
+---
+
+# Number of deaths with simple projections
+
+![](./inst/doc/fit_with_projections_mortalities.png)
+
+The number of deaths as a function of time (days; day 1 is 2020-03-17) in circles. Vertical line represents "today". The blue line shown is the model fit to a modified SIR model with 95% Credible Intervals in orange. Simple deterministic (mean-field) forecasts from the recursive model are shown. The model fit is poor as this is a time-lagged process but the model is not. However, as a first order estimate of the scale of the process (mortality), it is still reasonable.
 
 
 
@@ -86,7 +94,7 @@ To install you need to install R, and then bootstrap from github directly:
 
 and also the Rpackages, "rstan" and "SimInf". They will pull in their own dependencies.
 
-Ultimately, you just need to create a data list with the information required: number of infected people on a daily basis ("InfectedCurrently" in the spreadsheet) as well as the cummulative number of "Recoveries" and "Deaths" and dates. You will also need the total population size of your area of interest. Look inside the function (https://github.com/jae0/adapt/blob/master/R/data_nova_scotia.R) to see how it is done here. Use the Nova Scotia example as a template. Thereafter, you can probably run the short code in https://github.com/jae0/adapt/blob/master/inst/scripts/example_parameter_estimation_SIR_nova_scotia.R with minimal modification.
+Ultimately, you just need to create a data list with the information required: number of infected people on a daily basis ("InfectedCurrently" in the spreadsheet) as well as the cummulative number of "Recoveries" and "Deaths" on a daily basis. You will also need the total population size of your area of interest. Look inside the function (https://github.com/jae0/adapt/blob/master/R/data_nova_scotia.R) to see how it is done here. Use the Nova Scotia example as a template. Thereafter, you can probably run the short code in https://github.com/jae0/adapt/blob/master/inst/scripts/example_parameter_estimation_SIR_nova_scotia.R with minimal modification.
 
 
 Here is an example of the data structure that is expected in "stan_data":
@@ -99,6 +107,7 @@ List of 14
  $ Npop       : num 971395
  $ Nobs       : int 51
  $ Npreds     : num 30
+ $ time       : int [1:51] 1 2 3 4 5 6 7 8 9 10 ...
  $ Sobs       : num [1:51] 971394 971392 971390 971390 -1 ...
  $ Iobs       : num [1:51] 1 3 5 5 -1 28 41 51 68 73 ...
  $ Robs       : num [1:51] 0 0 0 0 -1 0 0 0 0 0 ...

@@ -64,7 +64,8 @@ data_nova_scotia = function( output="stan_data", Npop=971395, Npreds=5, interpol
     Sobs = daily$Sobs,
     Iobs = daily$Iobs,
     Robs = daily$Robs,
-    Mobs = daily$Mobs
+    Mobs = daily$Mobs,
+    time = as.integer(daily$dayno)
   )
 
 
@@ -72,10 +73,10 @@ data_nova_scotia = function( output="stan_data", Npop=971395, Npreds=5, interpol
 
   if (!exists("modelname", stan_data)) stan_data$modelname="discrete_autoregressive_with_observation_error_structured_beta_mortality"
 
-  if ( stan_data$modelname %in% c("continuous")) {
-    if (!exists("time", stan_data)) stan_data$time = as.integer(daily$dayno),  # used by ODE-based methods
-    if (!exists("time_pred", stan_data)) stan_data$time_pred = as.integer( c(daily$dayno, max(daily$dayno)+c(1:Npreds)) ) , # used by ODE-based methods
-    if (!exists("t0", stan_data)) stan_data$t0 = -0.01   # used by ODE-based methods
+  if ( stan_data$modelname %in% c("continuous") ) {
+    # used by ODE-based methods for rk4 integration
+    if (!exists("time_pred", stan_data)) stan_data$time_pred = as.integer( c(daily$dayno, max(daily$dayno)+c(1:Npreds)) )
+    if (!exists("t0", stan_data)) stan_data$t0 = -0.01
   }
 
   # add a few more flags for discrete_variable_encounter_rate and

@@ -14,7 +14,7 @@ plot_model_fit = function( stan_data, M=NULL, selection="default"  ) {
         mod_median = apply(M$I/stan_data$Npop, 2, median, na.rm=TRUE),
         mod_low = apply(M$I/stan_data$Npop, 2, quantile, probs=c(0.025), na.rm=TRUE),
         mod_high = apply(M$I/stan_data$Npop, 2, quantile, probs=c(0.975), na.rm=TRUE),
-        mod_time = stan_data$time_pred
+        mod_time = c( stan_data$time, max(stan_data$time) + c(1:stan_data$Npreds) )
       ))
       # Median and 95% Credible Interval
       ggplot(df_sample, aes(x=ts, y=sample_prop)) +
