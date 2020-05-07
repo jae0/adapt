@@ -27,7 +27,8 @@ stan_data = data_nova_scotia(
   # modelname = "discrete_autoregressive_with_observation_error_unstructured_beta"  # slow
   # modelname = "continuous" # ODE form  really slow ... and does not work that well .. huge error bars
   # modelname = "discrete_basic"   # poor fit ..  latent .. similar to continuous .. ie. model is too simple and params too static
-  modelname = "discrete_autoregressive_without_observation_error"  # no obsrevation error, only process error
+  # modelname = "discrete_autoregressive_without_observation_error"  # no obsrevation error, only process error
+  modelname = "discrete_autoregressive_with_observation_error_structured_beta_mortality"  # splitting recovered and mortalities
 )
 
 

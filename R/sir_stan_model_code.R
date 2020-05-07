@@ -664,7 +664,7 @@ transformed data {
   int Ntimeall;
   real<lower = 0, upper =1> Sprop[Nobs]; // observed S in proportion of total pop
   real<lower = 0, upper =1> Iprop[Nobs]; // observed I
-  real<lower = 0, upper =1> Rprop[Nobs]; // observed R including deaths
+  real<lower = 0, upper =1> Rprop[Nobs]; // observed R excluding deaths  ..  chaning meaning of R here (vs Robs)
   real<lower = 0, upper =1> Mprop[Nobs]; // observed mortalities
 
   Ntimeall = Nobs + Npreds;
@@ -672,12 +672,12 @@ transformed data {
   // * 1.0 is fiddling to comvert int to real
   // checking for > 0 is to check for missing values == -1
   for (i in 1:Nobs) {
-    if (Sobs[i] >= 0 && Iobs[i] >= 0) {
+    if (Sobs[i] >= 0 ) {
       Sprop[i] = (Sobs[i] * 1.0 )/ (Npop * 1.0)  ; // observation error .. some portion of infected is not captured
     } else {
       Sprop[i]=0.0; //dummy value
     }
-    if (Sobs[i] >= 0 && Iobs[i] >= 0 && Robs[i] >= 0) {
+    if ( Iobs[i] >= 0) {
       Iprop[i] = (Iobs[i]* 1.0 )/ ( Npop * 1.0) ;
     } else {
       Iprop[i]=0.0; //dummy value
@@ -687,7 +687,7 @@ transformed data {
     } else {
       Rprop[i]=0.0; //dummy value
     }
-    if (Robs[i] >= 0) {
+    if (Mobs[i] >= 0) {
       Mprop[i] = (Mobs[i]* 1.0 )/ (Npop* 1.0) ;  // deaths
     } else {
       Mprop[i]=0.0; //dummy value
@@ -697,9 +697,9 @@ transformed data {
 
 parameters {
   real<lower=0.0, upper =1> GAMMA;     // recovery rate .. proportion of infected recovering
+  real<lower=0.0, upper =1> EPSILON;   // death rate .. proportion of infected dying
   real<lower = 0, upper=1> BETA[Ntimeall-1];  // == beta in SIR , here we do *not* separate out the Encounter Rate from the infection rate
   real<lower=-0.2, upper =0.2>  MSErrorI;  // fractional mis-specification error due to latent, asymptompatic cases, reporting irregularities
-  real<lower=-0.2, upper =0.2>  MSErrorR;  // fractional mis-specification error due to variable disease progression/secondary infections
   real<lower = 1e-9, upper =0.2>  Ssd;  // these are fractional .. i.e CV's
   real<lower = 1e-9, upper =0.2>  Isd ;
   real<lower = 1e-9, upper =0.2>  Rsd;
@@ -722,12 +722,15 @@ transformed parameters{
   Imu[1] = sir0[2] ; //latent I
   Rmu[1] = sir0[3] ; //latent R
   Mmu[1] = sir0[4] ; //latent Mortalities
-   for (i in 1:(Ntimeall-1) ) {
+
+  for (i in 1:(Ntimeall-1) ) {
     real dS = BETA[i] * Smu[i] * Imu[i];
     real dI = GAMMA * Imu[i];
+    real dM = EPSILON * Imu[i];
     Smu[i+1] = Smu[i] - dS ;
-    Imu[i+1] = Imu[i] + dS - dI;
+    Imu[i+1] = Imu[i] + dS - dI - dM;
     Rmu[i+1] = Rmu[i] + dI;
+    Mmu[i+1] = Mmu[i] + dM;
   }
 }
 
@@ -737,10 +740,12 @@ model {
   Ssd ~ cauchy( 0.5, 1.0 );
   Isd ~ cauchy( 0.5, 1.0 );
   Rsd ~ cauchy( 0.5, 1.0 );
+  Msd ~ cauchy( 0.5, 1.0 );
 
-  sir0[1] ~ normal(Sprop[1], 0.2) ;
-  sir0[2] ~ normal(Iprop[1], 0.2) ;
-  sir0[3] ~ normal(Rprop[1], 0.2) ;
+  sir0[1] ~ normal(Sprop[1], 0.25) ;
+  sir0[2] ~ normal(Iprop[1], 0.25) ;
+  sir0[3] ~ normal(Rprop[1], 0.25) ;
+  sir0[4] ~ normal(Mprop[1], 0.25) ;
 
   ar1 ~ normal( 0, 1.0 ); // autoregression
   ar1sd ~ normal( 0, 1.0 );
@@ -748,7 +753,6 @@ model {
 
   // .. MSErrorI  is the mis-specification dur to asymptomatic cases
   MSErrorI ~ normal( 0, 0.1 );  // proportion of I that are asymtomatic
-  MSErrorR ~ normal( 0, 0.1 );  // proportion of R that are misclassified
 
   GAMMA ~ normal( GAMMA_prior, 1.0 );  // recovery of I ... always < 1
   BETA[1] ~ normal( BETA_prior, 1.0 );  // # 10% CV
@@ -762,14 +766,17 @@ model {
   // data likelihoods, if *obs ==-1, then data was missing  . same conditions as in transformed parameters
   // observation model:
   for (i in 1:Nobs) {
-    if (Sobs[i] >= 0 && Iobs[i] >= 0) {  // to handle missing values in SI
-      (Sprop[i] + Iprop[i]*MSErrorI) ~ normal( Smu[i] , Ssd );
+    if (Sobs[i] >= 0 ) {  // to handle missing values in SI
+      (Sprop[i] + Imu[i]*MSErrorI) ~ normal( Smu[i] , Ssd );
     }
-    if (Sobs[i] >= 0 && Iobs[i] >= 0 && Robs[i] >= 0) {
-      (Iprop[i] - Iprop[i]*MSErrorI - Rprop[i]*MSErrorR) ~ normal( Imu[i], Isd );
+    if (Iobs[i] >= 0 ) {
+      (Iprop[i] - Imu[i]*MSErrorI ) ~ normal( Imu[i], Isd );
     }
     if (Robs[i] >= 0 ) {
-      (Rprop[i] + Rprop[i]*MSErrorR)  ~ normal( Rmu[i], Rsd );  // assume no observation error / mis-specification error
+      Rprop[i]  ~ normal( Rmu[i], Rsd );  // assume no observation error / mis-specification error
+    }
+    if (Mobs[i] >= 0 ) {
+      Mprop[i]  ~ normal( Mmu[i], Msd );  // assume no observation error / mis-specification error
     }
   }
 }
@@ -778,11 +785,13 @@ generated quantities {
   real<lower=0> K[Ntimeall-1];
   int<lower = 0, upper =Npop> S[Ntimeall]; // latent S
   int<lower = 0, upper =Npop> I[Ntimeall]; // latent I
-  int<lower = 0, upper =Npop> R[Ntimeall]; // latent R
+  int<lower = 0, upper =Npop> R[Ntimeall]; // latent R (no mortality)
+  int<lower = 0, upper =Npop> M[Ntimeall]; // latent M (mortality)
 
   S = binomial_rng( Npop, Smu );
   I = binomial_rng( Npop, Imu );
   R = binomial_rng( Npop, Rmu );
+  M = binomial_rng( Npop, Mmu );
 
   // sample from  mean process (proportions to counts)
   for (i in 1:(Ntimeall-1) ) {
