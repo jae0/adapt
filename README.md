@@ -36,7 +36,7 @@ The number of recovered people as a function of time (days; day 1 is 2020-03-17)
 
 ![](./inst/doc/fit_with_projections_mortalities.png)
 
-The number of deaths as a function of time (days; day 1 is 2020-03-17) in circles. Vertical line represents "today". The blue line shown is the model fit to a modified SIR model with 95% Credible Intervals in orange. Simple deterministic (mean-field) forecasts from the recursive model are shown. The model fit is poor as this is a time-lagged process but the model is not. However, as a first order estimate of the scale of the process (mortality), it is still reasonable.
+The number of deaths as a function of time (days; day 1 is 2020-03-17) in circles. Vertical line represents "today". The blue line shown is the model fit to a modified SIR model with 95% Credible Intervals in orange. Simple deterministic (mean-field) forecasts from the recursive model are shown. The model fit is poor as mortality is a time-lagged process but the model is not. However, as a first order estimate of the scale of the process (mortality), it is still reasonable. I will add a time-lagged process shortly.
 
 
 
