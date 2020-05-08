@@ -19,9 +19,9 @@ stan_data = data_nova_scotia(
   Npop = 971395,  # total population
   Npreds = 30,   # number of days for forward projectins
   BNP = 3,        # beta number of days to average for forward projections
-  EPSILON_prior = 5/100,  # porportion of positive tested that die
-  GAMMA_prior = 1/28,  # approx scale of GAMMA ("effective recovery rate") ~ 1/ recovery time (about 21 to 28 days)
   BETA_prior = 0.9,    # approx scale of BETA  ("effective infection rate", 1 -> 100%)
+  GAMMA_prior = 1/25,  # approx scale of GAMMA ("effective recovery rate") ~ 1/ recovery time (about 21 to 28 days)
+  EPSILON_prior = (1/25)/20,  # 1/20 of GAMMA .. porportion of positive tested that die is ~5%, so 1/20 of GAMMA_prior
   # modelname = "discrete_autoregressive_with_observation_error_structured_beta"
   # modelname = "discrete_autoregressive_with_observation_error_unstructured_beta"  # slow
   # modelname = "continuous" # ODE form  really slow ... and does not work that well .. huge error bars
@@ -33,7 +33,7 @@ stan_data = data_nova_scotia(
 
 stancode_compiled = rstan::stan_model( model_code=sir_stan_model_code( selection=stan_data$modelname ) )  # compile the code
 
-f = rstan::sampling( stancode_compiled, data=stan_data, chains=3, warmup=8000, iter=10000, control= list(adapt_delta = 0.9, max_treedepth=12 ))
+f = rstan::sampling( stancode_compiled, data=stan_data, chains=3, warmup=5000, iter=6000, control= list(adapt_delta = 0.95, max_treedepth=14 ))
 
 
 if (0) {
@@ -63,7 +63,7 @@ png(filename = file.path(outdir, "fit_with_projections_infected.png"))
   lines( apply(M$I, 2, quantile, probs=0.975)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
   points( io ~ stan_data$time, col="darkgray", cex=1.2 )
   abline( v=stan_data$time[stan_data$Nobs], col="grey", lty="dashed" )
-  legend( "topright", "", paste( "Current date: ", Sys.Date(), " "), bty="n")
+  legend( "topright", "", paste( "Current date: ", stan_data$timestamp, " "), bty="n")
 dev.off()
 
 
@@ -78,7 +78,7 @@ png(filename = file.path(outdir, "fit_with_projections_recovered.png"))
   lines( apply(M$R, 2, quantile, probs=0.975)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
   points( ro ~ stan_data$time, col="darkgray", cex=1.2 )
   abline( v=stan_data$time[stan_data$Nobs], col="grey", lty="dashed" )
-  legend( "topright", "", paste( "Current date: ", Sys.Date(), " "), bty="n")
+  legend( "topright", "", paste( "Current date: ", stan_data$timestamp, " "), bty="n")
 dev.off()
 
 
@@ -93,7 +93,7 @@ png(filename = file.path(outdir, "fit_with_projections_mortalities.png"))
   lines( apply(M$M, 2, quantile, probs=0.975)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
   points( mo ~ stan_data$time, col="darkgray", cex=1.2 )
   abline( v=stan_data$time[stan_data$Nobs], col="grey", lty="dashed" )
-  legend( "topright", "", paste( "Current date: ", Sys.Date(), " "), bty="n")
+  legend( "topright", "", paste( "Current date: ", stan_data$timestamp, " "), bty="n")
 dev.off()
 
 
@@ -108,7 +108,7 @@ png(filename = file.path(outdir, "fit_with_projections_susceptible.png"))
   lines( apply(M$S, 2, quantile, probs=0.975)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
   points( so ~ stan_data$time, col="darkgray", cex=1.2 )
   abline( v=stan_data$time[stan_data$Nobs], col="grey", lty="dashed" )
-  legend( "topright", "", paste( "Current date: ", Sys.Date(), " "), bty="n")
+  legend( "topright", "", paste( "Current date: ", stan_data$timestamp, " "), bty="n")
 dev.off()
 
 
@@ -119,14 +119,14 @@ png(filename = file.path(outdir, "reproductive_number.png"))
   lines( apply(M$K, 2, quantile, probs=0.975)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed" )
   abline( h=1, col="red", lwd=3 )
   abline( v=stan_data$Nob, , col="grey", lty="dashed" )
-  legend( "topright", "", paste( "Current date: ", Sys.Date(), " "), bty="n")
+  legend( "topright", "", paste( "Current date: ", stan_data$timestamp, " "), bty="n")
 dev.off()
 
 
 png(filename = file.path(outdir, "reproductive_number_today.png"))
   hist( M$K[,stan_data$Nobs] , "fd", xlab="Current Reproductive number", ylab="Frequency", main="")  # today's K
   abline( v=1, col="red", lwd=3 )
-  legend( "topright", "", paste( "Current date: ", Sys.Date(), " "), bty="n")
+  legend( "topright", "", paste( "Current date: ", stan_data$timestamp, " "), bty="n")
 dev.off()
 
 
@@ -142,14 +142,14 @@ nprojections = 120
 sim = array( NA, dim=c(nsims, 3, nprojections) )
 
 if (stan_data$modelname=="discrete_autoregressive_with_observation_error_structured_beta_mortality") {
-  recovered = M$R + M$M
+  u0=data.frame(S=M$S[,today], I=M$I[,today], R=M$R[,today] + M$M[,today] )
 } else {
-  recovered = M$R
+  u0=data.frame(S=M$S[,today], I=M$I[,today], R=M$R[,today] )
 }
 
 for (i in 1:nsims) {
   sim[i,,] = run( SIR(
-    u0=data.frame(S=M$S[i,today], I=M$I[i,today], R=recovered[i,today] ),
+    u0=u0[i,],
     tspan=1:nprojections,
     beta=M$BETA[i,today],
     gamma=M$GAMMA[i] )
@@ -171,7 +171,7 @@ png(filename = file.path(outdir, "fit_with_projections_and_stochastic_simulation
   lines( apply(M$I, 2, quantile, probs=0.975)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
   abline( v=stan_data$time[stan_data$Nobs], col="grey", lty="dashed" )
   points( io ~ stan_data$time, xlim=xrange, ylim=yrange, col="darkgray", cex=1.2 )
-  legend( "topright", "", paste( "Current date: ", Sys.Date(), " "), bty="n")
+  legend( "topright", "", paste( "Current date: ", stan_data$timestamp, " "), bty="n")
 
 dev.off()
 
