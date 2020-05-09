@@ -206,443 +206,10 @@ generated quantities {
   } # end selection
 
 
-# ------------------
-
-
-
-
-  if ( selection=="discrete_autoregressive_with_observation_error_structured_beta" ) {
-    return(
-
-"
-data {
-  //declare variables
-  int<lower=0> Npop;  // Npop total
-  int<lower=0> Nobs;  //number of time slices
-  int<lower=0> Npreds;  //additional number of time slices for prediction
-  int<lower=0> BNP; // the last no days to use for BETA to project forward
-  real<lower=0> BETA_prior;
-  real<lower=0> GAMMA_prior;
-  int Sobs[Nobs]; // observed S
-  int Iobs[Nobs]; // observed I
-  int Robs[Nobs]; // observed R
-}
-
-transformed data {
-  int Ntimeall;
-  real<lower = 0, upper =1> Sprop[Nobs]; // observed S in proportion of total pop
-  real<lower = 0, upper =1> Iprop[Nobs]; // observed I
-  real<lower = 0, upper =1> Rprop[Nobs]; // observed R
-
-  Ntimeall = Nobs + Npreds;
-
-  // * 1.0 is fiddling to comvert int to real
-  // checking for > 0 is to check for missing values == -1
-  for (i in 1:Nobs) {
-    if (Sobs[i] >= 0 && Iobs[i] >= 0) {
-      Sprop[i] = (Sobs[i] * 1.0 )/ (Npop * 1.0)  ; // observation error .. some portion of infected is not captured
-    } else {
-      Sprop[i]=0.0; //dummy value
-    }
-    if (Sobs[i] >= 0 && Iobs[i] >= 0 && Robs[i] >= 0) {
-      Iprop[i] = (Iobs[i]* 1.0 )/ ( Npop * 1.0) ;
-    } else {
-      Iprop[i]=0.0; //dummy value
-    }
-    if (Robs[i] >= 0) {
-      Rprop[i] = (Robs[i]* 1.0 )/ (Npop* 1.0) ;
-    } else {
-      Rprop[i]=0.0; //dummy value
-    }
-  }
-}
-
-parameters {
-  real<lower=0.0, upper =1> GAMMA;     // recovery rate .. proportion of infected recovering
-  real<lower = 0, upper=1> BETA[Ntimeall-1];  // == beta in SIR , here we do *not* separate out the Encounter Rate from the infection rate
-  real<lower=-0.2, upper =0.2>  MSErrorI;  // fractional mis-specification error due to latent, asymptompatic cases, reporting irregularities
-  real<lower=-0.2, upper =0.2>  MSErrorR;  // fractional mis-specification error due to variable disease progression/secondary infections
-  real<lower = 1e-9, upper =0.2>  Ssd;  // these are fractional .. i.e CV's
-  real<lower = 1e-9, upper =0.2>  Isd ;
-  real<lower = 1e-9, upper =0.2>  Rsd;
-  real<lower = -1, upper =1> ar1;
-  real<lower = 0 > ar1sd;
-  real ar1k;
-  real<lower=0, upper =1> sir0[3];
-}
-
-transformed parameters{
-  real<lower = 0, upper =1> Smu[Ntimeall]; // mean process S
-  real<lower = 0, upper =1> Imu[Ntimeall]; // mean process I
-  real<lower = 0, upper =1> Rmu[Ntimeall]; // mean process R
-
-  // process model: SIR ODE in Euler difference form
-  // recursive model eq for discrete form of SIR;
-  //set intial conditions
-  Smu[1] = sir0[1] ; //latent S
-  Imu[1] = sir0[2] ; //latent I
-  Rmu[1] = sir0[3] ; //latent R
-   for (i in 1:(Ntimeall-1) ) {
-    real dS = BETA[i] * Smu[i] * Imu[i];
-    real dI = GAMMA * Imu[i];
-    Smu[i+1] = Smu[i] - dS ;
-    Imu[i+1] = Imu[i] + dS - dI;
-    Rmu[i+1] = Rmu[i] + dI;
-  }
-}
-
-model {
-
-  // non informative hyperpriors
-  Ssd ~ cauchy(0, 0.5);
-  Isd ~ cauchy(0, 0.5);
-  Rsd ~ cauchy(0, 0.5);
-
-  sir0[1] ~ normal(Sprop[1], 0.2) ;
-  sir0[2] ~ normal(Iprop[1], 0.2) ;
-  sir0[3] ~ normal(Rprop[1], 0.2) ;
-
-  ar1 ~ normal( 0, 1.0 ); // autoregression
-  ar1sd ~ normal( 0, 1.0 );
-  ar1k ~ normal( 0, 1.0 );
-
-  // .. MSErrorI  is the mis-specification dur to asymptomatic cases
-  MSErrorI ~ normal( 0, 0.1 );  // proportion of I that are asymtomatic
-  MSErrorR ~ normal( 0, 0.1 );  // proportion of R that are misclassified
-
-  GAMMA ~ normal( GAMMA_prior, 1.0 );  // recovery of I ... always < 1
-  BETA[1] ~ normal( BETA_prior, 1.0 );  // # 10% CV
-  for (i in 1:(Nobs-1)) {
-    BETA[i+1] ~ normal( ar1k + ar1 * BETA[i], ar1sd );
-  }
-  for ( i in (Nobs+1):(Ntimeall-1) ) {
-    BETA[i] ~ normal( mean( BETA[(Nobs-1-BNP):(Nobs-1)] ), sd( BETA[(Nobs-1-BNP):(Nobs-1)] ) );
-  }
-
-  // data likelihoods, if *obs ==-1, then data was missing  . same conditions as in transformed parameters
-  // observation model:
-  for (i in 1:Nobs) {
-    if (Sobs[i] >= 0 && Iobs[i] >= 0) {  // to handle missing values in SI
-      (Sprop[i] + Iprop[i]*MSErrorI) ~ normal( Smu[i] , Ssd );
-    }
-    if (Sobs[i] >= 0 && Iobs[i] >= 0 && Robs[i] >= 0) {
-      (Iprop[i] - Iprop[i]*MSErrorI - Rprop[i]*MSErrorR) ~ normal( Imu[i], Isd );
-    }
-    if (Robs[i] >= 0 ) {
-      (Rprop[i] + Rprop[i]*MSErrorR)  ~ normal( Rmu[i], Rsd );  // assume no observation error / mis-specification error
-    }
-  }
-}
-
-generated quantities {
-  real<lower=0> K[Ntimeall-1];
-  int<lower = 0, upper =Npop> S[Ntimeall]; // latent S
-  int<lower = 0, upper =Npop> I[Ntimeall]; // latent I
-  int<lower = 0, upper =Npop> R[Ntimeall]; // latent R
-
-  S = binomial_rng( Npop, Smu );
-  I = binomial_rng( Npop, Imu );
-  R = binomial_rng( Npop, Rmu );
-
-  // sample from  mean process (proportions to counts)
-  for (i in 1:(Ntimeall-1) ) {
-    K[i] = BETA[i] / GAMMA; // the contact number = fraction of S in contact with I
-  }
-
-}
-"
-    )  # end return
-  } # end selection
-
-
-# ------------------
-
-
-
-  if ( selection=="discrete_autoregressive_with_observation_error_unstructured_beta" ) {
-    return(
-
-"
-
-data {
-  //declare variables
-  int<lower=0> Npop;  // Npop total
-  int<lower=0> Nobs;  //number of time slices
-  int<lower=0> Npreds;  //additional number of time slices for prediction
-  int<lower=0> BNP; // the last no days to use for BETA to project forward
-  real<lower=0> BETA_prior;
-  real<lower=0> GAMMA_prior;
-  int Sobs[Nobs]; // observed S
-  int Iobs[Nobs]; // observed I
-  int Robs[Nobs]; // observed R
-}
-
-transformed data {
-  int Ntimeall;
-  real<lower = 0, upper =1> Sprop[Nobs]; // observed S in proportion of total pop
-  real<lower = 0, upper =1> Iprop[Nobs]; // observed I
-  real<lower = 0, upper =1> Rprop[Nobs]; // observed R
-  Ntimeall = Nobs + Npreds;
-  // * 1.0 is fiddling to comvert int to real
-  // checking for > 0 is to check for missing values == -1
-  for (i in 1:Nobs) {
-    if (Sobs[i] >= 0 && Iobs[i] >= 0) {
-      Sprop[i] = (Sobs[i] * 1.0 )/ (Npop * 1.0)  ; // observation error .. some portion of infected is not captured
-    } else {
-      Sprop[i]=0.0; //dummy value
-    }
-    if (Sobs[i] >= 0 && Iobs[i] >= 0 && Robs[i] >= 0) {
-      Iprop[i] = (Iobs[i]* 1.0 )/ ( Npop * 1.0) ;
-    } else {
-      Iprop[i]=0.0; //dummy value
-    }
-    if (Robs[i] >= 0) {
-      Rprop[i] = (Robs[i]* 1.0 )/ (Npop* 1.0) ;
-    } else {
-      Rprop[i]=0.0; //dummy value
-    }
-  }
-}
-
-parameters {
-  real<lower=0.0, upper =1> GAMMA;     // recovery rate .. proportion of infected recovering
-  real<lower = 0, upper=1> BETA[Ntimeall-1];  // == beta in SIR , here we do *not* separate out the Encounter Rate from the infection rate
-  real<lower=-0.2, upper =0.2>  MSErrorI;  // fractional mis-specification error due to latent, asymptompatic cases, reporting irregularities
-  real<lower=-0.2, upper =0.2>  MSErrorR;  // fractional mis-specification error due to variable disease progression/secondary infections
-  real<lower = 1e-9, upper =0.25>  Ssd;  // these are fractional .. i.e CV's
-  real<lower = 1e-9, upper =0.25>  Isd ;
-  real<lower = 1e-9, upper =0.25>  Rsd;
-  real<lower = -1, upper =1> ar1;
-  real<lower = 0, upper =0.25> ar1sd;
-  real<lower = -1, upper =1> ar1k;
-  real<lower=0, upper =1> sir0[3];
-}
-
-transformed parameters{
-  real<lower = 0, upper =1> Smu[Ntimeall]; // mean process S
-  real<lower = 0, upper =1> Imu[Ntimeall]; // mean process I
-  real<lower = 0, upper =1> Rmu[Ntimeall]; // mean process R
-
-
-  // recursive model eq for discrete form of SIR;
-  //set intial conditions
-  Smu[1] = sir0[1] ; //latent S
-  Imu[1] = sir0[2] ; //latent I
-  Rmu[1] = sir0[3] ; //latent R
-
-  // process model: SIR ODE in Euler difference form
-   for (i in 1:(Ntimeall-1) ) {
-    real dS = BETA[i] * Smu[i] * Imu[i];
-    real dI = GAMMA * Imu[i];
-    Smu[i+1] = Smu[i] - dS ;
-    Imu[i+1] = Imu[i] + dS - dI;
-    Rmu[i+1] = Rmu[i] + dI;
-  }
-
-}
-
-
-model {
-
-  // non informative hyperpriors
-  Ssd ~ cauchy(0, 0.5);
-  Isd ~ cauchy(0, 0.5);
-  Rsd ~ cauchy(0, 0.5);
-  sir0 ~ beta(0.5, 0.5) ;
-
-  // .. MSErrorI  is the mis-specification dur to asymptomatic cases
-  MSErrorI ~ normal( 0, 0.1 );  // proportion of I that are asymtomatic
-  MSErrorR ~ normal( 0, 0.1 );  // proportion of R that are misclassified
-
-  GAMMA ~ normal( GAMMA_prior, GAMMA_prior/3.0 );  // recovery of I ... always < 1
-
-  BETA[1:(Nobs-1)] ~ normal( BETA_prior, BETA_prior/3.0 );
-  for ( i in (Nobs):(Ntimeall-1) ) {
-    BETA[i] ~ normal( mean( BETA[(Nobs-1-BNP):(Nobs-1)] ), sd( BETA[(Nobs-1-BNP):(Nobs-1)] ) );
-  }
-
-  // data likelihoods, if *obs ==-1, then data was missing  . same conditions as in transformed parameters
-  // observation model:
-  for (i in 1:Nobs) {
-    if (Sobs[i] >= 0 && Iobs[i] >= 0) {  // to handle missing values in SI
-      (Sprop[i] + Iprop[i]*MSErrorI) ~ normal( Smu[i] , Ssd );
-    }
-    if (Sobs[i] >= 0 && Iobs[i] >= 0 && Robs[i] >= 0) {
-      (Iprop[i] - Iprop[i]*MSErrorI - Rprop[i]*MSErrorR) ~ normal( Imu[i], Isd );
-    }
-    if (Robs[i] >= 0 ) {
-      (Rprop[i] + Rprop[i]*MSErrorR)  ~ normal( Rmu[i], Rsd );  // assume no observation error / mis-specification error
-    }
-  }
-}
-
-generated quantities {
-  real<lower=0> K[Ntimeall-1];
-  int<lower = 0, upper =Npop> S[Ntimeall]; // latent S
-  int<lower = 0, upper =Npop> I[Ntimeall]; // latent I
-  int<lower = 0, upper =Npop> R[Ntimeall]; // latent R
-
-  S = binomial_rng( Npop, Smu );
-  I = binomial_rng( Npop, Imu );
-  R = binomial_rng( Npop, Rmu );
-
-  // sample from  mean process (proportions to counts)
-  for (i in 1:(Ntimeall-1) ) {
-    K[i] = BETA[i] / GAMMA; // the contact number = fraction of S in contact with I
-  }
-}
-
-"
-    )  # end return
-  } # end selection
-
-
-# ------------------
-
-# ------------------
-
-
-
-  if ( selection=="discrete_autoregressive_without_observation_error" ) {
-    return(
-"
-data {
-  //declare variables
-  int<lower=0> Npop;  // Npop total
-  int<lower=0> Nobs;  //number of time slices
-  int<lower=0> Npreds;  //additional number of time slices for prediction
-  int<lower=0> BNP; // the last no days to use for BETA to project forward
-  real<lower=0> BETA_prior;
-  real<lower=0> GAMMA_prior;
-  int Sobs[Nobs]; // observed S
-  int Iobs[Nobs]; // observed I
-  int Robs[Nobs]; // observed R
-}
-
-transformed data {
-  int Ntimeall;
-  real<lower = 0, upper =1> Sprop[Nobs]; // observed S in proportion of total pop
-  real<lower = 0, upper =1> Iprop[Nobs]; // observed I
-  real<lower = 0, upper =1> Rprop[Nobs]; // observed R
-
-  Ntimeall = Nobs + Npreds;
-
-  // * 1.0 is fiddling to comvert int to real
-  // checking for > 0 is to check for missing values == -1
-  for (i in 1:Nobs) {
-    if (Sobs[i] >= 0 ) {
-      Sprop[i] = (Sobs[i] * 1.0 )/ (Npop * 1.0)  ; // observation error .. some portion of infected is not captured
-    } else {
-      Sprop[i]=0.0; //dummy value
-    }
-    if ( Iobs[i] >= 0  ) {
-      Iprop[i] = (Iobs[i]* 1.0 )/ ( Npop * 1.0) ;
-    } else {
-      Iprop[i]=0.0; //dummy value
-    }
-    if (Robs[i] >= 0) {
-      Rprop[i] = (Robs[i]* 1.0 )/ (Npop* 1.0) ;
-    } else {
-      Rprop[i]=0.0; //dummy value
-    }
-  }
-}
-
-parameters {
-  real<lower=0.0, upper =1> GAMMA;     // recovery rate .. proportion of infected recovering
-  real<lower = 0, upper=1> BETA[Ntimeall-1];  // == beta in SIR , here we do *not* separate out the Encounter Rate from the infection rate
-  real<lower = 1e-9, upper =0.2>  Ssd;  // these are fractional .. i.e CV's
-  real<lower = 1e-9, upper =0.2>  Isd ;
-  real<lower = 1e-9, upper =0.2>  Rsd;
-  real<lower = -1, upper =1> ar1;
-  real<lower = 0 > ar1sd;
-  real ar1k;
-  real<lower=0, upper =1> sir0[3];
-}
-
-transformed parameters{
-  real<lower = 0, upper =1> Smu[Ntimeall]; // mean process S
-  real<lower = 0, upper =1> Imu[Ntimeall]; // mean process I
-  real<lower = 0, upper =1> Rmu[Ntimeall]; // mean process R
-
-  // process model: SIR ODE in Euler difference form
-  // recursive model eq for discrete form of SIR;
-  //set intial conditions
-  Smu[1] = sir0[1] ; //latent S
-  Imu[1] = sir0[2] ; //latent I
-  Rmu[1] = sir0[3] ; //latent R
-   for (i in 1:(Ntimeall-1) ) {
-    real dS = BETA[i] * Smu[i] * Imu[i];
-    real dI = GAMMA * Imu[i];
-    Smu[i+1] = Smu[i] - dS ;
-    Imu[i+1] = Imu[i] + dS - dI;
-    Rmu[i+1] = Rmu[i] + dI;
-  }
-}
-
-model {
-
-  // non informative hyperpriors
-  Ssd ~ cauchy(0, 0.5);
-  Isd ~ cauchy(0, 0.5);
-  Rsd ~ cauchy(0, 0.5);
-
-  sir0[1] ~ normal(Sprop[1], 0.2) ;
-  sir0[2] ~ normal(Iprop[1], 0.2) ;
-  sir0[3] ~ normal(Rprop[1], 0.2) ;
-
-  ar1 ~ normal( 0, 1.0 ); // autoregression
-  ar1sd ~ normal( 0, 1.0 );
-  ar1k ~ normal( 0, 1.0 );
-
-  GAMMA ~ normal( GAMMA_prior, 1.0 );  // recovery of I ... always < 1
-  BETA[1] ~ normal( BETA_prior, 1.0 );  // # 10% CV
-  for (i in 1:(Nobs-1)) {
-    BETA[i+1] ~ normal( ar1k + ar1 * BETA[i], ar1sd );
-  }
-  for ( i in (Nobs+1):(Ntimeall-1) ) {
-    BETA[i] ~ normal( mean( BETA[(Nobs-1-BNP):(Nobs-1)] ), sd( BETA[(Nobs-1-BNP):(Nobs-1)] ) );
-  }
-
-  // data likelihoods, if *obs ==-1, then data was missing  . same conditions as in transformed parameters
-  // observation model:
-  for (i in 1:Nobs) {
-    if ( Sobs[i] >= 0 ) {  // to handle missing values in SI
-      (Sprop[i] ) ~ normal( Smu[i] , Ssd );
-    }
-    if ( Iobs[i] >= 0 ) {
-      (Iprop[i] ) ~ normal( Imu[i], Isd );
-    }
-    if (Robs[i] >= 0 ) {
-      (Rprop[i] ) ~ normal( Rmu[i], Rsd );  // assume no observation error / mis-specification error
-    }
-  }
-}
-
-generated quantities {
-  real<lower=0> K[Ntimeall-1];
-  int<lower = 0, upper =Npop> S[Ntimeall]; // latent S
-  int<lower = 0, upper =Npop> I[Ntimeall]; // latent I
-  int<lower = 0, upper =Npop> R[Ntimeall]; // latent R
-
-  S = binomial_rng( Npop, Smu );
-  I = binomial_rng( Npop, Imu );
-  R = binomial_rng( Npop, Rmu );
-
-  // sample from  mean process (proportions to counts)
-  for (i in 1:(Ntimeall-1) ) {
-    K[i] = BETA[i] / GAMMA; // the contact number = fraction of S in contact with I
-  }
-
-}
-"
-
-    )  # end return
-  } # end selection
 
 # -----------------------
 
-  if ( selection=="discrete_autoregressive_with_observation_error_structured_beta_mortality" ) {
+  if ( selection=="discrete_autoregressive_structured_beta_mortality" ) {
     return(
 
 "
@@ -698,10 +265,10 @@ transformed data {
 }
 
 parameters {
-  real<lower=0.0, upper =1> GAMMA;     // recovery rate .. proportion of infected recovering
-  real<lower=0.0, upper =1> EPSILON;   // death rate .. proportion of infected dying
+  real<lower=0.0, upper =0.1> GAMMA;     // recovery rate .. proportion of infected recovering
+  real<lower=0.0, upper =0.01> EPSILON;   // death rate .. proportion of infected dying
   real<lower=0.0, upper  =1> BETA[Ntimeall-1];  // == beta in SIR , here we do *not* separate out the Encounter Rate from the infection rate
-  real<lower=0, upper =1>  MSErrorI;  // fractional mis-specification error due to latent, asymptompatic cases, reporting irregularities
+  // real<lower=-0.25, upper =0.25>  MSErrorI;  // fractional mis-specification error due to latent, asymptompatic cases, reporting irregularities
   real<lower = 1e-9, upper =0.2>  Ssd;  // these are fractional .. i.e CV's
   real<lower = 1e-9, upper =0.2>  Isd;
   real<lower = 1e-9, upper =0.2>  Rsd;
@@ -709,7 +276,7 @@ parameters {
   real<lower = -1, upper =1> ar1;
   real<lower = 1e-9, upper =1 > ar1sd;
   real ar1k;
-  real<lower=0, upper =1> sir0[4];
+  real <lower =0, upper =1 > latent0[4];
 }
 
 transformed parameters{
@@ -720,20 +287,23 @@ transformed parameters{
 
   // process model: SIR ODE in Euler difference form
   // recursive model eq for discrete form of SIR;
-  //set intial conditions
-  Smu[1] = sir0[1] ; //latent S
-  Imu[1] = sir0[2] ; //latent I
-  Rmu[1] = sir0[3] ; //latent R
-  Mmu[1] = sir0[4] ; //latent Mortalities
+  // some fraction of recovered die (rather than directly from infected),
+  // this is due to large a latency between infection and death (30 days+),
+  // using Recovered as it is closer to the timescale of the deaths
+
+  Smu[1] = latent0[1];
+  Imu[1] = latent0[2];
+  Rmu[1] = latent0[3];
+  Mmu[1] = latent0[4];
 
   for (i in 1:(Ntimeall-1) ) {
     real dSI = BETA[i] * Smu[i] * Imu[i];
     real dIR = GAMMA * Imu[i];
-    real dIM = EPSILON * Imu[i] ;
+    real dRM = EPSILON * Rmu[i];
     Smu[i+1] = Smu[i] - dSI ;
-    Imu[i+1] = Imu[i] + dSI - dIR - dIM;
-    Rmu[i+1] = Rmu[i] + dIR;
-    Mmu[i+1] = Mmu[i] + dIM;
+    Imu[i+1] = Imu[i] + dSI - dIR ;
+    Rmu[i+1] = Rmu[i] + dIR ;
+    Mmu[i+1] = Mmu[i] + dRM ;
   }
 }
 
@@ -745,36 +315,37 @@ model {
   Rsd ~ cauchy(0, 0.5);
   Msd ~ cauchy(0, 0.5);
 
-  sir0[1] ~ cauchy(0, 0.5) ;
-  sir0[2] ~ cauchy(0, 0.5) ;
-  sir0[3] ~ cauchy(0, 0.5) ;
-  sir0[4] ~ cauchy(0, 0.5) ;
+  //set intial conditions
+  latent0[1] ~ normal(Sprop[1], Ssd) ;
+  latent0[2] ~ normal(Iprop[1], Isd) ;
+  latent0[3] ~ normal(Rprop[1], Rsd) ;
+  latent0[4] ~ normal(Mprop[1], Msd) ;
 
-  ar1 ~ cauchy(0, 0.5); // autoregression
+  ar1 ~ normal(0, 1); // autoregression
   ar1sd ~ cauchy(0, 0.5);
   ar1k ~ cauchy(0, 0.5);
 
   // .. MSErrorI  is the mis-specification dur to asymptomatic cases
-  MSErrorI ~ cauchy(0, 0.5);  // proportion of I that are asymtomatic
+  // MSErrorI ~ cauchy(0, 0.5);  // proportion of I that are asymtomatic
 
   GAMMA ~ normal( GAMMA_prior, GAMMA_prior );  // recovery of I ... always < 1
   EPSILON ~ normal( EPSILON_prior, EPSILON_prior );  // recovery of I ... always < 1
-  BETA[1] ~ normal( BETA_prior, BETA_prior);  // # 10% CV
-  for (i in 1:(Nobs-1)) {
+  BETA[1] ~ normal( BETA_prior, BETA_prior );  // # 10% CV
+  for (i in 1:(Nobs-2)) {
     BETA[i+1] ~ normal( ar1k + ar1 * BETA[i], ar1sd );
   }
-  for ( i in (Nobs+1):(Ntimeall-1) ) {
+  for ( i in (Nobs):(Ntimeall-1) ) {
     BETA[i] ~ normal( mean( BETA[(Nobs-1-BNP):(Nobs-1)] ), sd( BETA[(Nobs-1-BNP):(Nobs-1)] ) );
   }
 
   // data likelihoods, if *obs ==-1, then data was missing  . same conditions as in transformed parameters
   // observation model:
   for (i in 1:Nobs) {
-    if (Sobs[i] >= 0 ) {  // to handle missing values in SI
-      (Sprop[i] - Iprop[i]*MSErrorI) ~ normal( Smu[i] , Ssd );
+    if (Sobs[i] >= 0  ) {  // to handle missing values in SI
+      Sprop[i] ~ normal( Smu[i] , Ssd );
     }
     if (Iobs[i] >= 0 ) {
-      (Iprop[i] + Iprop[i]*MSErrorI ) ~ normal( Imu[i], Isd );
+      Iprop[i]  ~ normal( Imu[i], Isd );
     }
     if (Robs[i] >= 0 ) {
       Rprop[i]  ~ normal( Rmu[i], Rsd );  // assume no observation error / mis-specification error

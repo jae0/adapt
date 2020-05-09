@@ -3,12 +3,9 @@
 # ---------------------------------------
 # examples of various methods of parameter estimation using NS data
 
-
-# convert to data.frame
-# loadfunctions("adapt")
-
 # remotes::install_github( "jae0/adapt" )
 require(adapt)
+# loadfunctions("adapt")
 
 require(rstan)
 rstan_options(auto_write = TRUE)
@@ -16,24 +13,22 @@ options(mc.cores = parallel::detectCores())
 
 
 stan_data = data_nova_scotia(
+  # interpolate_missing_data=TRUE,  # linear interpolation of missing data as a preprocessing step or estimate via imputation inside stan
   Npop = 971395,  # total population
   Npreds = 30,   # number of days for forward projectins
   BNP = 3,        # beta number of days to average for forward projections
-  BETA_prior = 0.9,    # approx scale of BETA  ("effective infection rate", 1 -> 100%)
+  BETA_prior = 0.8,    # approx scale of BETA  ("effective infection rate", 1 -> 100%)
   GAMMA_prior = 1/25,  # approx scale of GAMMA ("effective recovery rate") ~ 1/ recovery time (about 21 to 28 days)
   EPSILON_prior = (1/25)/20,  # 1/20 of GAMMA .. porportion of positive tested that die is ~5%, so 1/20 of GAMMA_prior
-  # modelname = "discrete_autoregressive_with_observation_error_structured_beta"
-  # modelname = "discrete_autoregressive_with_observation_error_unstructured_beta"  # slow
   # modelname = "continuous" # ODE form  really slow ... and does not work that well .. huge error bars
   # modelname = "discrete_basic"   # poor fit ..  latent .. similar to continuous .. ie. model is too simple and params too static
-  # modelname = "discrete_autoregressive_without_observation_error"  # no obsrevation error, only process error
-  modelname = "discrete_autoregressive_with_observation_error_structured_beta_mortality"  # splitting recovered and mortalities
+  modelname = "discrete_autoregressive_structured_beta_mortality"  # splitting recovered and mortalities
 )
 
 
 stancode_compiled = rstan::stan_model( model_code=sir_stan_model_code( selection=stan_data$modelname ) )  # compile the code
 
-f = rstan::sampling( stancode_compiled, data=stan_data, chains=3, warmup=5000, iter=6000, control= list(adapt_delta = 0.95, max_treedepth=14 ))
+f = rstan::sampling( stancode_compiled, data=stan_data, chains=3, warmup=6000, iter=8000, control= list(adapt_delta = 0.95, max_treedepth=14 ))
 
 
 if (0) {
@@ -158,7 +153,7 @@ for (i in 1:nsims) {
 
 
 
-library(scales)
+# library(scales)
 png(filename = file.path(outdir, "fit_with_projections_and_stochastic_simulations.png"))
   simxval = stan_data$Nobs + c(1:nprojections)
   xrange = c(0, max(nx, simxval) )
@@ -197,4 +192,60 @@ if (0) {
 
 
 
+require(odin)
+
+sir_model = odin::odin( {
+  ## Core equations for transitions between compartments:
+  update(S[]) <- S[i] - n_SI[i]
+  update(I[]) <- I[i] + n_SI[i] - n_IR[i]
+  update(R[]) <- R[i] + n_IR[i]
+
+  ## Individual probabilities of transition:
+  p_SI[] <- 1 - exp(-beta[i] * I[i] / N[i])
+  p_IR[] <- 1 - exp(-gamma[i])
+
+  ## Draws from binomial distributions for numbers changing between compartments:
+  n_SI[] <- rbinom(S[i], p_SI[i])
+  n_IR[] <- rbinom(I[i], p_IR[i])
+
+  ## Total population size
+  N[] <- S[i] + I[i] + R[i]
+
+  ## Initial states:
+  initial(S[]) <- S_ini
+  initial(I[]) <- I_ini
+  initial(R[]) <- R_ini
+
+  ## User defined parameters - default in parentheses:
+  S_ini <- user(1000)
+  I_ini <- user(1)
+  I_ini <- user(0)
+
+  beta[] <- user(0.2)
+  gamma[] <- user(0.1)
+
+  ## Number of replicates
+  nsim <- user(100)
+
+  dim(N) <- nsim
+  dim(S) <- nsim
+  dim(I) <- nsim
+  dim(R) <- nsim
+  dim(p_SI) <- nsim
+  dim(n_SI) <- nsim
+  dim(n_IR) <- nsim
+  dim(beta) <- nsim
+  dim(gamma) <- nsim
+})
+
+x <- sir_model()
+
+
+set.seed(1)
+sir_col_transp <- paste0(sir_col, "66")
+x_res <- x$run(0:100)
+par(mar = c(4.1, 5.1, 0.5, 0.5), las = 1)
+matplot(x_res[, 1], x_res[, -1], xlab = "Time", ylab = "Number of individuals",
+        type = "l", col = rep(sir_col_transp, each = 100), lty = 1)
+legend("left", lwd = 1, col = sir_col, legend = c("S", "I", "R"), bty = "n")
 
