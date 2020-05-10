@@ -22,6 +22,7 @@ stan_data = data_nova_scotia(
   EPSILON_prior = (1/25)/20,  # 1/20 of GAMMA .. porportion of positive tested that die is ~5%, so 1/20 of GAMMA_prior
   # modelname = "continuous" # ODE form  really slow ... and does not work that well .. huge error bars
   # modelname = "discrete_basic"   # poor fit ..  latent .. similar to continuous .. ie. model is too simple and params too static
+  # modelname = "discrete_binomial_autoregressive"
   modelname = "discrete_autoregressive_structured_beta_mortality"  # splitting recovered and mortalities
 )
 
@@ -136,18 +137,20 @@ today = stan_data$Nobs
 nprojections = 120
 sim = array( NA, dim=c(nsims, 3, nprojections) )
 
+
 if (stan_data$modelname=="discrete_autoregressive_with_observation_error_structured_beta_mortality") {
-  u0=data.frame(S=M$S[,today], I=M$I[,today], R=M$R[,today] + M$M[,today] )
+  u0=data.frame(S=M$S[,today], I=M$I[,today], R=M$R[,today] + M$M[,today], beta=M$BETA[,today], gamma=M$GAMMA[] )
 } else {
-  u0=data.frame(S=M$S[,today], I=M$I[,today], R=M$R[,today] )
+  u0=data.frame(S=M$S[,today], I=M$I[,today], R=M$R[,today], beta=M$BETA[,today], gamma=M$GAMMA[] )
 }
+
 
 for (i in 1:nsims) {
   sim[i,,] = run( SIR(
-    u0=u0[i,],
+    u0=u0[i,c("S","I","R")],
     tspan=1:nprojections,
-    beta=M$BETA[i,today],
-    gamma=M$GAMMA[i] )
+    beta=u0$beta[i],
+    gamma=u0$gamma[i] )
   )@U[]
 }
 
@@ -194,58 +197,69 @@ if (0) {
 
 require(odin)
 
-sir_model = odin::odin( {
+sir_odin = odin::odin( {
   ## Core equations for transitions between compartments:
-  update(S[]) <- S[i] - n_SI[i]
-  update(I[]) <- I[i] + n_SI[i] - n_IR[i]
-  update(R[]) <- R[i] + n_IR[i]
+  update(S) <- S - n_SI
+  update(I) <- I + n_SI - n_IR
+  update(R) <- R + n_IR
 
   ## Individual probabilities of transition:
-  p_SI[] <- 1 - exp(-beta[i] * I[i] / N[i])
-  p_IR[] <- 1 - exp(-gamma[i])
+  p_SI <- 1 - exp(-beta * I / N) # S to I
+  p_IR <- 1 - exp(-gamma) # I to R
 
-  ## Draws from binomial distributions for numbers changing between compartments:
-  n_SI[] <- rbinom(S[i], p_SI[i])
-  n_IR[] <- rbinom(I[i], p_IR[i])
+  ## Draws from binomial distributions for numbers changing between
+  ## compartments:
+  n_SI <- rbinom(S, p_SI)
+  n_IR <- rbinom(I, p_IR)
 
   ## Total population size
-  N[] <- S[i] + I[i] + R[i]
+  N <- S + I + R
 
   ## Initial states:
-  initial(S[]) <- S_ini
-  initial(I[]) <- I_ini
-  initial(R[]) <- R_ini
+  initial(S) <- S_ini
+  initial(I) <- I_ini
+  initial(R) <- R_ini
 
   ## User defined parameters - default in parentheses:
   S_ini <- user(1000)
   I_ini <- user(1)
-  I_ini <- user(0)
-
-  beta[] <- user(0.2)
-  gamma[] <- user(0.1)
-
-  ## Number of replicates
-  nsim <- user(100)
-
-  dim(N) <- nsim
-  dim(S) <- nsim
-  dim(I) <- nsim
-  dim(R) <- nsim
-  dim(p_SI) <- nsim
-  dim(n_SI) <- nsim
-  dim(n_IR) <- nsim
-  dim(beta) <- nsim
-  dim(gamma) <- nsim
-})
-
-x <- sir_model()
+  R_ini <- user(0)
+  beta <- user(0.2)
+  gamma <- user(0.1)
+} )
 
 
-set.seed(1)
+
+nsims = nrow(M$BETA)
+today = stan_data$Nobs
+nprojections = 120
+sim = array( NA, dim=c(nsims, 3, nprojections) )
+
+res <- sir_odin()$run(
+  0:nprojections)
+
+res <- sir_odin(nsim=1)$run(
+  0:nprojections)
+
+
+
+for (i in 1:nsims) {
+  sim[i,,] = run( SIR(
+    u0=u0[i,],
+    tspan=1:nprojections,
+    beta=M$BETA[i,today],
+    gamma=M$GAMMA[i] )
+  )@U[]
+}
+
+
+
+
+sir_col <- c("#8c8cd9", "#cc0044", "#999966")
 sir_col_transp <- paste0(sir_col, "66")
-x_res <- x$run(0:100)
+
 par(mar = c(4.1, 5.1, 0.5, 0.5), las = 1)
-matplot(x_res[, 1], x_res[, -1], xlab = "Time", ylab = "Number of individuals",
+matplot(res[, 1], res[, -1], xlab = "Time", ylab = "Number of individuals",
         type = "l", col = rep(sir_col_transp, each = 100), lty = 1)
 legend("left", lwd = 1, col = sir_col, legend = c("S", "I", "R"), bty = "n")
 

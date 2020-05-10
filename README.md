@@ -20,7 +20,7 @@ I will keep updating this as much as possible.
 
 ![](./inst/doc/fit_with_projections_infected.png)
 
-The number of infected people as a function of time (days; day 1 is 2020-03-17) in circles. Vertical line represents "today". The blue line shown is the model fit to a modified SIR model with 95% Credible Intervals in orange. Simple deterministic (mean-field) forecasts from the recursive model are shown.
+The number of infected people as a function of time (days; day 1 is 2020-03-17) in circles. Vertical line represents "today". The blue line shown is the model fit to a modified SIR model with 95% Credible Intervals in orange. Simple deterministic (mean-field) forecasts from the recursive model are shown. Note there is some underestimation near the peak as there was a large cluster outbreak in Northwood, smething that a mean-field (ODE) approach has difficulty tracking.
 
 ---
 
@@ -36,7 +36,7 @@ The number of recovered people as a function of time (days; day 1 is 2020-03-17)
 
 ![](./inst/doc/fit_with_projections_mortalities.png)
 
-The number of deaths as a function of time (days; day 1 is 2020-03-17) in circles. Vertical line represents "today". The blue line shown is the model fit to a modified SIR model with 95% Credible Intervals in orange. Simple deterministic (mean-field) forecasts from the recursive model are shown. The model fit is poor as mortality is a time-lagged process but the model is not. However, as a first order estimate of the scale of the process (mortality), it is still reasonable. I will add a time-lagged process shortly.
+The number of deaths as a function of time (days; day 1 is 2020-03-17) in circles. Vertical line represents "today". The blue line shown is the model fit to a modified SIR model with 95% Credible Intervals in orange. Simple deterministic (mean-field) forecasts from the recursive model are shown.
 
 
 
@@ -50,7 +50,7 @@ How the reproductive number has been changing over the course of the epidemic. C
 
 ![](./inst/doc/reproductive_number_today.png)
 
-The current estimate of the reproductive number (posterior distribution). There is still a non-zero probablity that the Reproductive number is larger than 1 (red line), but the majority of the distribution is currently below 1.
+The current estimate of the reproductive number (posterior distribution), which is very clearly now below 1 (red line)!
 
 
 ---
@@ -58,7 +58,7 @@ The current estimate of the reproductive number (posterior distribution). There 
 
 ![](./inst/doc/fit_with_projections_and_stochastic_simulations.png)
 
-Finally, individual trajectories of stochastic simulations are shown. These are based upon the joint posterior distributions of the parameter estimates for the most "current day", obtained from the above analysis. These trajectories represent possible futures, accounting for small number stochasticity (unlike the mean-field ODE-based "forward" predictions), assuming the current "situation" remains constant/consistent (i.e., control measures and population behaviours encapsualted in the joint-posterior distributions of the model parameters) . The majority of the trajectories suggest a continued decline in the number of infected people. Nonetheless, there still exists some scenarios of rapid disease outbreak.
+Finally, individual trajectories of stochastic simulations are shown. These are based upon the joint posterior distributions of the parameter estimates for the most "current day", obtained from the above analysis. These trajectories represent possible futures, accounting for small number stochasticity (unlike the mean-field ODE-based "forward" predictions), assuming the current "situation" remains constant/consistent (i.e., control measures and population behaviours encapsualted in the joint-posterior distributions of the model parameters). The majority of the trajectories suggest a continued decline in the number of infected people. Nonetheless, there still exists some scenarios of rapid disease outbreak (albeit with a low probability).
 
 
 

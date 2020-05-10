@@ -223,6 +223,46 @@ if (0) {
 
 
 
+# ---------------------------------------
+# 3.5. stochastic discrete form via STAN/MCMC "discrete_binomial_process"
+require(adapt)
+require(rstan)
+rstan_options(auto_write = TRUE)
+options(mc.cores = parallel::detectCores())
+
+# set.seed(42)
+
+i0 = 25/300
+
+Npop = 300
+times = 0:99
+params = list(prob_infection=0.001, time_shedding=7)
+# // prob_infection = probability of an individual infecting another in 1 unit of time (1 day)
+# // time_shedding = 1/ probability of transition to recovered state (~ duration is units of time) .. ie., simple geometric  .. 14 days
+inits = c(1-i0, i0, 0) # S, I, R, proportions
+
+sim = simulate_data( selection="sir_stochastic", Npop=Npop, inits=inits, times=times, params=params, plotdata=TRUE )
+  # prob_infection =  transmission probability (per person per 'close contact', per day)
+  # time_shedding  =  mean shedding duration for an individual
+
+stan_data = list(
+    Npop = Npop,
+    Nobs = nrow(sim),
+    Sobs = sim$Sobs,
+    Iobs = sim$Iobs,
+    Robs = sim$Robs
+)
+
+stancode_compiled = rstan::stan_model( model_code=sir_stan_model_code( selection="discrete_binomial_process") )  # compile the code
+
+f = rstan::sampling( stancode_compiled,
+  data = stan_data,
+  chains = 1,
+  warmup = 10000,
+  iter = 15000
+)
+
+M = rstan::extract(f)
 
 
 # ---------------------------------------

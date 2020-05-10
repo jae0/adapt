@@ -320,16 +320,13 @@ model {
   latent0[2] ~ normal(Iprop[1], Isd) ;
   latent0[3] ~ normal(Rprop[1], Rsd) ;
   latent0[4] ~ normal(Mprop[1], Msd) ;
+  // .. MSErrorI  is the mis-specification dur to asymptomatic cases
+  // MSErrorI ~ cauchy(0, 0.5);  // proportion of I that are asymtomatic
 
   ar1 ~ normal(0, 1); // autoregression
   ar1sd ~ cauchy(0, 0.5);
   ar1k ~ cauchy(0, 0.5);
 
-  // .. MSErrorI  is the mis-specification dur to asymptomatic cases
-  // MSErrorI ~ cauchy(0, 0.5);  // proportion of I that are asymtomatic
-
-  GAMMA ~ normal( GAMMA_prior, GAMMA_prior );  // recovery of I ... always < 1
-  EPSILON ~ normal( EPSILON_prior, EPSILON_prior );  // recovery of I ... always < 1
   BETA[1] ~ normal( BETA_prior, BETA_prior );  // # 10% CV
   for (i in 1:(Nobs-2)) {
     BETA[i+1] ~ normal( ar1k + ar1 * BETA[i], ar1sd );
@@ -337,6 +334,9 @@ model {
   for ( i in (Nobs):(Ntimeall-1) ) {
     BETA[i] ~ normal( mean( BETA[(Nobs-1-BNP):(Nobs-1)] ), sd( BETA[(Nobs-1-BNP):(Nobs-1)] ) );
   }
+
+  GAMMA ~ normal( GAMMA_prior, GAMMA_prior );  // recovery of I ... always < 1
+  EPSILON ~ normal( EPSILON_prior, EPSILON_prior );  // recovery of I ... always < 1
 
   // data likelihoods, if *obs ==-1, then data was missing  . same conditions as in transformed parameters
   // observation model:
@@ -380,6 +380,151 @@ generated quantities {
 
 
 # ------------------
+
+
+  if ( selection=="discrete_binomial_autoregressive" ) {
+
+    return(
+    "
+data {
+  //declare variables
+  int<lower=0> Npop;  // Npop total
+  int<lower=0> Nobs;  //number of time slices
+  int<lower=0> Npreds;  //additional number of time slices for prediction
+  int<lower=0> BNP; // the last no days to use for BETA to project forward
+  real<lower=0> BETA_prior;
+  real<lower=0> GAMMA_prior;
+  real<lower=0> EPSILON_prior;
+  int Sobs[Nobs]; // observed S
+  int Iobs[Nobs]; // observed I
+  int Robs[Nobs]; // observed Recovered (including deaths)
+  int Mobs[Nobs]; // observed mortality (Deaths only)
+}
+
+transformed data {
+//Calculate transitions, based on SIR status
+  int Ntimeall;
+  int<lower=0, upper = Npop> z_si[Nobs-1];
+  int<lower=0, upper = Npop> z_ir[Nobs-1];
+
+  Ntimeall = Nobs + Npreds;
+
+  for(i in 1:(Nobs-1)){
+    z_si[i] = Sobs[i] - Sobs[i+1]; // infected dynamics (and Susceptibles)
+    z_ir[i] = (Robs[i+1]-Mobs[i+1]) - (Robs[i]-Mobs[i]);  // recoveries only (excluding deaths)
+    z_im[i] = Mobs[i+1] - Mobs[i]; // death dynamics
+  }
+
+}
+
+parameters {
+  real<lower=1e-9> GAMMA;  // probability of transition to recovered state = 1/( duration is γ units of time) .. ie., simple geometric
+  real<lower=0.0, upper =0.1> EPSILON;   // death rate .. proportion of infected dying
+  real<lower=0.0, upper  =1> BETA[Nobs-1];  // == beta in SIR , here we do *not* separate out the Encounter Rate from the infection rate  // probability of an individual infecting another in 1 unit of time
+
+  real<lower = -1, upper =1> ar1;
+  real<lower = 1e-9, upper =1 > ar1sd;
+  real ar1k;
+  real <lower =0, upper =1 > latent0[4];
+}
+
+transformed parameters{
+  real<lower=0.0, upper =1> pr_si[Ntimeall-1];
+  real<lower=0.0, upper =1> pr_ir;
+  real<lower=0.0, upper =1> pr_im;
+  int S[Ntimeall]; // latent S
+  int I[Ntimeall]; // latent I
+  int R[Ntimeall]; // latent Recovered (including deaths)
+  int M[Ntimeall]; // latent mortality (Deaths only)
+
+  // pr_ir[i] = 1/GAMMA;
+  pr_ir = 1.0 - exp(-GAMMA);
+  pr_im = 1.0 - exp(-EPSILON);
+
+  for (i in 1:(Nobs-1)){
+    if ( Iobs[i] > 0){ //only define z_si when there are infections - otherwise distribution is degenerate and STAN
+      // pr_si[i] = 1-(1-BETA[i])^Iobs[i];  // per capita probability
+      pr_si[i] = 1.0 - exp(-BETA[i] * (Iobs[i] *1.0) / ( Npop * 1.0) );
+    } else {
+      pr_si[i] = 0.0;
+    }
+  }
+
+  for (i in Nobs:(Ntimeall-1)){
+      pr_si[i] = mean( pr_si[(Nobs-1-BNP):(Nobs-1)] );
+  }
+
+  S[1] = latent0[1];
+  I[1] = latent0[2];
+  R[1] = latent0[3];
+  M[1] = latent0[4];
+
+  for (i in 1:(Ntimeall-1) ) {
+    real dSI = binomial_rng( S[i], pr_si[i] );
+    real dIR = binomial_rng( I[i], pr_ir );
+    real dRM = binomial_rng( R[i], pr_rm );
+    S[i+1] = S[i] - dSI ;
+    I[i+1] = I[i] + dSI - dIR ;
+    R[i+1] = R[i] + dIR ;
+    M[i+1] = M[i] + dRM ;
+  }
+
+}
+
+
+model {
+
+  latent0_prob ~ beta(0.5, 0.5);
+
+  latent0[1] ~ binomial( Sobs[i], latent0_prob[1] );
+  latent0[2] ~ binomial( Iobs[i], latent0_prob[2] );
+  latent0[3] ~ binomial( Robs[i], latent0_prob[3] );
+  latent0[4] ~ binomial( Mobs[i], latent0_prob[4] );
+
+  ar1 ~ normal(0, 1); // autoregression
+  ar1sd ~ cauchy(0, 0.5);
+  ar1k ~ cauchy(0, 0.5);
+
+  // autoregressive BETA
+  BETA[1] ~ normal( BETA_prior, BETA_prior );  // # 10% CV
+  for (i in 1:(Nobs-2)) {
+    BETA[i+1] ~ normal( ar1k + ar1 * BETA[i], ar1sd );
+  }
+  for ( i in (Nobs):(Ntimeall-1) ) {
+    BETA[i] ~ normal( mean( BETA[(Nobs-1-BNP):(Nobs-1)] ), sd( BETA[(Nobs-1-BNP):(Nobs-1)] ) );
+  }
+
+  GAMMA ~ normal( GAMMA_prior, GAMMA_prior );  // recovery of I ... always < 1
+  EPSILON ~ normal( EPSILON_prior, EPSILON_prior );  // recovery of I ... always < 1
+
+
+  // likelihoods
+  for (i in 1:(Nobs-1)){
+    if(Iobs[i] > 0){ //only define z_si when there are infections - otherwise distribution is degenerate and STAN has trouble
+      z_si[i] ~ binomial( Sobs[i], pr_si[i] ); // prob of being infected
+    }
+    z_ir[i] ~ binomial( Iobs[i], pr_ir );
+    z_im[i] ~ binomial( Mobs[i], pr_im );
+  }
+}
+
+
+generated quantities {
+// int I[Nobs];
+//  int<lower=0> r_0; // simulate a single infected individual in the population, and count secondary infections (i.e. R_0).
+//  r_0 = 0;
+//  while (1) {
+//    r_0 = r_0 + binomial_rng(Npop-r_0,lambda);
+//    if (bernoulli_rng(1/gamma)) break;
+//  }
+  //for (i in 1:Nobs) {
+  //  I[i] = binomial_rng( Npop, )
+  // }
+}
+"
+    )  # end return
+  } # end selection
+
 
 
 # ------------------
@@ -434,14 +579,16 @@ generated quantities {
     r_0 = r_0 + binomial_rng(Npop-r_0,lambda);
     if (bernoulli_rng(1/gamma)) break;
   }
-  for (i in 1:Nobs) {
-    I[i] = binomial( Npop, )
-  }
+//   for (i in 1:Nobs) {
+//    I[i] = binomial( Npop, )
+//  }
 }
 "
     )  # end return
   } # end selection
 
+
+  # --------------------------
 
 
   if ( selection=="discrete_voorman_2017_covariates" ) {
