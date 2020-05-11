@@ -379,13 +379,12 @@ generated quantities {
   } # end selection
 
 
-# ------------------
+# -----------------------
 
-
-  if ( selection=="discrete_binomial_autoregressive" ) {
-
+  if ( selection=="discrete_autoregressive_structured_beta_mortality_hybrid" ) {
     return(
-    "
+
+"
 data {
   //declare variables
   int<lower=0> Npop;  // Npop total
@@ -402,26 +401,61 @@ data {
 }
 
 transformed data {
-//Calculate transitions, based on SIR status
   int Ntimeall;
+  real<lower = 0, upper =1> Sprop[Nobs]; // observed S in proportion of total pop
+  real<lower = 0, upper =1> Iprop[Nobs]; // observed I
+  real<lower = 0, upper =1> Rprop[Nobs]; // observed R excluding deaths  ..  chaning meaning of R here (vs Robs)
+  real<lower = 0, upper =1> Mprop[Nobs]; // observed mortalities
+
   int<lower=0, upper = Npop> z_si[Nobs-1];
   int<lower=0, upper = Npop> z_ir[Nobs-1];
+  int<lower=0, upper = Npop> z_im[Nobs-1];
 
   Ntimeall = Nobs + Npreds;
 
+  // * 1.0 is fiddling to comvert int to real
+  // checking for > 0 is to check for missing values == -1
+  for (i in 1:Nobs) {
+    if (Sobs[i] >= 0 ) {
+      Sprop[i] = (Sobs[i] * 1.0 )/ (Npop * 1.0)  ; // observation error .. some portion of infected is not captured
+    } else {
+      Sprop[i]=0.0; //dummy value
+    }
+    if ( Iobs[i] >= 0) {
+      Iprop[i] = (Iobs[i]* 1.0 )/ ( Npop * 1.0) ;
+    } else {
+      Iprop[i]=0.0; //dummy value
+    }
+    if (Mobs[i] >= 0) {
+      Mprop[i] = (Mobs[i]* 1.0 )/ (Npop* 1.0) ;  // deaths
+    } else {
+      Mprop[i]=0.0; //dummy value
+    }
+    if (Robs[i] >= 0 && Mobs[i] >= 0) {
+      Rprop[i] = ( (Robs[i] - Mobs[i])*1.0)/ (Npop* 1.0) ;  // recoveries only (with no deaths)
+    } else {
+      Rprop[i]=0.0; //dummy value
+    }
+  }
+
   for(i in 1:(Nobs-1)){
     z_si[i] = Sobs[i] - Sobs[i+1]; // infected dynamics (and Susceptibles)
-    z_ir[i] = (Robs[i+1]-Mobs[i+1]) - (Robs[i]-Mobs[i]);  // recoveries only (excluding deaths)
     z_im[i] = Mobs[i+1] - Mobs[i]; // death dynamics
+    z_ir[i] = Robs[i+1] - Robs[i] - z_im[i];  // recoveries only (excluding deaths)
   }
+
 
 }
 
 parameters {
-  real<lower=1e-9> GAMMA;  // probability of transition to recovered state = 1/( duration is γ units of time) .. ie., simple geometric
-  real<lower=0.0, upper =0.1> EPSILON;   // death rate .. proportion of infected dying
-  real<lower=0.0, upper  =1> BETA[Nobs-1];  // == beta in SIR , here we do *not* separate out the Encounter Rate from the infection rate  // probability of an individual infecting another in 1 unit of time
-
+  real<lower=0.0, upper =0.1> GAMMA;     // recovery rate .. proportion of infected recovering
+  real<lower=0.0, upper =0.01> EPSILON;   // death rate .. proportion of infected dying
+  real<lower=0.0, upper  =1> BETA[Ntimeall-1];  // == beta in SIR , here we do *not* separate out the Encounter Rate from the infection rate
+  // real<lower=-0.25, upper =0.25>  MSErrorI;  // fractional mis-specification error due to latent, asymptompatic cases, reporting irregularities
+  real<lower = 1e-9, upper =0.2>  Ssd;  // these are fractional .. i.e CV's
+  real<lower = 1e-9, upper =0.2>  Isd;
+  real<lower = 1e-9, upper =0.2>  Rsd;
+  real<lower = 1e-9, upper =0.2>  Msd;
   real<lower = -1, upper =1> ar1;
   real<lower = 1e-9, upper =1 > ar1sd;
   real ar1k;
@@ -429,63 +463,78 @@ parameters {
 }
 
 transformed parameters{
+  real<lower = 0, upper =1> Smu[Ntimeall]; // mean process S
+  real<lower = 0, upper =1> Imu[Ntimeall]; // mean process I
+  real<lower = 0, upper =1> Rmu[Ntimeall]; // mean process Recoveries only (no deaths)
+  real<lower = 0, upper =1> Mmu[Ntimeall]; // mean process Mortalities
+
   real<lower=0.0, upper =1> pr_si[Ntimeall-1];
   real<lower=0.0, upper =1> pr_ir;
   real<lower=0.0, upper =1> pr_im;
-  int S[Ntimeall]; // latent S
-  int I[Ntimeall]; // latent I
-  int R[Ntimeall]; // latent Recovered (including deaths)
-  int M[Ntimeall]; // latent mortality (Deaths only)
 
   // pr_ir[i] = 1/GAMMA;
   pr_ir = 1.0 - exp(-GAMMA);
   pr_im = 1.0 - exp(-EPSILON);
 
-  for (i in 1:(Nobs-1)){
-    if ( Iobs[i] > 0){ //only define z_si when there are infections - otherwise distribution is degenerate and STAN
-      // pr_si[i] = 1-(1-BETA[i])^Iobs[i];  // per capita probability
-      pr_si[i] = 1.0 - exp(-BETA[i] * (Iobs[i] *1.0) / ( Npop * 1.0) );
+  // needs to be copied over as S being a vector can only be defined as a param or transf param but not both
+
+  // process model: SIR ODE in Euler difference form
+  // recursive model eq for discrete form of SIR;
+  // some fraction of recovered die (rather than directly from infected),
+  // this is due to large a latency between infection and death (30 days+),
+  // using Recovered as it is closer to the timescale of the deaths
+
+  Smu[1] = latent0[1];
+  Imu[1] = latent0[2];
+  Rmu[1] = latent0[3];
+  Mmu[1] = latent0[4];
+
+  for (i in 1:(Ntimeall-1) ) {
+    real dSI = BETA[i] * Smu[i] * Imu[i];
+    real dIR = GAMMA * Imu[i];
+    real dRM = EPSILON * Rmu[i];
+    Smu[i+1] = Smu[i] - dSI ;
+    Imu[i+1] = Imu[i] + dSI - dIR ;
+    Rmu[i+1] = Rmu[i] + dIR ;
+    Mmu[i+1] = Mmu[i] + dRM ;
+  }
+
+
+  for (i in 1:(Nobs-1) ) {
+    if ( Iobs[i] > 0){
+      // pr_si[i] = 1-(1-BETA[i])^Imu[i]*Npop;  // per capita probability
+      pr_si[i] = 1.0 - exp( -BETA[i] * Imu[i] ); // approximation
     } else {
       pr_si[i] = 0.0;
     }
   }
-
-  for (i in Nobs:(Ntimeall-1)){
-      pr_si[i] = mean( pr_si[(Nobs-1-BNP):(Nobs-1)] );
+  for ( i in (Nobs):(Ntimeall-1) ) {
+    pr_si[i] = mean( pr_si[(Nobs-1-BNP):(Nobs-1)] ) ;
   }
 
-  S[1] = latent0[1];
-  I[1] = latent0[2];
-  R[1] = latent0[3];
-  M[1] = latent0[4];
-
-  for (i in 1:(Ntimeall-1) ) {
-    real dSI = binomial_rng( S[i], pr_si[i] );
-    real dIR = binomial_rng( I[i], pr_ir );
-    real dRM = binomial_rng( R[i], pr_rm );
-    S[i+1] = S[i] - dSI ;
-    I[i+1] = I[i] + dSI - dIR ;
-    R[i+1] = R[i] + dIR ;
-    M[i+1] = M[i] + dRM ;
-  }
 
 }
 
-
 model {
 
-  latent0_prob ~ beta(0.5, 0.5);
+  // non informative hyperpriors
+  Ssd ~ cauchy(0, 0.5);
+  Isd ~ cauchy(0, 0.5);
+  Rsd ~ cauchy(0, 0.5);
+  Msd ~ cauchy(0, 0.5);
 
-  latent0[1] ~ binomial( Sobs[i], latent0_prob[1] );
-  latent0[2] ~ binomial( Iobs[i], latent0_prob[2] );
-  latent0[3] ~ binomial( Robs[i], latent0_prob[3] );
-  latent0[4] ~ binomial( Mobs[i], latent0_prob[4] );
+  //set intial conditions
+  latent0[1] ~ normal(Sprop[1], Ssd) ;
+  latent0[2] ~ normal(Iprop[1], Isd) ;
+  latent0[3] ~ normal(Rprop[1], Rsd) ;
+  latent0[4] ~ normal(Mprop[1], Msd) ;
+  // .. MSErrorI  is the mis-specification dur to asymptomatic cases
+  // MSErrorI ~ cauchy(0, 0.5);  // proportion of I that are asymtomatic
 
   ar1 ~ normal(0, 1); // autoregression
   ar1sd ~ cauchy(0, 0.5);
   ar1k ~ cauchy(0, 0.5);
 
-  // autoregressive BETA
   BETA[1] ~ normal( BETA_prior, BETA_prior );  // # 10% CV
   for (i in 1:(Nobs-2)) {
     BETA[i+1] ~ normal( ar1k + ar1 * BETA[i], ar1sd );
@@ -497,8 +546,24 @@ model {
   GAMMA ~ normal( GAMMA_prior, GAMMA_prior );  // recovery of I ... always < 1
   EPSILON ~ normal( EPSILON_prior, EPSILON_prior );  // recovery of I ... always < 1
 
+  // data likelihoods, if *obs ==-1, then data was missing  . same conditions as in transformed parameters
+  // observation model:
+  for (i in 1:Nobs) {
+    if (Sobs[i] >= 0  ) {  // to handle missing values in SI
+      Sprop[i] ~ normal( Smu[i] , Ssd );
+    }
+    if (Iobs[i] >= 0 ) {
+      Iprop[i]  ~ normal( Imu[i], Isd );
+    }
+    if (Robs[i] >= 0 ) {
+      Rprop[i]  ~ normal( Rmu[i], Rsd );  // assume no observation error / mis-specification error
+    }
+    if (Mobs[i] >= 0 ) {
+      Mprop[i]  ~ normal( Mmu[i], Msd );  // assume no observation error / mis-specification error
+    }
+  }
 
-  // likelihoods
+  // likelihoods on incremental differences
   for (i in 1:(Nobs-1)){
     if(Iobs[i] > 0){ //only define z_si when there are infections - otherwise distribution is degenerate and STAN has trouble
       z_si[i] ~ binomial( Sobs[i], pr_si[i] ); // prob of being infected
@@ -506,20 +571,104 @@ model {
     z_ir[i] ~ binomial( Iobs[i], pr_ir );
     z_im[i] ~ binomial( Mobs[i], pr_im );
   }
+
 }
 
+generated quantities {
+  real<lower=0> K[Ntimeall-1];
+  int<lower = 0, upper =Npop> S[Ntimeall]; // latent S
+  int<lower = 0, upper =Npop> I[Ntimeall]; // latent I
+  int<lower = 0, upper =Npop> R[Ntimeall]; // latent R (no mortality)
+  int<lower = 0, upper =Npop> M[Ntimeall]; // latent M (mortality)
+
+  S = binomial_rng( Npop, Smu );
+  I = binomial_rng( Npop, Imu );
+  R = binomial_rng( Npop, Rmu );
+  M = binomial_rng( Npop, Mmu );
+
+  // sample from  mean process (proportions to counts)
+  for (i in 1:(Ntimeall-1) ) {
+    K[i] = BETA[i] / GAMMA; // the contact number = fraction of S in contact with I
+  }
+
+}
+"
+    )  # end return
+  } # end selection
+
+
+# ------------------
+
+
+# ------------------
+
+
+  if ( selection=="discrete_binomial_autoregressive_nonlatent_basic" ) {
+
+    return(
+    "
+data {
+  //declare variables
+  int<lower=0> Npop;  // Npop total
+  int<lower=0> Nobs;  //number of time slices
+  int<lower=0> Npreds;  //additional number of time slices for prediction
+  real<lower=0> BETA_prior;
+  real<lower=0> GAMMA_prior;
+  int Sobs[Nobs]; // observed S
+  int Iobs[Nobs]; // observed I
+  int Robs[Nobs]; // observed Recovered (including deaths)
+}
+
+transformed data {
+//Calculate transitions, based on SIR status
+  int Ntimeall;
+  int<lower=0, upper = Npop> z_si[Nobs-1];
+  int<lower=0, upper = Npop> z_ir[Nobs-1];
+
+  Ntimeall = Nobs + Npreds;
+
+  for(i in 1:(Nobs-1)){
+    z_si[i] = Sobs[i] - Sobs[i+1]; // infected dynamics (and Susceptibles)
+    z_im[i] = Mobs[i+1] - Mobs[i]; // death dynamics
+  }
+
+}
+
+parameters {
+  real<lower=1e-9, upper =0.1> GAMMA;  // probability of transition to recovered state = 1/( duration is γ units of time) .. ie., simple geometric
+  real <lower=0.0, upper  =1> BETA;  // == beta in SIR , here we do *not* separate out the Encounter Rate from the infection rate  // probability of an individual infecting another in 1 unit of time
+}
+
+transformed parameters{
+  real<lower=0.0, upper =1> pr_si[Ntimeall-1];
+  real<lower=0.0, upper =1> pr_ir;
+
+  // pr_ir[i] = 1/GAMMA;
+  pr_ir = 1.0 - exp(-GAMMA);
+
+  for (i in 1:(Nobs-1) ) {
+    if ( Iobs[i] > 0){
+      // pr_si[i] = 1-(1-BETA)^Iobs[i];  // per capita probability
+      pr_si[i] = 1.0 - exp(-BETA * (Iobs[i] *1.0) / ( Npop * 1.0) ); // approximation
+    } else {
+      pr_si[i] = 0.0;
+    }
+  }
+}
+
+model {
+  BETA  ~ normal( BETA_prior, BETA_prior );
+  GAMMA ~ normal( GAMMA_prior, GAMMA_prior );  // recovery of I ... always < 1
+  // likelihoods
+  for (i in 1:(Nobs-1)){
+    if(Iobs[i] > 0){ //only define z_si when there are infections - otherwise distribution is degenerate and STAN has trouble
+      z_si[i] ~ binomial( Sobs[i], pr_si[i] ); // prob of being infected
+    }
+    z_ir[i] ~ binomial( Iobs[i], pr_ir );
+  }
+}
 
 generated quantities {
-// int I[Nobs];
-//  int<lower=0> r_0; // simulate a single infected individual in the population, and count secondary infections (i.e. R_0).
-//  r_0 = 0;
-//  while (1) {
-//    r_0 = r_0 + binomial_rng(Npop-r_0,lambda);
-//    if (bernoulli_rng(1/gamma)) break;
-//  }
-  //for (i in 1:Nobs) {
-  //  I[i] = binomial_rng( Npop, )
-  // }
 }
 "
     )  # end return
