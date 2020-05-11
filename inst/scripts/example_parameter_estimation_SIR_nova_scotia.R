@@ -27,9 +27,6 @@ stan_data = data_nova_scotia(
 )
 
 
-#  stan_data$modelname = "discrete_binomial_autoregressive_nonlatent_basic"
-# stan_data$modelname = "discrete_autoregressive_structured_beta_mortality_hybrid"
-
 stancode_compiled = rstan::stan_model( model_code=sir_stan_model_code( selection=stan_data$modelname ) )  # compile the code
 
 

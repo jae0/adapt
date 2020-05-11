@@ -241,7 +241,7 @@ transformed data {
   // checking for > 0 is to check for missing values == -1
   for (i in 1:Nobs) {
     if (Sobs[i] >= 0 ) {
-      Sprop[i] = (Sobs[i] * 1.0 )/ (Npop * 1.0)  ; // observation error .. some portion of infected is not captured
+      Sprop[i] = (Sobs[i] * 1.0 )/ (Npop * 1.0)  ;
     } else {
       Sprop[i]=0.0; //dummy value
     }
@@ -348,10 +348,10 @@ model {
       Iprop[i]  ~ normal( Imu[i], Isd );
     }
     if (Robs[i] >= 0 ) {
-      Rprop[i]  ~ normal( Rmu[i], Rsd );  // assume no observation error / mis-specification error
+      Rprop[i]  ~ normal( Rmu[i], Rsd );
     }
     if (Mobs[i] >= 0 ) {
-      Mprop[i]  ~ normal( Mmu[i], Msd );  // assume no observation error / mis-specification error
+      Mprop[i]  ~ normal( Mmu[i], Msd );
     }
   }
 }
@@ -382,6 +382,10 @@ generated quantities {
 # -----------------------
 
   if ( selection=="discrete_autoregressive_structured_beta_mortality_hybrid" ) {
+
+    ## this tried to add the binomial data costraints but STAN really does not permit integers as rando variables and
+    ## so the probabilities are computed only for post-processing
+
     return(
 
 "
@@ -438,12 +442,23 @@ transformed data {
     }
   }
 
-  for(i in 1:(Nobs-1)){
-    z_si[i] = Sobs[i] - Sobs[i+1]; // infected dynamics (and Susceptibles)
-    z_im[i] = Mobs[i+1] - Mobs[i]; // death dynamics
-    z_ir[i] = Robs[i+1] - Robs[i] - z_im[i];  // recoveries only (excluding deaths)
+  for ( i in 1:(Nobs-1)){
+    if (Sobs[i] >=0 && Sobs[i+1] >= 0) {
+      z_si[i] = Sobs[i] - Sobs[i+1]; // infected dynamics (and Susceptibles)
+    } else {
+      z_si[i] = 0;  // dummy value
+    }
+    if (Robs[i] >=0 && Robs[i+1] >=0 && Mobs[i] >=0 && Mobs[i+1] >=0) {
+      z_ir[i] = Robs[i+1] - Robs[i] - Mobs[i+1] + Mobs[i];  // recoveries only (excluding deaths)
+    } else {
+      z_ir[i] = 0;
+    }
+    if (Mobs[i] >=0 && Mobs[i+1] >=0) {
+      z_im[i] = Mobs[i+1] - Mobs[i]; // death dynamics
+    } else {
+      z_im[i] = 0;
+    }
   }
-
 
 }
 
@@ -483,7 +498,6 @@ transformed parameters{
   // some fraction of recovered die (rather than directly from infected),
   // this is due to large a latency between infection and death (30 days+),
   // using Recovered as it is closer to the timescale of the deaths
-
   Smu[1] = latent0[1];
   Imu[1] = latent0[2];
   Rmu[1] = latent0[3];
@@ -499,14 +513,9 @@ transformed parameters{
     Mmu[i+1] = Mmu[i] + dRM ;
   }
 
-
   for (i in 1:(Nobs-1) ) {
-    if ( Iobs[i] > 0){
-      // pr_si[i] = 1-(1-BETA[i])^Imu[i]*Npop;  // per capita probability
-      pr_si[i] = 1.0 - exp( -BETA[i] * Imu[i] ); // approximation
-    } else {
-      pr_si[i] = 0.0;
-    }
+    // pr_si[i] = 1-(1-BETA[i])^Imu[i]*Npop;  // per capita probability
+    pr_si[i] = 1.0 - exp( -BETA[i] * Imu[i] ); // approximation
   }
   for ( i in (Nobs):(Ntimeall-1) ) {
     pr_si[i] = mean( pr_si[(Nobs-1-BNP):(Nobs-1)] ) ;
@@ -556,21 +565,25 @@ model {
       Iprop[i]  ~ normal( Imu[i], Isd );
     }
     if (Robs[i] >= 0 ) {
-      Rprop[i]  ~ normal( Rmu[i], Rsd );  // assume no observation error / mis-specification error
+      Rprop[i]  ~ normal( Rmu[i], Rsd );
     }
     if (Mobs[i] >= 0 ) {
-      Mprop[i]  ~ normal( Mmu[i], Msd );  // assume no observation error / mis-specification error
+      Mprop[i]  ~ normal( Mmu[i], Msd );
     }
   }
 
-  // likelihoods on incremental differences
-  for (i in 1:(Nobs-1)){
-    if(Iobs[i] > 0){ //only define z_si when there are infections - otherwise distribution is degenerate and STAN has trouble
-      z_si[i] ~ binomial( Sobs[i], pr_si[i] ); // prob of being infected
-    }
-    z_ir[i] ~ binomial( Iobs[i], pr_ir );
-    z_im[i] ~ binomial( Mobs[i], pr_im );
-  }
+  // additional likelihood constraints on direct incremental differences .. not using these as STAN does not operate on integers
+//  for (i in 1:(Nobs-1)){
+//    if (Sobs[i] >=0 && Sobs[i+1] >=0) {
+//      z_si[i] ~ binomial( Sobs[i], pr_si[i] ); // prob of being infected
+//    }
+//    if (Robs[i] >=0 && Robs[i+1] >=0 && Mobs[i] >=0 && Mobs[i+1] >=0) {
+ //     z_ir[i] ~ binomial( Iobs[i], pr_ir );
+ //   }
+ //   if (Mobs[i] >=0 && Mobs[i+1] >=0) {
+ //     z_im[i] ~ binomial( Mobs[i], pr_im );
+ //   }
+ // }
 
 }
 
