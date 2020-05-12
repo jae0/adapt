@@ -506,11 +506,11 @@ transformed parameters{
   for (i in 1:(Ntimeall-1) ) {
     real dSI = BETA[i] * Smu[i] * Imu[i];
     real dIR = GAMMA * Imu[i];
-    real dRM = EPSILON * Rmu[i];
+    real dIM = EPSILON * Imu[i];
     Smu[i+1] = Smu[i] - dSI ;
-    Imu[i+1] = Imu[i] + dSI - dIR ;
+    Imu[i+1] = Imu[i] + dSI - dIR -dIM;
     Rmu[i+1] = Rmu[i] + dIR ;
-    Mmu[i+1] = Mmu[i] + dRM ;
+    Mmu[i+1] = Mmu[i] + dIM ;
   }
 
   for (i in 1:(Nobs-1) ) {
@@ -572,18 +572,19 @@ model {
     }
   }
 
-  // additional likelihood constraints on direct incremental differences .. not using these as STAN does not operate on integers
-//  for (i in 1:(Nobs-1)){
-//    if (Sobs[i] >=0 && Sobs[i+1] >=0) {
-//      z_si[i] ~ binomial( Sobs[i], pr_si[i] ); // prob of being infected
-//    }
-//    if (Robs[i] >=0 && Robs[i+1] >=0 && Mobs[i] >=0 && Mobs[i+1] >=0) {
- //     z_ir[i] ~ binomial( Iobs[i], pr_ir );
- //   }
- //   if (Mobs[i] >=0 && Mobs[i+1] >=0) {
- //     z_im[i] ~ binomial( Mobs[i], pr_im );
- //   }
- // }
+  // additional likelihood constraints on direct incremental differences
+  // .. not using right now as STAN does not operate on integer random variables
+  //  for (i in 1:(Nobs-1)){
+  //    if (Sobs[i] >=0 && Sobs[i+1] >=0) {
+  //      z_si[i] ~ binomial( Sobs[i], pr_si[i] );  // prob of being infected
+  //    }
+  //    if (Robs[i] >=0 && Robs[i+1] >=0 && Mobs[i] >=0 && Mobs[i+1] >=0) {
+  //     z_ir[i] ~ binomial( Iobs[i], pr_ir );
+  //   }
+  //   if (Mobs[i] >=0 && Mobs[i+1] >=0) {
+  //     z_im[i] ~ binomial( Mobs[i], pr_im );
+  //   }
+  // }
 
 }
 

@@ -23,7 +23,7 @@ stan_data = data_nova_scotia(
   # modelname = "continuous" # ODE form  really slow ... and does not work that well .. huge error bars
   # modelname = "discrete_basic"   # poor fit ..  latent .. similar to continuous .. ie. model is too simple and params too static
   # modelname = "discrete_binomial_autoregressive"
-  modelname = "discrete_autoregressive_structured_beta_mortality"  # splitting recovered and mortalities
+  modelname = "discrete_autoregressive_structured_beta_mortality_hybrid"  # splitting recovered and mortalities
 )
 
 
