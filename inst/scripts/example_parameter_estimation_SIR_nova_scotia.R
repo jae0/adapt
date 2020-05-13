@@ -145,7 +145,7 @@ dev.off()
 
 
 png(filename = file.path(outdir, "reproductive_number_today.png"))
-  hist( M$K[,nscovid$Nobs] , "fd", xlab="Current Reproductive number", ylab="Frequency", main="")  # today's K
+  hist( M$K[,nscovid$Nobs] , "fd", xlab="Current Reproductive number", ylab="Frequency", main="", xlim=c(0, max(1.2, M$K[,nscovid$Nobs])) )  # today's K
   abline( v=1, col="red", lwd=3 )
   legend( "topright", "", paste( "Current date: ", nscovid$timestamp, " "), bty="n")
 dev.off()
@@ -206,6 +206,82 @@ dev.off()
 
 
 if (0) {
+
+library(nimble)
+
+
+#nimdata = nscovid[c("Iobs", "Sobs", "Robs", "Mobs")]
+nscovid$Iobs[ which(nscovid$Iobs < 0) ] = NA
+nscovid$Sobs[ which(nscovid$Sobs < 0) ] = NA
+nscovid$Robs[ which(nscovid$Robs < 0) ] = NA
+nscovid$Mobs[ which(nscovid$Mobs < 0) ] = NA
+
+dSI = -diff( nscovid$Sobs )
+dIR =  diff( nscovid$Robs )
+dIM =  diff( nscovid$Mobs )
+
+
+v <- nimbleCode({
+
+  # basic sir in latent state space form
+
+  BETA  ~ dnorm( BETA_prior, BETA_prior )
+  GAMMA ~ dnorm( GAMMA_prior, GAMMA_prior )  # recovery of I ... always < 1
+
+  # pr_ir <- 1/GAMMA;
+  pr_ir <- 1.0 - exp(-GAMMA)
+  pr_im <- 1.0 - exp(-EPSILON)
+
+  for (i in 1:4) {
+    inits[i] ~ dbeta(0.5, 0.5)
+  }
+
+  Smu[1] <- inits[1]
+  Imu[1] <- inits[2]
+  Rmu[1] <- inits[3]
+  Mmu[1] <- inits[4]
+
+  for(i in 1:(Nobs-1)){
+    pr_si[i] <- 1.0 - exp(-BETA * Iobs[i] / Npop ); # approximation
+    dSImu[i] ~ dbin( Sobs[i], pr_si[i]); # prob of being infected
+    dIRmu[i] ~ dbin( Iobs[i], pr_ir); # prob of being infected
+    dIMmu[i] ~ dbin( Iobs[i], pr_im); # prob of being infected
+    Smu[i+1] <- Smu[i] - dSImu[i]/Npop
+    Imu[i+1] <- Imu[i] + (dSImu[i] - dIRmu[i] - dIMmu[i])/Npop
+    Rmu[i+1] <- Rmu[i] + dIRmu[i]/Npop
+    Mmu[i+1] <- Mmu[i] + dIMmu[i]/Npop
+    Y[i,1] ~ dbin( floor(Smu[i]*Npop), pr_si[i] )
+    Y[i,2] ~ dbin( floor(Imu[i]*Npop), pr_ir )
+    Y[i,3] ~ dbin( floor(Imu[i]*Npop), pr_im )
+  }
+
+})
+
+
+nimconstants = nscovid[c("Npop", "Nobs", "Npreds", "BNP", "BETA_prior", "GAMMA_prior", "EPSILON_prior", "Iobs", "Sobs", "Robs", "Mobs")]
+
+nimdata = list( Y=as.matrix(cbind( dSI, dIR, dIM )) )
+
+
+vm <- nimbleModel( code=v, constants=nimconstants, data=nimdata)
+
+# note we define the 'data' nodes that need to be simulated
+simulate(model, nodes = c("Smu"))
+
+# extract simulated data & plot to see results
+df <- tibble(t = seq_along(model$x), x = model$x)
+df %>% ggplot(aes(t,x)) + geom_point()
+
+  library (bayesplot)
+  mcmc_trace(draws, facet_args = list(nrow = 3, ncol = 1))
+  mcmc_intervals(draws)
+
+
+)
+
+
+
+
     plot(f)
     plot(f, pars="I")
     print(f)
@@ -220,75 +296,8 @@ if (0) {
     summary(f)$summary[,"K1"]
     est=colMeans(M)
     prob=apply(M,2,function(x) I(length(x[x>0.10])/length(x) > 0.8)*1)
+
+
+
+
 }
-
-
-
-require(odin)
-
-sir_odin = odin::odin( {
-  ## Core equations for transitions between compartments:
-  update(S) <- S - n_SI
-  update(I) <- I + n_SI - n_IR
-  update(R) <- R + n_IR
-
-  ## Individual probabilities of transition:
-  p_SI <- 1 - exp(-beta * I / N) # S to I
-  p_IR <- 1 - exp(-gamma) # I to R
-
-  ## Draws from binomial distributions for numbers changing between
-  ## compartments:
-  n_SI <- rbinom(S, p_SI)
-  n_IR <- rbinom(I, p_IR)
-
-  ## Total population size
-  N <- S + I + R
-
-  ## Initial states:
-  initial(S) <- S_ini
-  initial(I) <- I_ini
-  initial(R) <- R_ini
-
-  ## User defined parameters - default in parentheses:
-  S_ini <- user(1000)
-  I_ini <- user(1)
-  R_ini <- user(0)
-  beta <- user(0.2)
-  gamma <- user(0.1)
-} )
-
-
-
-nsims = nrow(M$BETA)
-today = nscovid$Nobs
-nprojections = 120
-sim = array( NA, dim=c(nsims, 3, nprojections) )
-
-res <- sir_odin()$run(
-  0:nprojections)
-
-res <- sir_odin(nsim=1)$run(
-  0:nprojections)
-
-
-
-for (i in 1:nsims) {
-  sim[i,,] = run( SIR(
-    u0=u0[i,],
-    tspan=1:nprojections,
-    beta=M$BETA[i,today],
-    gamma=M$GAMMA[i] )
-  )@U[]
-}
-
-
-
-
-sir_col <- c("#8c8cd9", "#cc0044", "#999966")
-sir_col_transp <- paste0(sir_col, "66")
-
-par(mar = c(4.1, 5.1, 0.5, 0.5), las = 1)
-matplot(res[, 1], res[, -1], xlab = "Time", ylab = "Number of individuals",
-        type = "l", col = rep(sir_col_transp, each = 100), lty = 1)
-legend("left", lwd = 1, col = sir_col, legend = c("S", "I", "R"), bty = "n")
-
