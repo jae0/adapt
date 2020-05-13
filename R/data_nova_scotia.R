@@ -5,8 +5,6 @@ data_nova_scotia = function( output="stan_data", Npop=971395, Npreds=5, interpol
 
   gsdata = read_sheet( "https://docs.google.com/spreadsheets/d/1tgf2H9gDmRnGDGeQE-fC9IPhrmNxP8-JC7Nnnob_vuY/edit?usp=sharing" )
 
-  gsdata = gsdata[ is.finite(gsdata$InfectedCurrently), ]
-
   gsdata$Iobs = gsdata$InfectedCurrently
   gsdata$Robs = gsdata$Recoveries + gsdata$Deaths  # note: recovered = deaths+recoveries
   gsdata$Sobs = Npop - gsdata$Robs - gsdata$Iobs
@@ -14,6 +12,10 @@ data_nova_scotia = function( output="stan_data", Npop=971395, Npreds=5, interpol
 
   gsdata$dayno = lubridate::date( gsdata$Date)
   gsdata$dayno = gsdata$dayno - min(gsdata$dayno) + 1
+
+  time_start = min( gsdata$Date )
+  time_distancing = min( gsdata$Date[ which( grepl("socialdistancing", gsdata$ManagementMeasures )) ] )
+  time_relaxation = min( gsdata$Date[ which( grepl("open parks", gsdata$ManagementMeasures )) ] )
 
   if (output=="raw_data") return (gsdata)
 
@@ -65,7 +67,10 @@ data_nova_scotia = function( output="stan_data", Npop=971395, Npreds=5, interpol
     Iobs = daily$Iobs,
     Robs = daily$Robs,
     Mobs = daily$Mobs,
-    time = as.integer(daily$dayno)
+    time = as.integer(daily$dayno),
+    time_start = time_start,
+    time_distancing = time_distancing,
+    time_relaxation = time_relaxation
   )
 
 

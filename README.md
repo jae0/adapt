@@ -20,7 +20,7 @@ I will keep updating this as much as possible.
 
 ![](./inst/doc/fit_with_projections_infected.png)
 
-The number of infected people as a function of time (days; day 1 is 2020-03-17) in circles. Vertical line represents "today". The blue line shown is the model fit to a modified SIR model with 95% Credible Intervals in orange. Simple deterministic (mean-field) forecasts from the recursive model are shown. Note there is some underestimation near the peak as there was a large cluster outbreak in Northwood, smething that a mean-field (ODE) approach has difficulty tracking.
+The number of infected people as a function of time (days; day 1 is 2020-03-17) in circles. Vertical line represents "today". The blue line shown is the model fit to a modified SIR model with 95% Credible Intervals in orange. Simple deterministic (mean-field) forecasts from the recursive model are shown. Note there is some underestimation near the peak as there was a large cluster outbreak in Northwood, something that a mean-field (ODE) approach has difficulty tracking.
 
 ---
 
