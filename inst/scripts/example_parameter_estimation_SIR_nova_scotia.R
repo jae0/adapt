@@ -33,7 +33,7 @@ time_distancing = as.numeric(nscovid$time_distancing - nscovid$time_start)
 stancode_compiled = rstan::stan_model( model_code=sir_stan_model_code( selection=nscovid$modelname ) )  # compile the code
 
 
-f = rstan::sampling( stancode_compiled, data=nscovid, chains=3, warmup=6000, iter=8000, control= list(adapt_delta = 0.95, max_treedepth=14 ))
+f = rstan::sampling( stancode_compiled, data=nscovid, chains=3, warmup=7000, iter=10000, control= list(adapt_delta = 0.95, max_treedepth=15 ))
 
 
 if (0) {
