@@ -4,9 +4,8 @@
 # examples of various methods of parameter estimation using NS data
 
 # remotes::install_github( "jae0/adapt" )
-require(adapt)
 # loadfunctions("adapt")
-
+require(adapt)
 require(rstan)
 rstan_options(auto_write = TRUE)
 options(mc.cores = parallel::detectCores())
@@ -46,7 +45,7 @@ if (0) {
 
 M = extract(f)
 
-plot_model_fit( nscovid=nscovid, M=M )
+plot_model_fit( stan_data=nscovid, M=M )
 
 outdir = file.path( "~/bio/adapt/inst/doc/")
 nx = nscovid$Nobs + nscovid$Npreds - 1
@@ -57,7 +56,7 @@ io[io < 0] = NA
 
 png(filename = file.path(outdir, "fit_with_projections_infected.png"))
   xrange = c(0, nx)
-  yrange = c(0, max(M$I[, 1:nx]))
+  yrange = c(0, quantile(M$I[, 1:nx], probs=0.99) )
   plot( io ~ nscovid$time, xlim=xrange, ylim=yrange, ylab="Infected", xlab="Days (day 1 is 2020-03-17)", type="n" )
   lines( apply(M$I, 2, median)[1:nx] ~ seq(1,nx), lwd =3, col="slateblue" )
   lines( apply(M$I, 2, quantile, probs=0.025)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
@@ -66,8 +65,8 @@ png(filename = file.path(outdir, "fit_with_projections_infected.png"))
   abline( v=nscovid$time[nscovid$Nobs], col="grey", lty="dashed" )
   abline( v=nscovid$time[time_distancing], col="orange", lty="dotted" )
   abline( v=nscovid$time[time_relaxation], col="green", lty="dotted" )
-  legend( "topleft", "", "\n       [-- Social distancing -->", bty="n" )
-  legend( "top", "", "\n                                  [-- Parks open -->", bty="n" )
+  legend( "bottomleft", "", "       [-- Social distancing -->", bty="n" )
+  legend( "bottom", "", "                                  [-- Parks open -->", bty="n" )
   legend( "topright", "", paste( "Current date: ", nscovid$timestamp ), bty="n")
 dev.off()
 
@@ -76,7 +75,7 @@ ro = nscovid$Robs
 ro[ro < 0] = NA
 png(filename = file.path(outdir, "fit_with_projections_recovered.png"))
   xrange = c(0, nx)
-  yrange = c(0, max(M$R[, 1:nx]))
+  yrange = c(0, quantile(M$R[, 1:nx], probs=0.99) )
   plot( ro ~ nscovid$time, xlim=xrange, ylim=yrange, ylab="Recovered", xlab="Days (day 1 is 2020-03-17)", type="n" )
   lines( apply(M$R, 2, median)[1:nx] ~ seq(1,nx), lwd =3, col="slateblue" )
   lines( apply(M$R, 2, quantile, probs=0.025)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
@@ -95,7 +94,7 @@ mo = nscovid$Mobs
 mo[mo < 0] = NA
 png(filename = file.path(outdir, "fit_with_projections_mortalities.png"))
   xrange = c(0, nx)
-  yrange = c(0, max(M$M[, 1:nx]))
+  yrange = c(0, quantile(M$M[, 1:nx], probs=0.99) )
   plot( mo ~ nscovid$time, xlim=xrange, ylim=yrange, ylab="Mortalities", xlab="Days (day 1 is 2020-03-17)", type="n" )
   lines( apply(M$M, 2, median)[1:nx] ~ seq(1,nx), lwd =3, col="slateblue" )
   lines( apply(M$M, 2, quantile, probs=0.025)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
@@ -207,81 +206,6 @@ dev.off()
 
 if (0) {
 
-library(nimble)
-
-
-#nimdata = nscovid[c("Iobs", "Sobs", "Robs", "Mobs")]
-nscovid$Iobs[ which(nscovid$Iobs < 0) ] = NA
-nscovid$Sobs[ which(nscovid$Sobs < 0) ] = NA
-nscovid$Robs[ which(nscovid$Robs < 0) ] = NA
-nscovid$Mobs[ which(nscovid$Mobs < 0) ] = NA
-
-dSI = -diff( nscovid$Sobs )
-dIR =  diff( nscovid$Robs )
-dIM =  diff( nscovid$Mobs )
-
-
-v <- nimbleCode({
-
-  # basic sir in latent state space form
-
-  BETA  ~ dnorm( BETA_prior, BETA_prior )
-  GAMMA ~ dnorm( GAMMA_prior, GAMMA_prior )  # recovery of I ... always < 1
-
-  # pr_ir <- 1/GAMMA;
-  pr_ir <- 1.0 - exp(-GAMMA)
-  pr_im <- 1.0 - exp(-EPSILON)
-
-  for (i in 1:4) {
-    inits[i] ~ dbeta(0.5, 0.5)
-  }
-
-  Smu[1] <- inits[1]
-  Imu[1] <- inits[2]
-  Rmu[1] <- inits[3]
-  Mmu[1] <- inits[4]
-
-  for(i in 1:(Nobs-1)){
-    pr_si[i] <- 1.0 - exp(-BETA * Iobs[i] / Npop ); # approximation
-    dSImu[i] ~ dbin( Sobs[i], pr_si[i]); # prob of being infected
-    dIRmu[i] ~ dbin( Iobs[i], pr_ir); # prob of being infected
-    dIMmu[i] ~ dbin( Iobs[i], pr_im); # prob of being infected
-    Smu[i+1] <- Smu[i] - dSImu[i]/Npop
-    Imu[i+1] <- Imu[i] + (dSImu[i] - dIRmu[i] - dIMmu[i])/Npop
-    Rmu[i+1] <- Rmu[i] + dIRmu[i]/Npop
-    Mmu[i+1] <- Mmu[i] + dIMmu[i]/Npop
-    Y[i,1] ~ dbin( floor(Smu[i]*Npop), pr_si[i] )
-    Y[i,2] ~ dbin( floor(Imu[i]*Npop), pr_ir )
-    Y[i,3] ~ dbin( floor(Imu[i]*Npop), pr_im )
-  }
-
-})
-
-
-nimconstants = nscovid[c("Npop", "Nobs", "Npreds", "BNP", "BETA_prior", "GAMMA_prior", "EPSILON_prior", "Iobs", "Sobs", "Robs", "Mobs")]
-
-nimdata = list( Y=as.matrix(cbind( dSI, dIR, dIM )) )
-
-
-vm <- nimbleModel( code=v, constants=nimconstants, data=nimdata)
-
-# note we define the 'data' nodes that need to be simulated
-simulate(model, nodes = c("Smu"))
-
-# extract simulated data & plot to see results
-df <- tibble(t = seq_along(model$x), x = model$x)
-df %>% ggplot(aes(t,x)) + geom_point()
-
-  library (bayesplot)
-  mcmc_trace(draws, facet_args = list(nrow = 3, ncol = 1))
-  mcmc_intervals(draws)
-
-
-)
-
-
-
-
     plot(f)
     plot(f, pars="I")
     print(f)
@@ -296,8 +220,5 @@ df %>% ggplot(aes(t,x)) + geom_point()
     summary(f)$summary[,"K1"]
     est=colMeans(M)
     prob=apply(M,2,function(x) I(length(x[x>0.10])/length(x) > 0.8)*1)
-
-
-
 
 }

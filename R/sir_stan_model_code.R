@@ -467,10 +467,10 @@ parameters {
   real<lower=0.0, upper =0.01> EPSILON;   // death rate .. proportion of infected dying
   real<lower=0.0, upper  =1> BETA[Ntimeall-1];  // == beta in SIR , here we do *not* separate out the Encounter Rate from the infection rate
   // real<lower=-0.25, upper =0.25>  MSErrorI;  // fractional mis-specification error due to latent, asymptompatic cases, reporting irregularities
-  real<lower = 1e-9, upper =0.2>  Ssd;  // these are fractional .. i.e CV's
-  real<lower = 1e-9, upper =0.2>  Isd;
-  real<lower = 1e-9, upper =0.2>  Rsd;
-  real<lower = 1e-9, upper =0.2>  Msd;
+  real<lower = 1e-9, upper =0.2>  Ssd[Ntimeall];  // these are fractional .. i.e CV's
+  real<lower = 1e-9, upper =0.2>  Isd[Ntimeall];
+  real<lower = 1e-9, upper =0.2>  Rsd[Ntimeall];
+  real<lower = 1e-9, upper =0.2>  Msd[Ntimeall];
   real<lower = -1, upper =1> ar1;
   real<lower = 1e-9, upper =1 > ar1sd;
   real ar1k;
@@ -513,13 +513,13 @@ transformed parameters{
     Mmu[i+1] = Mmu[i] + dIM ;
   }
 
-  for (i in 1:(Nobs-1) ) {
-    // pr_si[i] = 1-(1-BETA[i])^Imu[i]*Npop;  // per capita probability
-    pr_si[i] = 1.0 - exp( -BETA[i] * Imu[i] ); // approximation
-  }
-  for ( i in (Nobs):(Ntimeall-1) ) {
-    pr_si[i] = mean( pr_si[(Nobs-1-BNP):(Nobs-1)] ) ;
-  }
+//  for (i in 1:(Nobs-1) ) {
+//    // pr_si[i] = 1-(1-BETA[i])^Imu[i]*Npop;  // per capita probability
+//    pr_si[i] = 1.0 - exp( -BETA[i] * Imu[i] ); // approximation
+//  }
+//  for ( i in (Nobs):(Ntimeall-1) ) {
+//    pr_si[i] = mean( pr_si[(Nobs-1-BNP):(Nobs-1)] ) ;
+//  }
 
 
 }
@@ -533,10 +533,10 @@ model {
   Msd ~ cauchy(0, 0.5);
 
   //set intial conditions
-  latent0[1] ~ normal(Sprop[1], Ssd) ;
-  latent0[2] ~ normal(Iprop[1], Isd) ;
-  latent0[3] ~ normal(Rprop[1], Rsd) ;
-  latent0[4] ~ normal(Mprop[1], Msd) ;
+  latent0[1] ~ normal(Sprop[1], Ssd[1]) ;
+  latent0[2] ~ normal(Iprop[1], Isd[1]) ;
+  latent0[3] ~ normal(Rprop[1], Rsd[1]) ;
+  latent0[4] ~ normal(Mprop[1], Msd[1]) ;
   // .. MSErrorI  is the mis-specification dur to asymptomatic cases
   // MSErrorI ~ cauchy(0, 0.5);  // proportion of I that are asymtomatic
 
@@ -559,16 +559,16 @@ model {
   // observation model:
   for (i in 1:Nobs) {
     if (Sobs[i] >= 0  ) {  // to handle missing values in SI
-      Sprop[i] ~ normal( Smu[i] , Ssd );
+      Sprop[i] ~ normal( Smu[i] , Ssd[1] );
     }
     if (Iobs[i] >= 0 ) {
-      Iprop[i]  ~ normal( Imu[i], Isd );
+      Iprop[i]  ~ normal( Imu[i], Isd[1] );
     }
     if (Robs[i] >= 0 ) {
-      Rprop[i]  ~ normal( Rmu[i], Rsd );
+      Rprop[i]  ~ normal( Rmu[i], Rsd[1] );
     }
     if (Mobs[i] >= 0 ) {
-      Mprop[i]  ~ normal( Mmu[i], Msd );
+      Mprop[i]  ~ normal( Mmu[i], Msd[1] );
     }
   }
 
