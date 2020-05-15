@@ -439,7 +439,7 @@ transformed data {
 parameters {
   real<lower=0.0, upper =0.1> GAMMA;     // recovery rate .. proportion of infected recovering
   real<lower=0.0, upper =0.01> EPSILON;   // death rate .. proportion of infected dying
-  real<lower=0.0, upper  =1> BETA[Ntimeall-1];  // == beta in SIR , here we do *not* separate out the Encounter Rate from the infection rate
+  real<lower=0.0, upper  =1> BETA[Nobs-1];  // == beta in SIR , here we do *not* separate out the Encounter Rate from the infection rate
   real<lower = 1e-9, upper =0.2>  Ssd;  // these are fractional .. i.e CV's
   real<lower = 1e-9, upper =0.2>  Isd;
   real<lower = 1e-9, upper =0.2>  Rsd;
@@ -447,10 +447,11 @@ parameters {
   real<lower = -1, upper =1> ar1;
   real<lower = 1e-9, upper =0.2 > ar1sd;
   real ar1k;
-  real<lower = 0, upper =1> Smu[Ntimeall]; // mean process S
-  real<lower = 0, upper =1> Imu[Ntimeall]; // mean process I
-  real<lower = 0, upper =1> Rmu[Ntimeall]; // mean process Recoveries only (no deaths)
-  real<lower = 0, upper =1> Mmu[Ntimeall]; // mean process Mortalities
+  real<lower = 0, upper =1> Smu[Nobs]; // mean process S
+  real<lower = 0, upper =1> Imu[Nobs]; // mean process I
+  real<lower = 0, upper =1> Rmu[Nobs]; // mean process Recoveries only (no deaths)
+  real<lower = 0, upper =1> Mmu[Nobs]; // mean process Mortalities
+  real<lower = 0, upper =1> BETAproj ;
 }
 
 transformed parameters{
@@ -468,16 +469,15 @@ model {
   ar1sd ~ cauchy(0, 0.5);
   ar1k ~ cauchy(0, 0.5);
 
+
+  GAMMA ~ normal( GAMMA_prior, GAMMA_prior );  // recovery of I ... always < 1
+  EPSILON ~ normal( EPSILON_prior, EPSILON_prior );  // recovery of I ... always < 1
+
   BETA[1] ~ normal( BETA_prior, BETA_prior );  // # 10% CV
   for (i in 1:(Nobs-2)) {
     BETA[i+1] ~ normal( ar1k + ar1 * BETA[i], ar1sd );
   }
-  for ( i in (Nobs):(Ntimeall-1) ) {
-    BETA[i] ~ normal( mean( BETA[(Nobs-1-BNP):(Nobs-1)] ), sd( BETA[(Nobs-1-BNP):(Nobs-1)] ) );
-  }
-
-  GAMMA ~ normal( GAMMA_prior, GAMMA_prior );  // recovery of I ... always < 1
-  EPSILON ~ normal( EPSILON_prior, EPSILON_prior );  // recovery of I ... always < 1
+  BETAproj ~ normal( mean( BETA[(Nobs-1-BNP):(Nobs-1)] ), sd(BETA[(Nobs-1-BNP):(Nobs-1)]) )  ;
 
   //set intial conditions
   Smu[1] ~ normal(Sprop[1], Ssd) ;
@@ -485,13 +485,12 @@ model {
   Rmu[1] ~ normal(Rprop[1], Rsd) ;
   Mmu[1] ~ normal(Mprop[1], Msd) ;
 
-  for (i in 1:(Ntimeall-1) ) {
+  for ( i in 1:(Nobs-1) ) {
     Smu[i+1] ~ normal( Smu[i] - BETA[i] * Smu[i] * Imu[i], Ssd)  ;
     Imu[i+1] ~ normal( Imu[i] + BETA[i] * Smu[i] * Imu[i] - GAMMA * Imu[i] - EPSILON * Imu[i], Isd);
     Rmu[i+1] ~ normal( Rmu[i] + GAMMA * Imu[i], Rsd ) ;
     Mmu[i+1] ~ normal( Mmu[i] + EPSILON * Imu[i], Msd) ;
   }
-
 
   // data likelihoods, if *obs ==-1, then data was missing  . same conditions as in transformed parameters
   // observation model:
@@ -519,15 +518,44 @@ generated quantities {
   int<lower = 0, upper =Npop> I[Ntimeall]; // latent I
   int<lower = 0, upper =Npop> R[Ntimeall]; // latent R (no mortality)
   int<lower = 0, upper =Npop> M[Ntimeall]; // latent M (mortality)
+  real<lower = 0, upper =1> Spp[Npreds]; // mean process S
+  real<lower = 0, upper =1> Ipp[Npreds]; // mean process I
+  real<lower = 0, upper =1> Rpp[Npreds]; // mean process Recoveries only (no deaths)
+  real<lower = 0, upper =1> Mpp[Npreds]; // mean process Mortalities
 
-  S = binomial_rng( Npop, Smu );
-  I = binomial_rng( Npop, Imu );
-  R = binomial_rng( Npop, Rmu );
-  M = binomial_rng( Npop, Mmu );
+  for (i in 1:Nobs) {
+    S[i] = binomial_rng( Npop, Smu[i] );
+    I[i] = binomial_rng( Npop, Imu[i] );
+    R[i] = binomial_rng( Npop, Rmu[i] );
+    M[i] = binomial_rng( Npop, Mmu[i] );
+  }
+
+
+  Spp[1] = Smu[Nobs];
+  Ipp[1] = Imu[Nobs];
+  Rpp[1] = Rmu[Nobs];
+  Mpp[1] = Mmu[Nobs];
+
+  for ( i in 1:(Npreds-1) ) {
+    Spp[i+1] = fmax(0, fmin( 1, Spp[i] - BETAproj * Spp[i] * Ipp[i] ) )  ;
+    Ipp[i+1] = fmax(0, fmin( 1, Ipp[i] + BETAproj * Spp[i] * Ipp[i] - GAMMA * Ipp[i] - EPSILON * Ipp[i] ));
+    Rpp[i+1] = fmax(0, fmin( 1, Rpp[i] + GAMMA * Ipp[i] )) ;
+    Mpp[i+1] = fmax(0, fmin( 1, Mpp[i] + EPSILON * Ipp[i] )) ;
+  }
+
+  for ( i in 1:Npreds ) {
+    S[Nobs+i] = binomial_rng( Npop, Spp[i] );
+    I[Nobs+i] = binomial_rng( Npop, Ipp[i] );
+    R[Nobs+i] = binomial_rng( Npop, Rpp[i] );
+    M[Nobs+i] = binomial_rng( Npop, Mpp[i] );
+  }
 
   // sample from  mean process (proportions to counts)
-  for (i in 1:(Ntimeall-1) ) {
+  for (i in 1:(Nobs-1) ) {
     K[i] = BETA[i] / GAMMA; // the contact number = fraction of S in contact with I
+  }
+  for (i in Nobs:(Ntimeall-1) ) {
+    K[i] = BETAproj / GAMMA; // the contact number = fraction of S in contact with I
   }
 
 }
@@ -645,9 +673,9 @@ transformed parameters{
   real<lower = 0, upper =1> Rmu[Ntimeall]; // mean process Recoveries only (no deaths)
   real<lower = 0, upper =1> Mmu[Ntimeall]; // mean process Mortalities
 
-  real<lower = 0, upper =0.1> dSI[Ntimeall];
-  real<lower = 0, upper =0.1> dIR[Ntimeall];
-  real<lower = 0, upper =0.1> dIM[Ntimeall];
+  real<lower = 0, upper =0.5> dSI[Ntimeall];
+  real<lower = 0, upper =0.5> dIR[Ntimeall];
+  real<lower = 0, upper =0.5> dIM[Ntimeall];
 
   real<lower=0.0, upper =1> pr_si[Ntimeall-1];
   real<lower=0.0, upper =1> pr_ir;
@@ -740,18 +768,18 @@ model {
   // use poisson instead on increments
     for (i in 1:(Nobs-1)){
       if (Sobs[i] >=0 && Sobs[i+1] >=0) {
-        // z_si[i] ~ binomial( (Npop*Smu[i]), pr_si[i] );  // prob of being infected
+        z_si[i] ~ binomial( Npop, pr_si[i]*Smu[i] );  // prob of being infected
         // z_si[i] ~ poisson(  Npop*Smu[i]* pr_si[i] ) ;
-        //z_si[i] ~ poisson( dSI[i]*Npop );
+        // z_si[i] ~ poisson( dSI[i]*Npop );
       }
       if (Robs[i] >=0 && Robs[i+1] >=0 && Mobs[i] >=0 && Mobs[i+1] >=0) {
-       // z_ir[i] ~ binomial( (Npop*Imu[i]), pr_ir );
+       // z_ir[i] ~ binomial( Npop, pr_ir*Imu[i] );
         // z_ir[i] ~ poisson( Imu[i]*Npop*pr_ir );
-        //z_ir[i] ~ poisson( dIR[i]*Npop );
+        // z_ir[i] ~ poisson( dIR[i]*Npop );
      }
      if (Mobs[i] >=0 && Mobs[i+1] >=0) {
-       // z_im[i] ~ binomial( (Npop*Mmu[i]), pr_im );P
-        //z_im[i] ~ poisson( Imu[i]*Npop*pr_im) ;
+       z_im[i] ~ binomial( Npop, pr_im*Mmu[i] );
+        // z_im[i] ~ poisson( Imu[i]*Npop*pr_im) ;
         //z_im[i] ~ poisson( dIM[i]*Npop) ;
      }
    }

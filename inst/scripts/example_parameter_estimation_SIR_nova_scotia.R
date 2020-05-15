@@ -4,12 +4,12 @@
 # examples of various methods of parameter estimation using NS data
 
 # remotes::install_github( "jae0/adapt" )
-# loadfunctions("adapt")
 require(adapt)
 require(rstan)
 rstan_options(auto_write = TRUE)
 options(mc.cores = parallel::detectCores())
 
+# loadfunctions("adapt")
 
 nscovid = data_nova_scotia(
   # interpolate_missing_data=TRUE,  # linear interpolation of missing data as a preprocessing step or estimate via imputation inside stan
@@ -22,9 +22,9 @@ nscovid = data_nova_scotia(
   # modelname = "continuous" # ODE form  really slow ... and does not work that well .. huge error bars
   # modelname = "discrete_basic"   # poor fit ..  latent .. similar to continuous .. ie. model is too simple and params too static
   # modelname = "discrete_binomial_autoregressive"
-  # modelname = "discrete_autoregressive_structured_beta_mortality_hybrid"  # splitting recovered and mortalities
+  modelname = "discrete_autoregressive_structured_beta_mortality_hybrid"  # splitting recovered and mortalities
   # modelname = "discrete_autoregressive_structured_beta_mortality_poisson"
-  modelname = "discrete_autoregressive_structured_beta_mortality"
+  # modelname = "discrete_autoregressive_structured_beta_mortality"
 )
 
 time_relaxation = as.numeric(nscovid$time_relaxation - nscovid$time_start)
@@ -164,9 +164,9 @@ sim = array( NA, dim=c(nsims, 3, nprojections) )
 
 
 if (nscovid$modelname=="discrete_autoregressive_with_observation_error_structured_beta_mortality") {
-  u0=data.frame(S=M$S[,today], I=M$I[,today], R=M$R[,today] + M$M[,today], beta=M$BETA[,today], gamma=M$GAMMA[] )
+  u0=data.frame(S=M$S[,today], I=M$I[,today], R=M$R[,today] + M$M[,today], beta=M$BETA[,today-1], gamma=M$GAMMA[] )
 } else {
-  u0=data.frame(S=M$S[,today], I=M$I[,today], R=M$R[,today], beta=M$BETA[,today], gamma=M$GAMMA[] )
+  u0=data.frame(S=M$S[,today], I=M$I[,today], R=M$R[,today], beta=M$BETA[,today-1], gamma=M$GAMMA[] )
 }
 
 
@@ -188,7 +188,7 @@ png(filename = file.path(outdir, "fit_with_projections_and_stochastic_simulation
   yrange = c(0, max(M$I[, 1:nx]))
   yrange = c(0, 800)
   plot( io ~ nscovid$time, xlim=xrange, ylim=yrange,  type="n", ylab="Infected", xlab="Days (day 1 is 2020-03-17)")
-  for ( i in 1:min(nsims, 1500)) lines( sim[i,2,] ~ simxval, col=alpha("slategray", 0.1), ltyp="dashed" )
+  for ( i in 1:min(nsims, 2000)) lines( sim[i,2,] ~ simxval, col=alpha("slategray", 0.1), ltyp="dashed" )
   lines( apply(M$I, 2, median)[1:nx] ~ seq(1,nx), lwd = 3, col="slateblue" )
   lines( apply(M$I, 2, quantile, probs=0.025)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
   lines( apply(M$I, 2, quantile, probs=0.975)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
