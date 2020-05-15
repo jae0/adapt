@@ -22,9 +22,10 @@ nscovid = data_nova_scotia(
   # modelname = "continuous" # ODE form  really slow ... and does not work that well .. huge error bars
   # modelname = "discrete_basic"   # poor fit ..  latent .. similar to continuous .. ie. model is too simple and params too static
   # modelname = "discrete_binomial_autoregressive"
-  modelname = "discrete_autoregressive_structured_beta_mortality_hybrid"  # splitting recovered and mortalities
+  # modelname = "discrete_autoregressive_structured_beta_mortality_hybrid"  # splitting recovered and mortalities
+  # modelname = "discrete_autoregressive_structured_beta_mortality_poisson"
+  modelname = "discrete_autoregressive_structured_beta_mortality"
 )
-
 
 time_relaxation = as.numeric(nscovid$time_relaxation - nscovid$time_start)
 time_distancing = as.numeric(nscovid$time_distancing - nscovid$time_start)

@@ -268,7 +268,6 @@ parameters {
   real<lower=0.0, upper =0.1> GAMMA;     // recovery rate .. proportion of infected recovering
   real<lower=0.0, upper =0.01> EPSILON;   // death rate .. proportion of infected dying
   real<lower=0.0, upper  =1> BETA[Ntimeall-1];  // == beta in SIR , here we do *not* separate out the Encounter Rate from the infection rate
-  // real<lower=-0.25, upper =0.25>  MSErrorI;  // fractional mis-specification error due to latent, asymptompatic cases, reporting irregularities
   real<lower = 1e-9, upper =0.2>  Ssd;  // these are fractional .. i.e CV's
   real<lower = 1e-9, upper =0.2>  Isd;
   real<lower = 1e-9, upper =0.2>  Rsd;
@@ -299,11 +298,11 @@ transformed parameters{
   for (i in 1:(Ntimeall-1) ) {
     real dSI = BETA[i] * Smu[i] * Imu[i];
     real dIR = GAMMA * Imu[i];
-    real dRM = EPSILON * Rmu[i];
+    real dIM = EPSILON * Imu[i];
     Smu[i+1] = Smu[i] - dSI ;
-    Imu[i+1] = Imu[i] + dSI - dIR ;
+    Imu[i+1] = Imu[i] + dSI - dIR - dIM;
     Rmu[i+1] = Rmu[i] + dIR ;
-    Mmu[i+1] = Mmu[i] + dRM ;
+    Mmu[i+1] = Mmu[i] + dIM ;
   }
 }
 
@@ -320,8 +319,6 @@ model {
   latent0[2] ~ normal(Iprop[1], Isd) ;
   latent0[3] ~ normal(Rprop[1], Rsd) ;
   latent0[4] ~ normal(Mprop[1], Msd) ;
-  // .. MSErrorI  is the mis-specification dur to asymptomatic cases
-  // MSErrorI ~ cauchy(0, 0.5);  // proportion of I that are asymtomatic
 
   ar1 ~ normal(0, 1); // autoregression
   ar1sd ~ cauchy(0, 0.5);
@@ -411,6 +408,169 @@ transformed data {
   real<lower = 0, upper =1> Rprop[Nobs]; // observed R excluding deaths  ..  chaning meaning of R here (vs Robs)
   real<lower = 0, upper =1> Mprop[Nobs]; // observed mortalities
 
+  Ntimeall = Nobs + Npreds;
+
+  // * 1.0 is fiddling to comvert int to real
+  // checking for > 0 is to check for missing values == -1
+  for (i in 1:Nobs) {
+    if (Sobs[i] >= 0 ) {
+      Sprop[i] = (Sobs[i] * 1.0 )/ (Npop * 1.0)  ; // observation error .. some portion of infected is not captured
+    } else {
+      Sprop[i]=0.0; //dummy value
+    }
+    if ( Iobs[i] >= 0) {
+      Iprop[i] = (Iobs[i]* 1.0 )/ ( Npop * 1.0) ;
+    } else {
+      Iprop[i]=0.0; //dummy value
+    }
+    if (Mobs[i] >= 0) {
+      Mprop[i] = (Mobs[i]* 1.0 )/ (Npop* 1.0) ;  // deaths
+    } else {
+      Mprop[i]=0.0; //dummy value
+    }
+    if (Robs[i] >= 0 && Mobs[i] >= 0) {
+      Rprop[i] = ( (Robs[i] - Mobs[i])*1.0)/ (Npop* 1.0) ;  // recoveries only (with no deaths)
+    } else {
+      Rprop[i]=0.0; //dummy value
+    }
+  }
+}
+
+parameters {
+  real<lower=0.0, upper =0.1> GAMMA;     // recovery rate .. proportion of infected recovering
+  real<lower=0.0, upper =0.01> EPSILON;   // death rate .. proportion of infected dying
+  real<lower=0.0, upper  =1> BETA[Ntimeall-1];  // == beta in SIR , here we do *not* separate out the Encounter Rate from the infection rate
+  real<lower = 1e-9, upper =0.2>  Ssd;  // these are fractional .. i.e CV's
+  real<lower = 1e-9, upper =0.2>  Isd;
+  real<lower = 1e-9, upper =0.2>  Rsd;
+  real<lower = 1e-9, upper =0.2>  Msd;
+  real<lower = -1, upper =1> ar1;
+  real<lower = 1e-9, upper =0.2 > ar1sd;
+  real ar1k;
+  real<lower = 0, upper =1> Smu[Ntimeall]; // mean process S
+  real<lower = 0, upper =1> Imu[Ntimeall]; // mean process I
+  real<lower = 0, upper =1> Rmu[Ntimeall]; // mean process Recoveries only (no deaths)
+  real<lower = 0, upper =1> Mmu[Ntimeall]; // mean process Mortalities
+}
+
+transformed parameters{
+}
+
+model {
+
+  // non informative hyperpriors
+  Ssd ~ cauchy(0, 0.5);
+  Isd ~ cauchy(0, 0.5);
+  Rsd ~ cauchy(0, 0.5);
+  Msd ~ cauchy(0, 0.5);
+
+  ar1 ~ normal(0, 1); // autoregression
+  ar1sd ~ cauchy(0, 0.5);
+  ar1k ~ cauchy(0, 0.5);
+
+  BETA[1] ~ normal( BETA_prior, BETA_prior );  // # 10% CV
+  for (i in 1:(Nobs-2)) {
+    BETA[i+1] ~ normal( ar1k + ar1 * BETA[i], ar1sd );
+  }
+  for ( i in (Nobs):(Ntimeall-1) ) {
+    BETA[i] ~ normal( mean( BETA[(Nobs-1-BNP):(Nobs-1)] ), sd( BETA[(Nobs-1-BNP):(Nobs-1)] ) );
+  }
+
+  GAMMA ~ normal( GAMMA_prior, GAMMA_prior );  // recovery of I ... always < 1
+  EPSILON ~ normal( EPSILON_prior, EPSILON_prior );  // recovery of I ... always < 1
+
+  //set intial conditions
+  Smu[1] ~ normal(Sprop[1], Ssd) ;
+  Imu[1] ~ normal(Iprop[1], Isd) ;
+  Rmu[1] ~ normal(Rprop[1], Rsd) ;
+  Mmu[1] ~ normal(Mprop[1], Msd) ;
+
+  for (i in 1:(Ntimeall-1) ) {
+    Smu[i+1] ~ normal( Smu[i] - BETA[i] * Smu[i] * Imu[i], Ssd)  ;
+    Imu[i+1] ~ normal( Imu[i] + BETA[i] * Smu[i] * Imu[i] - GAMMA * Imu[i] - EPSILON * Imu[i], Isd);
+    Rmu[i+1] ~ normal( Rmu[i] + GAMMA * Imu[i], Rsd ) ;
+    Mmu[i+1] ~ normal( Mmu[i] + EPSILON * Imu[i], Msd) ;
+  }
+
+
+  // data likelihoods, if *obs ==-1, then data was missing  . same conditions as in transformed parameters
+  // observation model:
+  for (i in 1:Nobs) {
+    if (Sobs[i] >= 0  ) {  // to handle missing values in SI
+      Sprop[i] ~ normal( Smu[i] , Ssd );
+    }
+    if (Iobs[i] >= 0 ) {
+      Iprop[i]  ~ normal( Imu[i], Isd );
+    }
+    if (Robs[i] >= 0 ) {
+      Rprop[i]  ~ normal( Rmu[i], Rsd );
+    }
+    if (Mobs[i] >= 0 ) {
+      Mprop[i]  ~ normal( Mmu[i], Msd );
+    }
+  }
+
+
+}
+
+generated quantities {
+  real<lower=0> K[Ntimeall-1];
+  int<lower = 0, upper =Npop> S[Ntimeall]; // latent S
+  int<lower = 0, upper =Npop> I[Ntimeall]; // latent I
+  int<lower = 0, upper =Npop> R[Ntimeall]; // latent R (no mortality)
+  int<lower = 0, upper =Npop> M[Ntimeall]; // latent M (mortality)
+
+  S = binomial_rng( Npop, Smu );
+  I = binomial_rng( Npop, Imu );
+  R = binomial_rng( Npop, Rmu );
+  M = binomial_rng( Npop, Mmu );
+
+  // sample from  mean process (proportions to counts)
+  for (i in 1:(Ntimeall-1) ) {
+    K[i] = BETA[i] / GAMMA; // the contact number = fraction of S in contact with I
+  }
+
+}
+"
+    )  # end return
+  } # end selection
+
+
+# ------------------
+
+
+# -----------------------
+
+  if ( selection=="discrete_autoregressive_structured_beta_mortality_poisson" ) {
+
+    ## this tried to add the binomial data costraints but STAN really does not permit integers as rando variables and
+    ## so the probabilities are computed only for post-processing
+
+    return(
+
+"
+data {
+  //declare variables
+  int<lower=0> Npop;  // Npop total
+  int<lower=0> Nobs;  //number of time slices
+  int<lower=0> Npreds;  //additional number of time slices for prediction
+  int<lower=0> BNP; // the last no days to use for BETA to project forward
+  real<lower=0> BETA_prior;
+  real<lower=0> GAMMA_prior;
+  real<lower=0> EPSILON_prior;
+  int Sobs[Nobs]; // observed S
+  int Iobs[Nobs]; // observed I
+  int Robs[Nobs]; // observed Recovered (including deaths)
+  int Mobs[Nobs]; // observed mortality (Deaths only)
+}
+
+transformed data {
+  int Ntimeall;
+  real<lower = 0, upper =1> Sprop[Nobs]; // observed S in proportion of total pop
+  real<lower = 0, upper =1> Iprop[Nobs]; // observed I
+  real<lower = 0, upper =1> Rprop[Nobs]; // observed R excluding deaths  ..  chaning meaning of R here (vs Robs)
+  real<lower = 0, upper =1> Mprop[Nobs]; // observed mortalities
+
   int<lower=0, upper = Npop> z_si[Nobs-1];
   int<lower=0, upper = Npop> z_ir[Nobs-1];
   int<lower=0, upper = Npop> z_im[Nobs-1];
@@ -442,9 +602,10 @@ transformed data {
     }
   }
 
+
   for ( i in 1:(Nobs-1)){
     if (Sobs[i] >=0 && Sobs[i+1] >= 0) {
-      z_si[i] = Sobs[i] - Sobs[i+1]; // infected dynamics (and Susceptibles)
+     z_si[i] = Sobs[i] - Sobs[i+1]; // infected dynamics (and Susceptibles)
     } else {
       z_si[i] = 0;  // dummy value
     }
@@ -460,21 +621,22 @@ transformed data {
     }
   }
 
+
 }
 
 parameters {
-  real<lower=0.0, upper =0.1> GAMMA;     // recovery rate .. proportion of infected recovering
-  real<lower=0.0, upper =0.01> EPSILON;   // death rate .. proportion of infected dying
+  real<lower=0.0, upper =0.5> GAMMA;     // recovery rate .. proportion of infected recovering
+  real<lower=0.0, upper =0.1> EPSILON;   // death rate .. proportion of infected dying
   real<lower=0.0, upper  =1> BETA[Ntimeall-1];  // == beta in SIR , here we do *not* separate out the Encounter Rate from the infection rate
-  // real<lower=-0.25, upper =0.25>  MSErrorI;  // fractional mis-specification error due to latent, asymptompatic cases, reporting irregularities
-  real<lower = 1e-9, upper =0.2>  Ssd[Ntimeall];  // these are fractional .. i.e CV's
-  real<lower = 1e-9, upper =0.2>  Isd[Ntimeall];
-  real<lower = 1e-9, upper =0.2>  Rsd[Ntimeall];
-  real<lower = 1e-9, upper =0.2>  Msd[Ntimeall];
+  real<lower = 1e-9, upper =0.2>  Ssd;  // these are fractional .. i.e CV's
+  real<lower = 1e-9, upper =0.2>  Isd;
+  real<lower = 1e-9, upper =0.2>  Rsd;
+  real<lower = 1e-9, upper =0.2>  Msd;
+
   real<lower = -1, upper =1> ar1;
-  real<lower = 1e-9, upper =1 > ar1sd;
+  real<lower = 1e-9, upper =0.2 > ar1sd;
   real ar1k;
-  real <lower =0, upper =1 > latent0[4];
+  real<lower = 0, upper =1> latent0[4];
 }
 
 transformed parameters{
@@ -483,44 +645,46 @@ transformed parameters{
   real<lower = 0, upper =1> Rmu[Ntimeall]; // mean process Recoveries only (no deaths)
   real<lower = 0, upper =1> Mmu[Ntimeall]; // mean process Mortalities
 
+  real<lower = 0, upper =0.1> dSI[Ntimeall];
+  real<lower = 0, upper =0.1> dIR[Ntimeall];
+  real<lower = 0, upper =0.1> dIM[Ntimeall];
+
   real<lower=0.0, upper =1> pr_si[Ntimeall-1];
   real<lower=0.0, upper =1> pr_ir;
   real<lower=0.0, upper =1> pr_im;
 
+  //set intial conditions
+  Smu[1] = latent0[1] ;
+  Imu[1] = latent0[2] ;
+  Rmu[1] = latent0[3] ;
+  Mmu[1] = latent0[4] ;
+
+  for (i in 1:(Ntimeall-1) ) {
+    dSI[i] = BETA[i] * Smu[i] * Imu[i] ;
+    dIR[i] = GAMMA * Imu[i]  ;
+    dIM[i] = EPSILON  * Imu[i] ;
+    Smu[i+1] = Smu[i] - dSI[i]   ;
+    Imu[i+1] = Imu[i] + dSI[i] - dIR[i] - dIM[i] ;
+    Rmu[i+1] = Rmu[i] + dIR[i] ;
+    Mmu[i+1] = Mmu[i] + dIM[i] ;
+  }
+
   // pr_ir[i] = 1/GAMMA;
   pr_ir = 1.0 - exp(-GAMMA);
   pr_im = 1.0 - exp(-EPSILON);
-
-  // needs to be copied over as S being a vector can only be defined as a param or transf param but not both
 
   // process model: SIR ODE in Euler difference form
   // recursive model eq for discrete form of SIR;
   // some fraction of recovered die (rather than directly from infected),
   // this is due to large a latency between infection and death (30 days+),
   // using Recovered as it is closer to the timescale of the deaths
-  Smu[1] = latent0[1];
-  Imu[1] = latent0[2];
-  Rmu[1] = latent0[3];
-  Mmu[1] = latent0[4];
-
-  for (i in 1:(Ntimeall-1) ) {
-    real dSI = BETA[i] * Smu[i] * Imu[i];
-    real dIR = GAMMA * Imu[i];
-    real dIM = EPSILON * Imu[i];
-    Smu[i+1] = Smu[i] - dSI ;
-    Imu[i+1] = Imu[i] + dSI - dIR -dIM;
-    Rmu[i+1] = Rmu[i] + dIR ;
-    Mmu[i+1] = Mmu[i] + dIM ;
+  for (i in 1:(Nobs-1) ) {
+    // pr_si[i] = 1-(1-BETA[i])^Imu[i]*Npop;  // per capita probability
+    pr_si[i] = 1.0 - exp( -BETA[i] * Imu[i] ); // approximation
   }
-
-//  for (i in 1:(Nobs-1) ) {
-//    // pr_si[i] = 1-(1-BETA[i])^Imu[i]*Npop;  // per capita probability
-//    pr_si[i] = 1.0 - exp( -BETA[i] * Imu[i] ); // approximation
-//  }
-//  for ( i in (Nobs):(Ntimeall-1) ) {
-//    pr_si[i] = mean( pr_si[(Nobs-1-BNP):(Nobs-1)] ) ;
-//  }
-
+  for ( i in (Nobs):(Ntimeall-1) ) {
+    pr_si[i] = mean( pr_si[(Nobs-1-BNP):(Nobs-1)] ) ;
+  }
 
 }
 
@@ -531,14 +695,6 @@ model {
   Isd ~ cauchy(0, 0.5);
   Rsd ~ cauchy(0, 0.5);
   Msd ~ cauchy(0, 0.5);
-
-  //set intial conditions
-  latent0[1] ~ normal(Sprop[1], Ssd[1]) ;
-  latent0[2] ~ normal(Iprop[1], Isd[1]) ;
-  latent0[3] ~ normal(Rprop[1], Rsd[1]) ;
-  latent0[4] ~ normal(Mprop[1], Msd[1]) ;
-  // .. MSErrorI  is the mis-specification dur to asymptomatic cases
-  // MSErrorI ~ cauchy(0, 0.5);  // proportion of I that are asymtomatic
 
   ar1 ~ normal(0, 1); // autoregression
   ar1sd ~ cauchy(0, 0.5);
@@ -555,36 +711,51 @@ model {
   GAMMA ~ normal( GAMMA_prior, GAMMA_prior );  // recovery of I ... always < 1
   EPSILON ~ normal( EPSILON_prior, EPSILON_prior );  // recovery of I ... always < 1
 
+  //set intial conditions
+  latent0[1] ~ normal(Sprop[1], Ssd) ;
+  latent0[2] ~ normal(Iprop[1], Isd) ;
+  latent0[3] ~ normal(Rprop[1], Rsd) ;
+  latent0[4] ~ normal(Mprop[1], Msd) ;
+
   // data likelihoods, if *obs ==-1, then data was missing  . same conditions as in transformed parameters
   // observation model:
   for (i in 1:Nobs) {
     if (Sobs[i] >= 0  ) {  // to handle missing values in SI
-      Sprop[i] ~ normal( Smu[i] , Ssd[1] );
+      Sprop[i] ~ normal( Smu[i] , Ssd );
     }
     if (Iobs[i] >= 0 ) {
-      Iprop[i]  ~ normal( Imu[i], Isd[1] );
+      Iprop[i]  ~ normal( Imu[i], Isd );
     }
     if (Robs[i] >= 0 ) {
-      Rprop[i]  ~ normal( Rmu[i], Rsd[1] );
+      Rprop[i]  ~ normal( Rmu[i], Rsd );
     }
     if (Mobs[i] >= 0 ) {
-      Mprop[i]  ~ normal( Mmu[i], Msd[1] );
+      Mprop[i]  ~ normal( Mmu[i], Msd );
     }
   }
 
+
   // additional likelihood constraints on direct incremental differences
-  // .. not using right now as STAN does not operate on integer random variables
-  //  for (i in 1:(Nobs-1)){
-  //    if (Sobs[i] >=0 && Sobs[i+1] >=0) {
-  //      z_si[i] ~ binomial( Sobs[i], pr_si[i] );  // prob of being infected
-  //    }
-  //    if (Robs[i] >=0 && Robs[i+1] >=0 && Mobs[i] >=0 && Mobs[i+1] >=0) {
-  //     z_ir[i] ~ binomial( Iobs[i], pr_ir );
-  //   }
-  //   if (Mobs[i] >=0 && Mobs[i+1] >=0) {
-  //     z_im[i] ~ binomial( Mobs[i], pr_im );
-  //   }
-  // }
+  // .. not using binomial as STAN does not operate on integer random variables
+  // use poisson instead on increments
+    for (i in 1:(Nobs-1)){
+      if (Sobs[i] >=0 && Sobs[i+1] >=0) {
+        // z_si[i] ~ binomial( (Npop*Smu[i]), pr_si[i] );  // prob of being infected
+        // z_si[i] ~ poisson(  Npop*Smu[i]* pr_si[i] ) ;
+        //z_si[i] ~ poisson( dSI[i]*Npop );
+      }
+      if (Robs[i] >=0 && Robs[i+1] >=0 && Mobs[i] >=0 && Mobs[i+1] >=0) {
+       // z_ir[i] ~ binomial( (Npop*Imu[i]), pr_ir );
+        // z_ir[i] ~ poisson( Imu[i]*Npop*pr_ir );
+        //z_ir[i] ~ poisson( dIR[i]*Npop );
+     }
+     if (Mobs[i] >=0 && Mobs[i+1] >=0) {
+       // z_im[i] ~ binomial( (Npop*Mmu[i]), pr_im );P
+        //z_im[i] ~ poisson( Imu[i]*Npop*pr_im) ;
+        //z_im[i] ~ poisson( dIM[i]*Npop) ;
+     }
+   }
+
 
 }
 
