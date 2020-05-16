@@ -66,8 +66,8 @@ png(filename = file.path(outdir, "fit_with_projections_infected.png"))
   abline( v=nscovid$time[nscovid$Nobs], col="grey", lty="dashed" )
   abline( v=nscovid$time[time_distancing], col="orange", lty="dotted" )
   abline( v=nscovid$time[time_relaxation], col="green", lty="dotted" )
-  legend( "bottomleft", "", "       [-- Social distancing -->", bty="n" )
-  legend( "bottom", "", "                                  [-- Parks open -->", bty="n" )
+  legend( "bottomleft", "", "      [-- Social distancing -->", bty="n" )
+  legend( "bottom", "", "                                 [-- Parks open -->", bty="n" )
   legend( "topright", "", paste( "Current date: ", nscovid$timestamp ), bty="n")
 dev.off()
 
@@ -85,8 +85,8 @@ png(filename = file.path(outdir, "fit_with_projections_recovered.png"))
   abline( v=nscovid$time[nscovid$Nobs], col="grey", lty="dashed" )
   abline( v=nscovid$time[time_distancing], col="orange", lty="dotted" )
   abline( v=nscovid$time[time_relaxation], col="green", lty="dotted" )
-  legend( "topleft", "", "\n\n       [-- Social distancing -->", bty="n" )
-  legend( "top", "", "\n\n                                  [-- Parks open -->", bty="n" )
+  legend( "left", "", "\n\n      [-- Social distancing -->", bty="n" )
+  legend( "center", "", "\n\n                                [-- Parks open -->", bty="n" )
   legend( "topright", "", paste( "Current date: ", nscovid$timestamp ), bty="n")
 dev.off()
 
@@ -104,8 +104,8 @@ png(filename = file.path(outdir, "fit_with_projections_mortalities.png"))
   abline( v=nscovid$time[nscovid$Nobs], col="grey", lty="dashed" )
   abline( v=nscovid$time[time_distancing], col="orange", lty="dotted" )
   abline( v=nscovid$time[time_relaxation], col="green", lty="dotted" )
-  legend( "topleft", "", "\n\n       [-- Social distancing -->", bty="n" )
-  legend( "top", "", "\n\n                                  [-- Parks open -->", bty="n" )
+  legend( "topleft", "", "\n\n      [-- Social distancing -->", bty="n" )
+  legend( "top", "", "\n\n                                 [-- Parks open -->", bty="n" )
   legend( "topright", "", paste( "Current date: ", nscovid$timestamp, " "), bty="n")
 dev.off()
 
@@ -123,8 +123,8 @@ png(filename = file.path(outdir, "fit_with_projections_susceptible.png"))
   abline( v=nscovid$time[nscovid$Nobs], col="grey", lty="dashed" )
   abline( v=nscovid$time[time_distancing], col="orange", lty="dotted" )
   abline( v=nscovid$time[time_relaxation], col="green", lty="dotted" )
-  legend( "bottomleft", "", "       [-- Social distancing -->\n\n", bty="n" )
-  legend( "bottom", "", "                                  [-- Parks open -->\n\n", bty="n" )
+  legend( "bottomleft", "", "      [-- Social distancing -->\n\n", bty="n" )
+  legend( "bottom", "", "                                 [-- Parks open -->\n\n", bty="n" )
   legend( "topright", "", paste( "Current date: ", nscovid$timestamp ), bty="n")
 dev.off()
 
@@ -138,16 +138,26 @@ png(filename = file.path(outdir, "reproductive_number.png"))
   abline( v=nscovid$time[nscovid$Nobs], col="grey", lty="dashed" )
   abline( v=nscovid$time[time_distancing], col="orange", lty="dotted" )
   abline( v=nscovid$time[time_relaxation], col="green", lty="dotted" )
-  legend( "topleft", "", "\n\n       [-- Social distancing -->", bty="n" )
-  legend( "top", "", "\n\n                                  [-- Parks open -->", bty="n" )
+  legend( "topleft", "", "\n\n      [-- Social distancing -->", bty="n" )
+  legend( "top", "", "\n\n                                 [-- Parks open -->", bty="n" )
   legend( "topright", "", paste( "Current date: ", nscovid$timestamp ), bty="n")
 dev.off()
 
 
+brks = "fd"
+days0 = hist( M$K[,nscovid$Nobs] , breaks=brks, plot=FALSE)  # today's K
+days1 = hist( M$K[,nscovid$Nobs-1] , breaks=brks, plot=FALSE )  # today's K
+days7 = hist( M$K[,nscovid$Nobs-7] , breaks=brks, plot=FALSE )  # today's K
+
 png(filename = file.path(outdir, "reproductive_number_today.png"))
-  hist( M$K[,nscovid$Nobs] , "fd", xlab="Current Reproductive number", ylab="Frequency", main="", xlim=c(0, max(1.2, M$K[,nscovid$Nobs])) )  # today's K
+  plot(  days0$density ~ days0$mids, col="green", lwd=3, xlab="Current Reproductive number", ylab="Probability density", main="", xlim=c(0, max(1.2, M$K[,nscovid$Nobs])) ,ylim=c(0,3),type ="l")
+  lines( days1$density ~ days1$mids, col="slateblue", lwd=3, lty="dotted")
+  lines( days7$density ~ days7$mids, col="darkorange", lwd=3, lty="dashed")
   abline( v=1, col="red", lwd=3 )
   legend( "topright", "", paste( "Current date: ", nscovid$timestamp, " "), bty="n")
+  legend( "right", legend=c("Today", "Yesterday", "7 days ago"), lty=c("solid", "dotted", "dashed"), col=c("green", "slateblue", "darkorange"), lwd=c(3,3,3), bty="n")
+
+
 dev.off()
 
 
@@ -197,7 +207,7 @@ png(filename = file.path(outdir, "fit_with_projections_and_stochastic_simulation
   abline( v=nscovid$time[time_distancing], col="orange", lty="dotted" )
   abline( v=nscovid$time[time_relaxation], col="green", lty="dotted" )
   legend( "topleft", "", "\n\n   [-- Social distancing -->", bty="n" )
-  legend( "topleft", "", "\n\n\n                               [-- Parks open -->", bty="n" )
+  legend( "topleft", "", "\n\n\n                              [-- Parks open -->", bty="n" )
   legend( "top", "", paste( "Current date: ", nscovid$timestamp ), bty="n")
 
 dev.off()

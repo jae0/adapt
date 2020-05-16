@@ -469,7 +469,6 @@ model {
   ar1sd ~ cauchy(0, 0.5);
   ar1k ~ cauchy(0, 0.5);
 
-
   GAMMA ~ normal( GAMMA_prior, GAMMA_prior );  // recovery of I ... always < 1
   EPSILON ~ normal( EPSILON_prior, EPSILON_prior );  // recovery of I ... always < 1
 
@@ -569,7 +568,7 @@ generated quantities {
 
 # -----------------------
 
-  if ( selection=="discrete_autoregressive_structured_beta_mortality_poisson" ) {
+  if ( selection=="discrete_autoregressive_structured_beta_mortality_testing" ) {
 
     ## this tried to add the binomial data costraints but STAN really does not permit integers as rando variables and
     ## so the probabilities are computed only for post-processing
