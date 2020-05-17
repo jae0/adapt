@@ -1,68 +1,55 @@
 
 ---
 
-# Current COVID-19 status for Nova Scotia:
 
-Here we show a few elements of COVID-19 status in Nova Scotia based on data compiled from publicly available information (https://novascotia.ca/coronavirus/data/). This has been kindly compiled by J. Strang and N. St-Jacques and stored at: https://docs.google.com/spreadsheets/d/1tgf2H9gDmRnGDGeQE-fC9IPhrmNxP8-JC7Nnnob_vuY/edit#gid=1323236978
+# Current COVID-19 status by province in Canada:
 
-The following figures are generated from https://github.com/jae0/adapt/blob/master/inst/scripts/example_parameter_estimation_SIR_nova_scotia.R.
+You can see the current status of COVID-19 disease progression by province, where data are available, by choosing from the links below.
 
-The use of smaller areal units in a spatially explicit mode would of course be more informative, however, this is all that is currently available.
+- ![Alberta](./inst/doc/Alberta/README.md)
 
-The number of cases are modelled as a latent variable in a recursive SIR model and then projected forward using parameter estimates from the last few days of observations, in this case, three days.
+- ![British Columbia](./inst/doc/BC/README.md)
 
-I will keep updating this as much as possible.
+- ![Manitoba](./inst/doc/Manitoba/README.md)
 
----
+- ![New Brunswick](./inst/doc/New%20Brunswick/README.md)
+
+- ![Newfoundland and Labrador](./inst/doc/NL/README.md)
+
+- ![Nova Scotia](./inst/doc/Nova%20Scotia/README.md)
+
+- ![Ontario](./inst/doc/Ontario/README.md)
+
+- ![Quebec](./inst/doc/Quebec/README.md)
+
+- ![Yukon](./inst/doc/Yukon/README.md)
 
 
-# Infected number of people with simple projections
+More information about the models and data can be found on the ![main page](https://github.com/jae0/adapt/blob/master/README.md)
 
-![](./inst/doc/Nova%20Scotia/fit_with_projections_infected.png)
-
-The number of infected people as a function of time (days; day 1 is 2020-03-17) in circles. Vertical line represents "today". The blue line shown is the model fit to a modified SIR model with 95% Credible Intervals in orange. Simple deterministic (mean-field) forecasts from the recursive model are shown. Note there is some underestimation near the peak as there was a large cluster outbreak in Northwood, something that a mean-field (ODE) approach has difficulty tracking.
-
----
-
-# Recovered number of people with simple projections
-
-![](./inst/doc/Nova%20Scotia/fit_with_projections_recovered.png)
-
-The number of recovered people as a function of time (days; day 1 is 2020-03-17) in circles. Vertical line represents "today". The blue line shown is the model fit to a modified SIR model with 95% Credible Intervals in orange. Simple deterministic (mean-field) forecasts from the recursive model are shown.
-
----
-
-# Number of deaths with simple projections
-
-![](./inst/doc/Nova%20Scotia/fit_with_projections_mortalities.png)
-
-The number of deaths as a function of time (days; day 1 is 2020-03-17) in circles. Vertical line represents "today". The blue line shown is the model fit to a modified SIR model with 95% Credible Intervals in orange. Simple deterministic (mean-field) forecasts from the recursive model are shown.
-
+Please note that these results are generated from an automated process. There might be problems due to unforeseen issues. I will keep tweaking and updating this as much as possible.
 
 
 ---
 
-# Reproductive number
 
-![](./inst/doc/Nova%20Scotia/reproductive_number.png)
+# The data
 
-How the reproductive number has been changing over the course of the epidemic. Currently it is below the critical value of 1. Above this number, an epidemic is more likely.
+The data are obtained directly from: https://github.com/ishaberry/Covid19Canada. This is a data repository maintained by:
 
-![](./inst/doc/Nova%20Scotia/reproductive_number_today.png)
+Berry I, Soucy J-PR, Tuite A, Fisman D. Open access epidemiologic data and an interactive dashboard to monitor the COVID-19 outbreak in Canada. CMAJ. 2020 Apr 14;192(15):E420. doi: https://doi.org/10.1503/cmaj.75262
 
-The current estimate of the reproductive number (posterior distribution), which is very clearly now below 1 (red line)!
-
-
----
-# Forecast with stochastic simulations
-
-![](./inst/doc/Nova%20Scotia/fit_with_projections_and_stochastic_simulations.png)
-
-Finally, individual trajectories of stochastic simulations are shown. These are based upon the joint posterior distributions of the parameter estimates for the most "current day", obtained from the above analysis. These trajectories represent possible futures, accounting for small number stochasticity (unlike the mean-field ODE-based "forward" predictions), assuming the current "situation" remains constant/consistent (i.e., control measures and population behaviours encapsualted in the joint-posterior distributions of the model parameters). The majority of the trajectories suggest a continued decline in the number of infected people. Nonetheless, there still exists some scenarios of rapid disease outbreak (albeit with a low probability).
+and assimilated in https://github.com/jae0/adapt/blob/master/R/data_provinces_of_canada.R .
 
 
+# The model
 
----
+The number of cases are modelled as a latent state-space variable in a variant of the compartmental SIR model. The variation is that Mortalities are separated from Recovered people and the infection rate parameter is modelled as an autoregressive AR(K) process. For the purposes of these results, a K=3 day lag is used, a balance between computational time and stabilization of the estimates.
+
+Mean-field projections from this recursive model are presented with 95% posterior credible intervals, based upon an average and standard deviation of the infection rate parameter over the last K days (i.e., 3 days).
+
+A stochastic simulation (Master Equation-based) from these parameters are also presented.
+
 
 # What is "adapt"?
 
@@ -74,7 +61,9 @@ If you just want to get a sense of what things are like for your area of interes
 
 https://docs.google.com/spreadsheets/d/1tgf2H9gDmRnGDGeQE-fC9IPhrmNxP8-JC7Nnnob_vuY/edit#gid=1323236978
 
-This data was/is compiled and updated by Jennifer Strang and Nathalie Saint-Jacques. You can use this as a template. Alternatively, you can directly estimate the numbers required and manually create the data structures (see example below).
+This data was/is compiled and updated by Jennifer Strang and Nathalie Saint-Jacques. You can use this as a template.
+
+Alternatively, you can directly estimate the numbers required and manually create the data structures (see example in and assimilated in https://github.com/jae0/adapt/blob/master/R/data_provinces_of_canada.R ).
 
 Please note: No guarantees are being made here. There are always errors in models, programs that implement such models and in the data itself. However, this is a functional way of helping make sense of information such that we can engage in more informed discussions with your community on next steps in these trying times.
 
