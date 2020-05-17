@@ -35,9 +35,9 @@ to.screen = FALSE
 
 if ("model" %in% tasks ) stancode_compiled = rstan::stan_model( model_code=sir_stan_model_code( selection="default" ) )  # compile the code
 
-for (i in 1:length(can) ) {
+for (province in names(can) ) {
 
-  province = names(can)[i]
+  # province = names(can)[i]
   print(province)
 
   fn_model = file.path( workdir, paste( province, can[[province]]$modelname, "rdata", sep=".") )

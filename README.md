@@ -34,13 +34,11 @@ and assimilated in https://github.com/jae0/adapt/blob/master/R/data_provinces_of
 
 ---
 
-# The model
+# The analytical model
 
-The number of cases are modelled as a latent state-space variable in a variant of the compartmental SIR model. The variation is that Mortalities are separated from Recovered people and the infection rate parameter is modelled as an autoregressive AR(K) process. For the purposes of these results, a K=3 day lag is used, a balance between computational time and stabilization of the estimates.
+The number of cases are modelled as a latent state-space variable in a variant of the compartmental SIR model. This is a technique we often use in fishery status and estimation problems. We deviate from the SIR model in that Mortalities are separated from Recovered people and the infection rate parameter is modelled as an autoregressive AR(K) process. For the purposes of these results, a K=3 day lag is used, a balance between computational time and stabilization of the estimates. No claims are made that these are "true" rates, even though latent in formulation. Instead, they represent "effective" or practical estimates of the state of disease progression.
 
-Mean-field projections from this recursive model are presented with 95% posterior credible intervals, based upon an average and standard deviation of the infection rate parameter over the last K days (i.e., 3 days).
-
-A stochastic simulation (Master Equation-based) from these parameters are also presented.
+"Simple" projections (i.e., deterministic, mean-field predictions) from this recursive model are presented with 95% posterior credible intervals, based upon an average and standard deviation of the infection rate parameter over the last K days (i.e., 3 days). A stochastic simulation from these parameters are also presented; these are based on a master equation formulation with a Gillespie approximation, .
 
 
 
@@ -62,7 +60,6 @@ Alternatively, you can directly estimate the numbers required and manually creat
 
 Please note: No guarantees are being made here. There are always errors in models, programs that implement such models and in the data itself. However, this is a functional way of helping make sense of information such that we can engage in more informed discussions with your community on next steps in these trying times.
 
-Good luck,
 
 Jae
 
