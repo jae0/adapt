@@ -1,28 +1,18 @@
 
----
-
-
 # Current COVID-19 status by province in Canada:
 
 You can see the current status of COVID-19 disease progression by province, where data are available, by choosing from the links below.
 
 - ![Alberta](./inst/doc/Alberta/README.md)
-
 - ![British Columbia](./inst/doc/BC/README.md)
-
 - ![Manitoba](./inst/doc/Manitoba/README.md)
-
 - ![New Brunswick](./inst/doc/New%20Brunswick/README.md)
-
 - ![Newfoundland and Labrador](./inst/doc/NL/README.md)
-
 - ![Nova Scotia](./inst/doc/Nova%20Scotia/README.md)
-
 - ![Ontario](./inst/doc/Ontario/README.md)
-
 - ![Quebec](./inst/doc/Quebec/README.md)
-
 - ![Yukon](./inst/doc/Yukon/README.md)
+- ![Northwest Territories](./inst/doc/NWT/README.md)
 
 
 More information about the models and data can be found on the ![main page](https://github.com/jae0/adapt/blob/master/README.md)
@@ -42,6 +32,8 @@ Berry I, Soucy J-PR, Tuite A, Fisman D. Open access epidemiologic data and an in
 and assimilated in https://github.com/jae0/adapt/blob/master/R/data_provinces_of_canada.R .
 
 
+---
+
 # The model
 
 The number of cases are modelled as a latent state-space variable in a variant of the compartmental SIR model. The variation is that Mortalities are separated from Recovered people and the infection rate parameter is modelled as an autoregressive AR(K) process. For the purposes of these results, a K=3 day lag is used, a balance between computational time and stabilization of the estimates.
@@ -50,6 +42,9 @@ Mean-field projections from this recursive model are presented with 95% posterio
 
 A stochastic simulation (Master Equation-based) from these parameters are also presented.
 
+
+
+---
 
 # What is "adapt"?
 
