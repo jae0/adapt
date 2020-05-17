@@ -1,4 +1,8 @@
 
+# NOTE: 17 May 2020, JSC
+# NOTE: this script is now subsumed by "example_parameter_estimation_SIR_provinces_of_Canada.R"
+# NOTE: it is here for reference to show how to oeprate upon a single areal unit
+
 
 # ---------------------------------------
 # examples of various methods of parameter estimation using NS data
@@ -79,9 +83,6 @@ for (i in 1:nsims) {
 }
 
 plot_model_fit( selection="forecasts", stan_data=nscovid, M=M, outdir=outdir, sim=sim )
-
-
-
 
 
 
