@@ -14,17 +14,9 @@ options(mc.cores = parallel::detectCores())
 nscovid = data_nova_scotia(
   # interpolate_missing_data=TRUE,  # linear interpolation of missing data as a preprocessing step or estimate via imputation inside stan
   Npop = 971395,  # total population
-  Npreds = 30,   # number of days for forward projectins
-  BNP = 3,        # beta number of days to average for forward projections
-  BETA_prior = 0.8,    # approx scale of BETA  ("effective infection rate", 1 -> 100%)
-  GAMMA_prior = 1/25,  # approx scale of GAMMA ("effective recovery rate") ~ 1/ recovery time (about 21 to 28 days)
-  EPSILON_prior = (1/25)/20,  # 1/20 of GAMMA .. porportion of positive tested that die is ~5%, so 1/20 of GAMMA_prior
-  # modelname = "continuous" # ODE form  really slow ... and does not work that well .. huge error bars
-  # modelname = "discrete_basic"   # poor fit ..  latent .. similar to continuous .. ie. model is too simple and params too static
-  # modelname = "discrete_binomial_autoregressive"
-  modelname = "discrete_autoregressive_structured_beta_mortality_hybrid"  # splitting recovered and mortalities
-  # modelname = "discrete_autoregressive_structured_beta_mortality_poisson"
-  # modelname = "discrete_autoregressive_structured_beta_mortality"
+  Npreds = 15,   # number of days for forward projectins
+  BNP = 4,       # AR(BNP) process for beta number ( BNP= no of days lag) and also no days to average for forward projections
+  modelname = "default" # "discrete_autoregressive_structured_beta_mortality_hybrid"  # splitting recovered and mortalities
 )
 
 time_relaxation = as.numeric(nscovid$time_relaxation - nscovid$time_start)
@@ -43,122 +35,19 @@ if (0) {
   load(fn)
 }
 
+  M = extract(f)
 
-M = extract(f)
+  province = "Nova Scotia"
+  outdir = file.path( "~", "bio", "adapt", "inst", "doc", province )
+  to.screen = TRUE
+      # to.screen = FALSE
 
-plot_model_fit( stan_data=nscovid, M=M )
-
-outdir = file.path( "~/bio/adapt/inst/doc/")
-nx = nscovid$Nobs + nscovid$Npreds - 1
-
-
-io = nscovid$Iobs
-io[io < 0] = NA
-
-png(filename = file.path(outdir, "fit_with_projections_infected.png"))
-  xrange = c(0, nx)
-  yrange = c(0, quantile(M$I[, 1:nx], probs=0.99) )
-  plot( io ~ nscovid$time, xlim=xrange, ylim=yrange, ylab="Infected", xlab="Days (day 1 is 2020-03-17)", type="n" )
-  lines( apply(M$I, 2, median)[1:nx] ~ seq(1,nx), lwd =3, col="slateblue" )
-  lines( apply(M$I, 2, quantile, probs=0.025)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
-  lines( apply(M$I, 2, quantile, probs=0.975)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
-  points( io ~ nscovid$time, col="darkgray", cex=1.2 )
-  abline( v=nscovid$time[nscovid$Nobs], col="grey", lty="dashed" )
-  abline( v=nscovid$time[time_distancing], col="orange", lty="dotted" )
-  abline( v=nscovid$time[time_relaxation], col="green", lty="dotted" )
-  legend( "bottomleft", "", "      [-- Social distancing -->", bty="n" )
-  legend( "bottom", "", "                                 [-- Parks open -->", bty="n" )
-  legend( "topright", "", paste( "Current date: ", nscovid$timestamp ), bty="n")
-dev.off()
-
-
-ro = nscovid$Robs
-ro[ro < 0] = NA
-png(filename = file.path(outdir, "fit_with_projections_recovered.png"))
-  xrange = c(0, nx)
-  yrange = c(0, quantile(M$R[, 1:nx], probs=0.99) )
-  plot( ro ~ nscovid$time, xlim=xrange, ylim=yrange, ylab="Recovered", xlab="Days (day 1 is 2020-03-17)", type="n" )
-  lines( apply(M$R, 2, median)[1:nx] ~ seq(1,nx), lwd =3, col="slateblue" )
-  lines( apply(M$R, 2, quantile, probs=0.025)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
-  lines( apply(M$R, 2, quantile, probs=0.975)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
-  points( ro ~ nscovid$time, col="darkgray", cex=1.2 )
-  abline( v=nscovid$time[nscovid$Nobs], col="grey", lty="dashed" )
-  abline( v=nscovid$time[time_distancing], col="orange", lty="dotted" )
-  abline( v=nscovid$time[time_relaxation], col="green", lty="dotted" )
-  legend( "left", "", "\n\n      [-- Social distancing -->", bty="n" )
-  legend( "center", "", "\n\n                                [-- Parks open -->", bty="n" )
-  legend( "topright", "", paste( "Current date: ", nscovid$timestamp ), bty="n")
-dev.off()
-
-
-mo = nscovid$Mobs
-mo[mo < 0] = NA
-png(filename = file.path(outdir, "fit_with_projections_mortalities.png"))
-  xrange = c(0, nx)
-  yrange = c(0, quantile(M$M[, 1:nx], probs=0.99) )
-  plot( mo ~ nscovid$time, xlim=xrange, ylim=yrange, ylab="Mortalities", xlab="Days (day 1 is 2020-03-17)", type="n" )
-  lines( apply(M$M, 2, median)[1:nx] ~ seq(1,nx), lwd =3, col="slateblue" )
-  lines( apply(M$M, 2, quantile, probs=0.025)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
-  lines( apply(M$M, 2, quantile, probs=0.975)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
-  points( mo ~ nscovid$time, col="darkgray", cex=1.2 )
-  abline( v=nscovid$time[nscovid$Nobs], col="grey", lty="dashed" )
-  abline( v=nscovid$time[time_distancing], col="orange", lty="dotted" )
-  abline( v=nscovid$time[time_relaxation], col="green", lty="dotted" )
-  legend( "topleft", "", "\n\n      [-- Social distancing -->", bty="n" )
-  legend( "top", "", "\n\n                                 [-- Parks open -->", bty="n" )
-  legend( "topright", "", paste( "Current date: ", nscovid$timestamp, " "), bty="n")
-dev.off()
-
-
-so = nscovid$Sobs
-so[so < 0] = NA
-png(filename = file.path(outdir, "fit_with_projections_susceptible.png"))
-  xrange = c(0, nx)
-  yrange = c(min(M$S[, 1:nx]), max(M$S[, 1:nx]))
-  plot( so ~ nscovid$time, xlim=xrange, ylim=yrange, ylab="Susceptible", xlab="Days (day 1 is 2020-03-17)", type="n" )
-  lines( apply(M$S, 2, median)[1:nx] ~ seq(1,nx), lwd =3, col="slateblue" )
-  lines( apply(M$S, 2, quantile, probs=0.025)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
-  lines( apply(M$S, 2, quantile, probs=0.975)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
-  points( so ~ nscovid$time, col="darkgray", cex=1.2 )
-  abline( v=nscovid$time[nscovid$Nobs], col="grey", lty="dashed" )
-  abline( v=nscovid$time[time_distancing], col="orange", lty="dotted" )
-  abline( v=nscovid$time[time_relaxation], col="green", lty="dotted" )
-  legend( "bottomleft", "", "      [-- Social distancing -->\n\n", bty="n" )
-  legend( "bottom", "", "                                 [-- Parks open -->\n\n", bty="n" )
-  legend( "topright", "", paste( "Current date: ", nscovid$timestamp ), bty="n")
-dev.off()
-
-
-
-png(filename = file.path(outdir, "reproductive_number.png"))
-  plot( apply(M$K[,1:nx], 2, median) ~ seq(1,nx), lwd =3, col="darkgray", ylim=c(0,10), ylab="Reproductive number", xlab="Days (day 1 is 2020-03-17)" )
-  lines( apply(M$K, 2, quantile, probs=0.025)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed" )
-  lines( apply(M$K, 2, quantile, probs=0.975)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed" )
-  abline( h=1, col="red", lwd=3 )
-  abline( v=nscovid$time[nscovid$Nobs], col="grey", lty="dashed" )
-  abline( v=nscovid$time[time_distancing], col="orange", lty="dotted" )
-  abline( v=nscovid$time[time_relaxation], col="green", lty="dotted" )
-  legend( "topleft", "", "\n\n      [-- Social distancing -->", bty="n" )
-  legend( "top", "", "\n\n                                 [-- Parks open -->", bty="n" )
-  legend( "topright", "", paste( "Current date: ", nscovid$timestamp ), bty="n")
-dev.off()
-
-
-brks = "fd"
-days0 = hist( M$K[,nscovid$Nobs] , breaks=brks, plot=FALSE)  # today's K
-days1 = hist( M$K[,nscovid$Nobs-1] , breaks=brks, plot=FALSE )  # today's K
-days7 = hist( M$K[,nscovid$Nobs-7] , breaks=brks, plot=FALSE )  # today's K
-
-png(filename = file.path(outdir, "reproductive_number_today.png"))
-  plot(  days0$density ~ days0$mids, col="green", lwd=3, xlab="Current Reproductive number", ylab="Probability density", main="", xlim=c(0, max(1.2, M$K[,nscovid$Nobs])) ,ylim=c(0,3),type ="l")
-  lines( days1$density ~ days1$mids, col="slateblue", lwd=3, lty="dotted")
-  lines( days7$density ~ days7$mids, col="darkorange", lwd=3, lty="dashed")
-  abline( v=1, col="red", lwd=3 )
-  legend( "topright", "", paste( "Current date: ", nscovid$timestamp, " "), bty="n")
-  legend( "right", legend=c("Today", "Yesterday", "7 days ago"), lty=c("solid", "dotted", "dashed"), col=c("green", "slateblue", "darkorange"), lwd=c(3,3,3), bty="n")
-
-
-dev.off()
+  plot_model_fit( selection="susceptible", stan_data=nscovid, M=M, outdir=outdir, to.screen=to.screen )
+  plot_model_fit( selection="infected", stan_data=nscovid, M=M, outdir=outdir, to.screen=to.screen )
+  plot_model_fit( selection="recovered", stan_data=nscovid, M=M, outdir=outdir, to.screen=to.screen )
+  plot_model_fit( selection="deaths", stan_data=nscovid, M=M, outdir=outdir, to.screen=to.screen )
+  plot_model_fit( selection="reproductive_number", stan_data=nscovid, M=M, outdir=outdir, to.screen=to.screen )
+  plot_model_fit( selection="reproductive_number_histograms", stan_data=nscovid, M=M, outdir=outdir, to.screen=to.screen )
 
 
 
@@ -189,28 +78,9 @@ for (i in 1:nsims) {
   )@U[]
 }
 
+plot_model_fit( selection="forecasts", stan_data=nscovid, M=M, outdir=outdir, sim=sim )
 
 
-# library(scales)
-png(filename = file.path(outdir, "fit_with_projections_and_stochastic_simulations.png"))
-  simxval = nscovid$Nobs + c(1:nprojections)
-  xrange = c(0, max(nx, simxval) )
-  yrange = c(0, max(M$I[, 1:nx]))
-  yrange = c(0, 800)
-  plot( io ~ nscovid$time, xlim=xrange, ylim=yrange,  type="n", ylab="Infected", xlab="Days (day 1 is 2020-03-17)")
-  for ( i in 1:min(nsims, 2000)) lines( sim[i,2,] ~ simxval, col=alpha("slategray", 0.1), ltyp="dashed" )
-  lines( apply(M$I, 2, median)[1:nx] ~ seq(1,nx), lwd = 3, col="slateblue" )
-  lines( apply(M$I, 2, quantile, probs=0.025)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
-  lines( apply(M$I, 2, quantile, probs=0.975)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
-  points( io ~ nscovid$time, xlim=xrange, ylim=yrange, col="darkgray", cex=1.2 )
-  abline( v=nscovid$time[nscovid$Nobs], col="grey", lty="dashed" )
-  abline( v=nscovid$time[time_distancing], col="orange", lty="dotted" )
-  abline( v=nscovid$time[time_relaxation], col="green", lty="dotted" )
-  legend( "topleft", "", "\n\n   [-- Social distancing -->", bty="n" )
-  legend( "topleft", "", "\n\n\n                              [-- Parks open -->", bty="n" )
-  legend( "top", "", paste( "Current date: ", nscovid$timestamp ), bty="n")
-
-dev.off()
 
 
 

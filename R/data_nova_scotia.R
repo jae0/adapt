@@ -70,14 +70,16 @@ data_nova_scotia = function( output="stan_data", Npop=971395, Npreds=5, interpol
     time = as.integer(daily$dayno),
     time_start = time_start,
     time_distancing = time_distancing,
-    time_relaxation = time_relaxation
+    time_relaxation = time_relaxation,
+    plotlabel = "Nova Scotia"
   )
 
 
   stan_data = c( stan_data, list(...) )
 
-  if (!exists("modelname", stan_data)) stan_data$modelname="discrete_autoregressive_with_observation_error_structured_beta_mortality"
-    stan_data$timestamp = max( lubridate::date( gsdata$Date) )
+  if (!exists("modelname", stan_data))  stan_data$modelname="discrete_autoregressive_with_observation_error_structured_beta_mortality"
+
+  stan_data$timestamp = max( lubridate::date( gsdata$Date) )
 
   if ( stan_data$modelname %in% c("continuous") ) {
     # used by ODE-based methods for rk4 integration

@@ -18,7 +18,7 @@ I will keep updating this as much as possible.
 
 # Infected number of people with simple projections
 
-![](./inst/doc/fit_with_projections_infected.png)
+![](./inst/doc/Nova Scotia/fit_with_projections_infected.png)
 
 The number of infected people as a function of time (days; day 1 is 2020-03-17) in circles. Vertical line represents "today". The blue line shown is the model fit to a modified SIR model with 95% Credible Intervals in orange. Simple deterministic (mean-field) forecasts from the recursive model are shown. Note there is some underestimation near the peak as there was a large cluster outbreak in Northwood, something that a mean-field (ODE) approach has difficulty tracking.
 
@@ -26,7 +26,7 @@ The number of infected people as a function of time (days; day 1 is 2020-03-17) 
 
 # Recovered number of people with simple projections
 
-![](./inst/doc/fit_with_projections_recovered.png)
+![](./inst/doc/Nova Scotia/fit_with_projections_recovered.png)
 
 The number of recovered people as a function of time (days; day 1 is 2020-03-17) in circles. Vertical line represents "today". The blue line shown is the model fit to a modified SIR model with 95% Credible Intervals in orange. Simple deterministic (mean-field) forecasts from the recursive model are shown.
 
@@ -34,7 +34,7 @@ The number of recovered people as a function of time (days; day 1 is 2020-03-17)
 
 # Number of deaths with simple projections
 
-![](./inst/doc/fit_with_projections_mortalities.png)
+![](./inst/doc/Nova Scotia/fit_with_projections_mortalities.png)
 
 The number of deaths as a function of time (days; day 1 is 2020-03-17) in circles. Vertical line represents "today". The blue line shown is the model fit to a modified SIR model with 95% Credible Intervals in orange. Simple deterministic (mean-field) forecasts from the recursive model are shown.
 
@@ -44,11 +44,11 @@ The number of deaths as a function of time (days; day 1 is 2020-03-17) in circle
 
 # Reproductive number
 
-![](./inst/doc/reproductive_number.png)
+![](./inst/doc/Nova Scotia/reproductive_number.png)
 
 How the reproductive number has been changing over the course of the epidemic. Currently it is below the critical value of 1. Above this number, an epidemic is more likely.
 
-![](./inst/doc/reproductive_number_today.png)
+![](./inst/doc/Nova Scotia/reproductive_number_today.png)
 
 The current estimate of the reproductive number (posterior distribution), which is very clearly now below 1 (red line)!
 
@@ -56,7 +56,7 @@ The current estimate of the reproductive number (posterior distribution), which 
 ---
 # Forecast with stochastic simulations
 
-![](./inst/doc/fit_with_projections_and_stochastic_simulations.png)
+![](./inst/doc/Nova Scotia/fit_with_projections_and_stochastic_simulations.png)
 
 Finally, individual trajectories of stochastic simulations are shown. These are based upon the joint posterior distributions of the parameter estimates for the most "current day", obtained from the above analysis. These trajectories represent possible futures, accounting for small number stochasticity (unlike the mean-field ODE-based "forward" predictions), assuming the current "situation" remains constant/consistent (i.e., control measures and population behaviours encapsualted in the joint-posterior distributions of the model parameters). The majority of the trajectories suggest a continued decline in the number of infected people. Nonetheless, there still exists some scenarios of rapid disease outbreak (albeit with a low probability).
 
@@ -113,9 +113,7 @@ List of 14
  $ Robs       : num [1:51] 0 0 0 0 -1 0 0 0 0 0 ...
  $ Mobs       : num [1:51] 0 0 0 0 -1 0 0 0 0 0 ...
  $ BNP        : num 3
- $ GAMMA_prior: num 0.0357
- $ EPSILON_prior: num 0.0357
- $ BETA_prior : num 0.9
  $ modelname  : chr "discrete_autoregressive_without_observation_error"
+ $ plotlabel  : chr "Nova Scotia"
 
 ```
