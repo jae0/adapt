@@ -10,11 +10,11 @@ You can see the current status of COVID-19 disease progression by province, wher
 - ![Manitoba](./Manitoba/README.md)
 - ![New Brunswick](./New%20Brunswick/README.md)
 - ![Newfoundland and Labrador](./NL/README.md)
+- ![Northwest Territories](./inst/doc/NWT/README.md)
 - ![Nova Scotia](./Nova%20Scotia/README.md)
 - ![Ontario](./Ontario/README.md)
 - ![Quebec](./Quebec/README.md)
 - ![Yukon](./Yukon/README.md)
-- ![Northwest Territories](./inst/doc/NWT/README.md)
 
 
 More information about the models and data can be found on the ![main page](https://github.com/jae0/adapt/blob/master/README.md)
