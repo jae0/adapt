@@ -3,7 +3,7 @@
 
 # Current COVID-19 status by province in Canada:
 
-You can see the current status of COVID-19 disease progression by province, where data are available, by choosing from the links  below. More information about the models and data can be found on the ![main page](README.md)
+You can see the current status of COVID-19 disease progression by province, where data are available, by choosing from the links below. More information about the models and data can be found on the ![main page](https://github.com/jae0/adapt/blob/master/README.md)
 
 
 ![Alberta](./Alberta/README.md)
