@@ -1,7 +1,7 @@
 
 ---
 
-# Current COVID-19 status for Nova Scotia:
+# Current COVID-19 status for British Columbia:
 
 Here we show a few elements of COVID-19 status by province based on data compiled from publicly available information.
 
