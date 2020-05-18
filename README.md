@@ -23,7 +23,7 @@ Please note that these results are generated from an automated process. There mi
 ---
 
 
-# The data
+# Data
 
 The data are obtained directly from: https://github.com/ishaberry/Covid19Canada. This is a data repository maintained by:
 
@@ -34,7 +34,7 @@ and assimilated in https://github.com/jae0/adapt/blob/master/R/data_provinces_of
 
 ---
 
-# The analytical model
+# Analytical model
 
 The number of cases are modelled as a latent state-space variable in a variant of the compartmental SIR model. This is a technique we often use in fishery status and estimation problems. We deviate from the SIR model in that Mortalities are separated from Recovered people and the infection rate parameter is modelled as an autoregressive AR(K) process. For the purposes of these results, a K=3 day lag is used, a balance between computational time and stabilization of the estimates. No claims are made that these are "true" rates, even though latent in formulation. Instead, they represent "effective" or practical estimates of the state of disease progression.
 

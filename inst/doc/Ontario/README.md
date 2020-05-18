@@ -39,7 +39,7 @@ The number of deaths as a function of time (days) in circles. Vertical line repr
 
 ![](./reproductive_number.png)
 
-How the reproductive number has been changing over the course of the epidemic. If this value is below the critical value of 1, then disease spread is being controlled. If it is above 1, an epidemic is more likely.
+How the reproductive number has been changing over the course of the epidemic. If this value is below the critical value of 1, then disease spread is being controlled. If it is above 1, an epidemic is more likely. The blue line shown is the model fit to a modified SIR model with 95% Credible Intervals in orange.
 
 ![](./reproductive_number_today.png)
 

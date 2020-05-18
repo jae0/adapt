@@ -169,7 +169,7 @@ plot_model_fit = function( selection="default", stan_data, M,
     }
       rp = apply(M$K[,1:nx], 2, median)
       yrange = range(rp)
-      plot( rp ~ seq(1,nx), type="l", lwd =3, col="darkgray", ylim=yrange, ylab="Reproductive number", xlab="Days" )
+      plot( rp ~ seq(1,nx), type="l", lwd =3, col="slateblue", ylim=yrange, ylab="Reproductive number", xlab="Days" )
       lines( apply(M$K, 2, quantile, probs=0.025)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed" )
       lines( apply(M$K, 2, quantile, probs=0.975)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed" )
       abline( h=1, col="red", lwd=3 )
@@ -186,7 +186,7 @@ plot_model_fit = function( selection="default", stan_data, M,
 
   if (selection=="reproductive_number_histograms") {
     brks = 30
-    days0 = hist( M$K[,stan_data$Nobs-1] , breaks=brks, plot=FALSE)  # today's K
+    days0 = hist( M$K[,stan_data$Nobs-1] , breaks=brks, plot=FALSE)  # today's K ... Nobs-1 is unstable and better for a "current estimate" as it is anchored on both sides
     days1 = hist( M$K[,stan_data$Nobs-2] , breaks=brks, plot=FALSE )  # today's K
     days7 = hist( M$K[,stan_data$Nobs-8] , breaks=brks, plot=FALSE )  # today's K
     yrange = range( c(days0$density, days1$density, days7$density))
@@ -225,8 +225,8 @@ plot_model_fit = function( selection="default", stan_data, M,
       lines( apply(M$I, 2, quantile, probs=0.025)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
       lines( apply(M$I, 2, quantile, probs=0.975)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
       points( io ~ stan_data$time, xlim=xrange, ylim=yrange, col="darkgray", cex=1.2 )
+      abline( v=stan_data$time[stan_data$Nobs], col="grey", lty="dashed" )
       # if (stan_data$province=="Nova Scotia") {
-      #   abline( v=stan_data$time[stan_data$Nobs], col="grey", lty="dashed" )
       #   abline( v=stan_data$time[time_distancing], col="orange", lty="dotted" )
       #   abline( v=stan_data$time[time_relaxation], col="green", lty="dotted" )
       #   legend( "topleft", "", "\n\n   [-- Social distancing -->", bty="n" )

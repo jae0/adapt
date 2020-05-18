@@ -1,5 +1,6 @@
 
 
+
 remotes::install_github("epiforecasts/EpiNow", dependencies = TRUE)
 
 
@@ -22,6 +23,7 @@ for each au {
 BYM of forecasts
 
 library(remotes)
+
 install_github("stewid/SimInf")
 
   ## Create a SEIR model object.
