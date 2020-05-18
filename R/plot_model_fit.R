@@ -222,6 +222,7 @@ plot_model_fit = function( selection="default", stan_data, M,
       io[io < 0] = NA
       ip = apply(M$I, 2, median)[1:nx]
       yrange = range( c(io, ip), na.rm=TRUE)
+      yrange[2] = yrange[2] *1.75
       plot( io ~ stan_data$time, xlim=xrange, ylim=yrange,  type="n", ylab="Infected", xlab="Days")
       for ( i in 1:min(nsims, 2000)) lines( sim[i,2,] ~ simxval, col=alpha("slategray", 0.1), lty="dashed" )
       lines( ip ~ seq(1,nx), lwd = 3, col="slateblue" )

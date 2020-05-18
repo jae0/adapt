@@ -98,6 +98,7 @@ for (province in names(can) ) {
 ## Comparisons across provinces: normalize to unit population
 fn.summary = file.path( workdir, "Covid19Canada_summary.rdata")
 
-summary_adapt( summary, can=can, fn=fn.summary )
+# res = summary_adapt( "summary", can=can, fn=fn.summary )
 
+summary_adapt( "plot.all", can=can, fn=fn.summary )
 
