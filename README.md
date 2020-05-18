@@ -11,6 +11,8 @@ You can see the current status of COVID-19 disease progression by province, wher
 - ![Northwest Territories](./inst/doc/NWT/README.md)
 - ![Nova Scotia](./inst/doc/Nova%20Scotia/README.md)
 - ![Ontario](./inst/doc/Ontario/README.md)
+- ![Prince Edward Island](./PEI/README.md)
+- ![Saskatchewan](./Saskatchewan/README.md)
 - ![Quebec](./inst/doc/Quebec/README.md)
 - ![Yukon](./inst/doc/Yukon/README.md)
 
@@ -38,7 +40,12 @@ and assimilated in https://github.com/jae0/adapt/blob/master/R/data_provinces_of
 
 The number of cases are modelled as a latent state-space variable in a variant of the compartmental SIR model. This is a technique we often use in fishery status and estimation problems. We deviate from the SIR model in that Mortalities are separated from Recovered people and the infection rate parameter is modelled as an autoregressive AR(K) process. For the purposes of these results, a K=3 day lag is used, a balance between computational time and stabilization of the estimates. No claims are made that these are "true" rates, even though latent in formulation. Instead, they represent "effective" or practical estimates of the state of disease progression.
 
-"Simple" projections (i.e., deterministic, mean-field predictions) from this recursive model are presented with 95% posterior credible intervals, based upon an average and standard deviation of the infection rate parameter over the last K days (i.e., 3 days). A stochastic simulation from these parameters are also presented; these are based on a master equation formulation with a Gillespie approximation, .
+"Simple" projections (i.e., deterministic, mean-field predictions) from this recursive model are presented with 95% posterior credible intervals, based upon an average and standard deviation of the infection rate parameter over the last K days (i.e., 3 days). A stochastic simulation from these parameters are also presented; these are based on a master equation formulation with a Gillespie approximation.
+
+The model options and main results are created by running:
+
+  https://github.com/jae0/adapt/blob/master/inst/scripts/example_parameter_estimation_SIR_provinces_of_Canada.R.
+
 
 
 
@@ -46,7 +53,7 @@ The number of cases are modelled as a latent state-space variable in a variant o
 
 # What is "adapt"?
 
-*adapt* (Areal Disease Analysis and Predicion Tools) is a set of routines to analyze publicly available disease epidemic data such as COVID-19 that you can customize for your town, province or state or country. This data tends to be rather crude counts of cases and recovered people and deaths. Your area of interest probably has these announcements and the information is likely captured by concerned citizens. To make sense of this information, beyond the daily ups and downs, you need to model it. To help, *adapt* attempts to assimilate disease spread data for COVID-19 and other similar diseases and estimate model parameters of classical epidemiological models using Bayesian methods (MCMC via STAN: https://mc-stan.org/) and then simulate/forcast disease progression using stochastic simulation modelling approaches (via the Gillespie method, implemented beautifully by SimInf: https://github.com/stewid/SimInf). Areal unit-based approaches using CAR/BYM models (via INLA) are also (soon) being developed to help understand and model spatial patterns.
+*adapt* (Areal Disease Analysis and Predicion Tools) is a set of routines to analyze publicly available disease epidemic data such as COVID-19 that you can customize for your town, province or state or country. This data tends to be rather crude counts of cases and recovered people and deaths. Your area of interest probably has these announcements and the information is likely captured by concerned citizens. To make sense of this information, beyond the daily ups and downs, you need to model it. To help, *adapt* attempts to assimilate disease spread data for COVID-19 and other similar diseases and estimate model parameters of classical epidemiological models using Bayesian methods (MCMC via STAN: https://mc-stan.org/) and then simulate/forecast disease progression using stochastic simulation modelling approaches (via the Gillespie method, implemented beautifully by SimInf: https://github.com/stewid/SimInf). Areal unit-based approaches using CAR/BYM models (via INLA) are also used to help understand and model spatial patterns (todo).
 
 A basic model appropriate for such crude data is the SIR (Susceptible-Infected-Recovered) compartmental model. This is a well understood model that has its share of limitations but still sufficient to get a crude sense of what is going on. Look it up if you want to know details. The programs here are used to fit a variation of this model to the crude data, as best we can. It relies upon some advanced statistical and mathematical engines developed by opensourced, cutting edge research groups (R, STAN, SimInf, and many others, see below), and approaches the problem as a "latent, state-space" problem, often encountered also in fisheries assessment problems. Use of "adapt", however, requires only some minimal understanding of programming, mostly R (https://cran.r-project.org/).
 

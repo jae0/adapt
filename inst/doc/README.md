@@ -13,6 +13,8 @@ You can see the current status of COVID-19 disease progression by province, wher
 - ![Northwest Territories](./inst/doc/NWT/README.md)
 - ![Nova Scotia](./Nova%20Scotia/README.md)
 - ![Ontario](./Ontario/README.md)
+- ![Prince Edward Island](./PEI/README.md)
+- ![Saskatchewan](./Saskatchewan/README.md)
 - ![Quebec](./Quebec/README.md)
 - ![Yukon](./Yukon/README.md)
 

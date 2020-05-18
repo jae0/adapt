@@ -1,11 +1,13 @@
 
 plot_model_fit = function( selection="default", stan_data, M,
-  sim=NULL, outdir="", nx=stan_data$Nobs + stan_data$Npreds - 1, to.screen =FALSE ) {
+  sim=NULL, outdir="", nx=NULL, to.screen =FALSE ) {
 
   if (!dir.exists(outdir)) dir.create(outdir, showWarnings=FALSE, recursive=TRUE )
 
   # M = mcmc posteriors from STAN
   # nx = stan_data$Nobs + trunc( stan_data$Npreds *0.2 )
+  if (is.null (nx)) nx = stan_data$Nobs + stan_data$Npreds - 1
+
   xrange = c(0, nx)
 
   if (selection=="default") {
@@ -167,11 +169,12 @@ plot_model_fit = function( selection="default", stan_data, M,
     } else {
       dev.new()
     }
-      rp = apply(M$K[,1:nx], 2, median)
+      nxr = stan_data$Nobs + stan_data$Npreds - 4  # in case data are not upto-date
+      rp = apply(M$K[,1:nxr], 2, median)
       yrange = range(rp)
-      plot( rp ~ seq(1,nx), type="l", lwd =3, col="slateblue", ylim=yrange, ylab="Reproductive number", xlab="Days" )
-      lines( apply(M$K, 2, quantile, probs=0.025)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed" )
-      lines( apply(M$K, 2, quantile, probs=0.975)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed" )
+      plot( rp ~ seq(1,nxr), type="l", lwd =3, col="slateblue", ylim=yrange, ylab="Reproductive number", xlab="Days" )
+      lines( apply(M$K, 2, quantile, probs=0.025)[1:nxr] ~ seq(1,nxr), col="darkorange", lty="dashed" )
+      lines( apply(M$K, 2, quantile, probs=0.975)[1:nxr] ~ seq(1,nxr), col="darkorange", lty="dashed" )
       abline( h=1, col="red", lwd=3 )
       abline( v=stan_data$time[stan_data$Nobs-1], col="grey", lty="dashed" )
       # if (stan_data$province=="Nova Scotia") {
@@ -220,7 +223,7 @@ plot_model_fit = function( selection="default", stan_data, M,
       ip = apply(M$I, 2, median)[1:nx]
       yrange = range( c(io, ip), na.rm=TRUE)
       plot( io ~ stan_data$time, xlim=xrange, ylim=yrange,  type="n", ylab="Infected", xlab="Days")
-      for ( i in 1:min(nsims, 2000)) lines( sim[i,2,] ~ simxval, col=alpha("slategray", 0.1), ltyp="dashed" )
+      for ( i in 1:min(nsims, 2000)) lines( sim[i,2,] ~ simxval, col=alpha("slategray", 0.1), lty="dashed" )
       lines( ip ~ seq(1,nx), lwd = 3, col="slateblue" )
       lines( apply(M$I, 2, quantile, probs=0.025)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
       lines( apply(M$I, 2, quantile, probs=0.975)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )

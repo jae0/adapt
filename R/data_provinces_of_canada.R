@@ -5,6 +5,9 @@ data_provinces_of_canada = function( selection="default", fn=NULL, Npreds=5, ...
 
   if (is.null(fn) ) fn = file.path(getwd(), "Covid19Canada.rdata")  # default to current work directory
 
+  outdir = dirname(fn)
+  if (!dir.exists(outdir)) dir.create(outdir, showWarnings=FALSE, recursive=TRUE )
+
   fn_pop = file.path( dirname(fn), "POP_Canada.rdata")
 
   if (selection =="download_pop") {
