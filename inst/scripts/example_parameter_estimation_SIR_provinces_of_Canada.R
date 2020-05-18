@@ -54,7 +54,7 @@ for (province in names(can) ) {
 
   if ("model" %in% tasks ) {
     control.stan = list(adapt_delta = 0.95, max_treedepth=14 )
-    if ( province %in% c("Quebec", "Ontario", "Alberta") ) {
+    if ( province %in% c("Quebec", "Ontario" ) ) {
       # these provinces seem to have longer and more complex dynamics (i.e. parameter space) ... requires additional stabilzation
       control.stan = list(adapt_delta = 0.975, max_treedepth=16 )
       can[[province]]$BNP = 4
@@ -79,7 +79,7 @@ for (province in names(can) ) {
     # --- simplistic stochastic simulations using joint posterior distributions from current day estimates:
     nsims = nrow(M$BETA)
     today = can[[province]]$Nobs
-    nprojections = 140
+    nprojections = 200
     sim = array( NA, dim=c(nsims, 3, nprojections) )
     u0=data.frame(S=M$S[,today], I=M$I[,today], R=M$R[,today] + M$M[,today], beta=M$BETA[,today-1], gamma=M$GAMMA[] )
 

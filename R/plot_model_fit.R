@@ -58,7 +58,7 @@ plot_model_fit = function( selection="default", stan_data, M,
     so[so < 0] = NA
     sp = apply(M$S, 2, median)[1:nx]
     yrange = range( c(so, sp), na.rm=TRUE)
-    yrange = c(yrange[1], yrange[2])
+    yrange = c(yrange[1], yrange[2] )
     if (!to.screen) {
       png(filename = file.path(outdir, "fit_with_projections_susceptible.png"))
     } else {
@@ -193,18 +193,21 @@ plot_model_fit = function( selection="default", stan_data, M,
     days1 = hist( M$K[,stan_data$Nobs-2] , breaks=brks, plot=FALSE )  # today's K
     days7 = hist( M$K[,stan_data$Nobs-8] , breaks=brks, plot=FALSE )  # today's K
     yrange = range( c(days0$density, days1$density, days7$density))
+    yrange[2] = yrange[2] * 1.15
     xrange = range( c(0, days0$mides, days1$mids, days7$mids, 1.3))
+    xrange[2] = xrange[2] * 1.15
+
     if (!to.screen) {
       png(filename = file.path(outdir, "reproductive_number_today.png"))
     } else {
       dev.new()
     }
-      plot(  days0$density ~ days0$mids, col="green", lwd=3, xlab="Current Reproductive number", ylab="Probability density", main="", xlim=xrange, ylim=yrange, type ="l")
+      plot(  days0$density ~ days0$mids, col="green", lwd=3, xlab="Reproductive number", ylab="Probability density", main="", xlim=xrange, ylim=yrange, type ="l")
       lines( days1$density ~ days1$mids, col="slateblue", lwd=3, lty="dotted")
       lines( days7$density ~ days7$mids, col="darkorange", lwd=3, lty="dashed")
       abline( v=1, col="red", lwd=3 )
       legend( "topright", "", paste( "Current date: ", stan_data$timestamp, " "), bty="n")
-      legend( "right", legend=c("Today", "Yesterday", "7 days ago"), lty=c("solid", "dotted", "dashed"), col=c("green", "slateblue", "darkorange"), lwd=c(3,3,3), bty="n")
+      legend( "topleft", legend=c("Current", "Yesterday", "7 days ago"), lty=c("solid", "dotted", "dashed"), col=c("green", "slateblue", "darkorange"), lwd=c(3,3,3), bty="n")
       title( main= paste( stan_data$province, "  Current date: ", stan_data$timestamp ) )
     if (!to.screen) dev.off()
 
@@ -222,9 +225,9 @@ plot_model_fit = function( selection="default", stan_data, M,
       io[io < 0] = NA
       ip = apply(M$I, 2, median)[1:nx]
       yrange = range( c(io, ip), na.rm=TRUE)
-      yrange[2] = yrange[2] *1.75
+      yrange[2] = yrange[2] * 2
       plot( io ~ stan_data$time, xlim=xrange, ylim=yrange,  type="n", ylab="Infected", xlab="Days")
-      for ( i in 1:min(nsims, 2000)) lines( sim[i,2,] ~ simxval, col=alpha("slategray", 0.1), lty="dashed" )
+      for ( i in 1:min(nsims, 2000)) lines( sim[i,2,] ~ simxval, col=alpha("slategray", 0.1), lty="solid" )
       lines( ip ~ seq(1,nx), lwd = 3, col="slateblue" )
       lines( apply(M$I, 2, quantile, probs=0.025)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
       lines( apply(M$I, 2, quantile, probs=0.975)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
