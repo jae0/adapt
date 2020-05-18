@@ -13,7 +13,10 @@ nscovid = data_nova_scotia(
   # interpolate_missing_data=TRUE,  # linear interpolation of missing data as a preprocessing step or estimate via imputation inside stan
   Npop = 971395,  # total population
   Npreds = 30,   # number of days for forward projectins
-  BNP = 7,        # beta number of days to average for forward projections
+  BNP = 3,        # beta number of days to average for forward projections
+  BETA_max = 10,       # max rate param for S -> I  # approx number of contacts per person per time (day) multiplied by the probability of disease transmission in a contact between a susceptible and an infectious subject;  ~ 1/( typical time in days between contacts)
+  GAMMA_max = 0.1,    # max rate param for I -> R  # ~ 1/(typical time until removal = 14) = 0.07
+  EPSILON_max = 0.1,  # max rate param for I -> M  # about 5% seem to die ..
   modelname = "discrete_autoregressive_structured_beta_mortality_hybrid_nimble"  # splitting recovered and mortalities
 )
 

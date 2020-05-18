@@ -20,6 +20,9 @@ nscovid = data_nova_scotia(
   Npop = 971395,  # total population
   Npreds = 15,   # number of days for forward projectins
   BNP = 4,       # AR(BNP) process for beta number ( BNP= no of days lag) and also no days to average for forward projections
+  BETA_max = 10,       # max rate param for S -> I  # approx number of contacts per person per time (day) multiplied by the probability of disease transmission in a contact between a susceptible and an infectious subject;  ~ 1/( typical time in days between contacts)
+  GAMMA_max = 0.1,    # max rate param for I -> R  # ~ 1/(typical time until removal = 14) = 0.07
+  EPSILON_max = 0.1,  # max rate param for I -> M  # about 5% seem to die ..
   modelname = "default" # "discrete_autoregressive_structured_beta_mortality_hybrid"  # splitting recovered and mortalities
 )
 
@@ -54,36 +57,10 @@ if (0) {
   plot_model_fit( selection="reproductive_number_histograms", stan_data=nscovid, M=M, outdir=outdir, to.screen=to.screen )
 
 
-
-
 # --- now some simplistic stochastic simulations using joint posterior distributions from current day estimates:
 
-require(SimInf)
-
-nsims = nrow(M$BETA)
-today = nscovid$Nobs
-nprojections = 120
-sim = array( NA, dim=c(nsims, 3, nprojections) )
-
-
-if (nscovid$modelname=="discrete_autoregressive_with_observation_error_structured_beta_mortality") {
-  u0=data.frame(S=M$S[,today], I=M$I[,today], R=M$R[,today] + M$M[,today], beta=M$BETA[,today-1], gamma=M$GAMMA[] )
-} else {
-  u0=data.frame(S=M$S[,today], I=M$I[,today], R=M$R[,today], beta=M$BETA[,today-1], gamma=M$GAMMA[] )
-}
-
-
-for (i in 1:nsims) {
-  sim[i,,] = run( SIR(
-    u0=u0[i,c("S","I","R")],
-    tspan=1:nprojections,
-    beta=u0$beta[i],
-    gamma=u0$gamma[i] )
-  )@U[]
-}
-
+sim = simulate( M, istart=nscovid$Nobs-1, nsims=2000, nprojections=150 )
 plot_model_fit( selection="forecasts", stan_data=nscovid, M=M, outdir=outdir, sim=sim )
-
 
 
 if (0) {

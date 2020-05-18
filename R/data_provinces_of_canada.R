@@ -153,8 +153,7 @@ data_provinces_of_canada = function( selection="default", fn=NULL, Npreds=5, ...
       statevars = c("susceptible", "infected", "recovered", "dead"),  # names of last dim of "daily"
       time = daynos,
       time_start = daterange[1],
-      timestamp = max( lubridate::as_date( daterange ) ),
-      plotlabel = prov
+      timestamp = max( lubridate::as_date( daterange ) )
     )
 
 

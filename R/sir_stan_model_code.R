@@ -16,6 +16,9 @@ data {
   int<lower=0> Nobs;  //number of time slices
   int<lower=0> Npreds;  //additional number of time slices for prediction
   int<lower=0> BNP; // the last no days to use for BETA to project forward
+  real<lower=0> BETA_max; //
+  real<lower=0> GAMMA_max; //
+  real<lower=0> EPSILON_max; //
   int Sobs[Nobs]; // observed S
   int Iobs[Nobs]; // observed I
   int Robs[Nobs]; // observed Recovered (including deaths)
@@ -58,17 +61,17 @@ transformed data {
 }
 
 parameters {
-  real<lower=0.0, upper =1.0> GAMMA;     // recovery rate .. proportion of infected recovering
-  real<lower=0.0, upper =1.0> EPSILON;   // death rate .. proportion of infected dying
-  real<lower=0.0, upper =10.0> BETA[Nobs];  // == beta in SIR , here we do *not* separate out the Encounter Rate from the infection rate
-  real<lower = 0.0, upper =10.0> BETAproj ;
+  real<lower=0.0, upper =GAMMA_max> GAMMA;     // recovery rate .. proportion of infected recovering
+  real<lower=0.0, upper =EPSILON_max> EPSILON;   // death rate .. proportion of infected dying
+  real<lower=0.0, upper =BETA_max> BETA[Nobs];  // == beta in SIR , here we do *not* separate out the Encounter Rate from the infection rate
+  real<lower = 0.0, upper =BETA_max> BETAproj ;
   real<lower = 1.0e-9, upper =0.2>  Ssd;  // these are fractional .. i.e CV's
   real<lower = 1.0e-9, upper =0.2>  Isd;
   real<lower = 1.0e-9, upper =0.2>  Rsd;
   real<lower = 1.0e-9, upper =0.2>  Msd;
   real<lower = -1.0, upper =1.0> ar1[BNP];
   real<lower = 1.0e-9, upper =0.2 > ar1sd;
-  real<lower = 0.0, upper =1.0> ar1k;
+  real<lower = -1.0, upper =1.0> ar1k;
   real<lower = 0.0, upper =1.0> Smu[Nobs]; // mean process S
   real<lower = 0.0, upper =1.0> Imu[Nobs]; // mean process I
   real<lower = 0.0, upper =1.0> Rmu[Nobs]; // mean process Recoveries only (no deaths)
