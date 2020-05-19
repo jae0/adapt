@@ -189,7 +189,7 @@ plot_model_fit = function( selection="default", stan_data, M,
 
   if (selection=="reproductive_number_histograms") {
     brks = 30
-    days0 = hist( M$K[,stan_data$Nobs-1] , breaks=brks, plot=FALSE)  # today's K ... Nobs-1 is unstable and better for a "current estimate" as it is anchored on both sides
+    days0 = hist( M$K[,stan_data$Nobs-1] , breaks=brks, plot=FALSE)  # today's K ... Nobs-1 can be unstable and better for a "current estimate" as it is anchored on both sides
     days1 = hist( M$K[,stan_data$Nobs-2] , breaks=brks, plot=FALSE )  # today's K
     days7 = hist( M$K[,stan_data$Nobs-8] , breaks=brks, plot=FALSE )  # today's K
     yrange = range( c(days0$density, days1$density, days7$density))
@@ -219,7 +219,7 @@ plot_model_fit = function( selection="default", stan_data, M,
     } else {
       dev.new()
     }
-      simxval = stan_data$Nobs + c(1:nprojections)
+      simxval = stan_data$Nobs + c(1:dim(sim)[3])
       xrange = c(0, max(nx, simxval) )
       io = stan_data$Iobs
       io[io < 0] = NA
@@ -227,7 +227,7 @@ plot_model_fit = function( selection="default", stan_data, M,
       yrange = range( c(io, ip), na.rm=TRUE)
       yrange[2] = yrange[2] * 2
       plot( io ~ stan_data$time, xlim=xrange, ylim=yrange,  type="n", ylab="Infected", xlab="Days")
-      for ( i in 1:min(nsims, 2000)) lines( sim[i,2,] ~ simxval, col=alpha("slategray", 0.1), lty="solid" )
+      for ( i in 1:min( dim(sim)[1], 2000)) lines( sim[i,2,] ~ simxval, col=alpha("slategray", 0.1), lty="solid" )
       lines( ip ~ seq(1,nx), lwd = 3, col="slateblue" )
       lines( apply(M$I, 2, quantile, probs=0.025)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
       lines( apply(M$I, 2, quantile, probs=0.975)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )

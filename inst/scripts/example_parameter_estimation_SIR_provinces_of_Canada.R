@@ -55,13 +55,13 @@ for (au in names(can) ) {
   outdir = file.path( "~", "bio", "adapt", "inst", "doc", au)
 
   if ("model" %in% tasks ) {
-    control.stan = list(adapt_delta = 0.95, max_treedepth=15 )
-    # if ( au %in% c("Quebec", "Ontario" ) ) {
-    #   # these aus seem to have longer and more complex dynamics (i.e. parameter space) ... requires additional stabilzation
-    #   control.stan = list(adapt_delta = 0.95, max_treedepth=15 )
-    #   can[[au]]$BNP = 4
-    # }
-    f = rstan::sampling( stancode_compiled, data=can[[au]], chains=3, warmup=5000, iter=6000, control=control.stan  )
+    control.stan = list(adapt_delta = 0.975, max_treedepth=14 )
+    if ( au %in% c("Quebec", "Ontario" ) ) {
+       # these aus seem to have longer and more complex dynamics (i.e. parameter space) ... requires additional stabilzation
+       control.stan = list(adapt_delta = 0.975, max_treedepth=15 )
+       can[[au]]$BNP = 4
+    }
+    f = rstan::sampling( stancode_compiled, data=can[[au]], chains=3, warmup=6000, iter=7000, control=control.stan  )
     save(f, file=fn_model, compress=TRUE)
   }
 
@@ -78,9 +78,8 @@ for (au in names(can) ) {
   }
 
   if ("forecast" %in% tasks ) {
-    # --- simplistic stochastic simulations using joint posterior distributions from current day estimates:
-    # estimates for the last day (Nobs can be erratic .. use the day previous as a current value)
-    sim = simulate( M, istart=can[[au]]$Nobs-1, nsims=2000, nprojections=150 )
+    # --- simplistic stochastic simulations using joint posterior distributions from "current" day estimates:, if BNP is provided, this uses the average in the period specified
+    sim = simulate( M, istart=can[[au]]$Nobs, nsims=2000, nprojections=150, BNP=can[[au]]$BNP )
     plot_model_fit( selection="forecasts", stan_data=can[[au]], M=M, outdir=outdir, sim=sim, to.screen=to.screen )
   }
 
