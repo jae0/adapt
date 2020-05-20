@@ -160,10 +160,9 @@ data_provinces_of_canada = function( selection="default", fn=NULL, Npreds=5, ...
     stan_data = c( stan_data, list(...) )
     if (!exists("modelname", stan_data)) stan_data$modelname="default"
     # add a few more flags for discrete_variable_encounter_rate and
-    if (!exists("BETA_prior", stan_data)) stan_data$BETA_prior = 0.5
-    if (!exists("GAMMA_prior", stan_data)) stan_data$GAMMA_prior = 0.5
-    if (!exists("ER_prior", stan_data)) stan_data$ER_prior = 0.5
-    if (!exists("me_prior", stan_data)) stan_data$me_prior = 0.1  # % of Infected that are asymptomatic
+    if (!exists("BETA_max", stan_data)) stan_data$BETA_max = 0.5
+    if (!exists("GAMMA_max", stan_data)) stan_data$GAMMA_max = 0.5
+    if (!exists("EPSILON_max", stan_data)) stan_data$EPSILON_max = 0.5
     if (!exists("BNP", stan_data)) stan_data$BNP = 5  # % of Infected that are asymptomatic
 
     if ( stan_data$modelname %in% c("continuous") ) {

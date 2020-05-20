@@ -189,9 +189,9 @@ plot_model_fit = function( selection="default", stan_data, M,
 
   if (selection=="reproductive_number_histograms") {
     brks = 30
-    days0 = hist( M$K[,stan_data$Nobs-1] , breaks=brks, plot=FALSE)  # today's K ... Nobs-1 can be unstable and better for a "current estimate" as it is anchored on both sides
-    days1 = hist( M$K[,stan_data$Nobs-2] , breaks=brks, plot=FALSE )  # today's K
-    days7 = hist( M$K[,stan_data$Nobs-8] , breaks=brks, plot=FALSE )  # today's K
+    days0 = hist( M$K[,stan_data$Nobs] , breaks=brks, plot=FALSE)  # today's K ... Nobs-1 can be unstable and better for a "current estimate" as it is anchored on both sides
+    days1 = hist( M$K[,stan_data$Nobs-1] , breaks=brks, plot=FALSE )  # today's K
+    days7 = hist( M$K[,stan_data$Nobs-7] , breaks=brks, plot=FALSE )  # today's K
     yrange = range( c(days0$density, days1$density, days7$density))
     yrange[2] = yrange[2] * 1.15
     xrange = range( c(0, days0$mides, days1$mids, days7$mids, 1.3))
@@ -206,6 +206,7 @@ plot_model_fit = function( selection="default", stan_data, M,
       lines( days1$density ~ days1$mids, col="slateblue", lwd=3, lty="dotted")
       lines( days7$density ~ days7$mids, col="darkorange", lwd=3, lty="dashed")
       abline( v=1, col="red", lwd=3 )
+      abline( h=0, col="gray", lwd=1 )
       legend( "topright", "", paste( "Current date: ", stan_data$timestamp, " "), bty="n")
       legend( "topleft", legend=c("Current", "Yesterday", "7 days ago"), lty=c("solid", "dotted", "dashed"), col=c("green", "slateblue", "darkorange"), lwd=c(3,3,3), bty="n")
       title( main= paste( stan_data$au, "  Current date: ", stan_data$timestamp ) )

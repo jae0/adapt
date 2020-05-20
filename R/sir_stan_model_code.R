@@ -70,7 +70,7 @@ parameters {
   real<lower = 1.0e-9, upper =0.2>  Rsd;
   real<lower = 1.0e-9, upper =0.2>  Msd;
   real<lower = -1.0, upper =1.0> ar1[BNP];
-  real<lower = 1.0e-9, upper =0.2 > ar1sd;
+  real<lower = 1.0e-9, upper =0.1 > ar1sd;
   real<lower = -1.0, upper =1.0> ar1k;
   real<lower = 0.0, upper =1.0> Smu[Nobs]; // mean process S
   real<lower = 0.0, upper =1.0> Imu[Nobs]; // mean process I
@@ -83,20 +83,20 @@ transformed parameters{
 
 model {
 
-  // non informative hyperpriors
-  Ssd ~ cauchy(0, 0.5);
-  Isd ~ cauchy(0, 0.5);
-  Rsd ~ cauchy(0, 0.5);
-  Msd ~ cauchy(0, 0.5);
+  // non informative hyperpriors (process error)
+  Ssd ~ cauchy(0.0, 0.5);
+  Isd ~ cauchy(0.0, 0.5);
+  Rsd ~ cauchy(0.0, 0.5);
+  Msd ~ cauchy(0.0, 0.5);
 
-  ar1 ~ normal(0, 1); // autoregression
-  ar1sd ~ cauchy(0, 0.5);
-  ar1k ~ cauchy(0, 0.5);
+  GAMMA ~ cauchy(0.0, 0.5);;  // recovery of I ... always < 1
+  EPSILON ~ cauchy(0.0, 0.5);;  // recovery of I ... always < 1
 
-  GAMMA ~ cauchy(0, 0.5);;  // recovery of I ... always < 1
-  EPSILON ~ cauchy(0, 0.5);;  // recovery of I ... always < 1
-
-  // AR(BNP) model for BETA
+  // AR(k=BNP) model for BETA
+  BETA[1:BNP] ~ double_exponential( 0.0, 1.0 );  // this is a 1/2 Laplace's distribution, centered on 0
+  ar1 ~ double_exponential( 0.0, 1.0 ); // autoregression (AR(k=BNP))
+  ar1sd ~ normal(0.0, 0.2);
+  ar1k ~ cauchy(0.0, 0.5);
   for ( i in (BNP+1):Nobs ) {
     real BETAmu = ar1k;
     for ( j in 1:BNP) {
@@ -104,8 +104,7 @@ model {
     }
     BETA[i] ~ normal( BETAmu, ar1sd );
   }
-  BETA[1:BNP] ~ normal( mean( BETA[(BNP+1):(BNP+1+BNP)] ), sd(BETA[(BNP+1):(BNP+1+BNP)]) )  ;
-  BETAproj ~ normal( mean( BETA[(Nobs-1-BNP):(Nobs-1)] ), sd(BETA[(Nobs-1-BNP):(Nobs-1)]) )  ;
+  BETAproj ~ normal( mean( BETA[(Nobs-BNP):(Nobs)] ), sd(BETA[(Nobs-BNP):(Nobs)]) )  ;
 
   //set intial conditions
   Smu[1] ~ normal(Sprop[1], Ssd) ;
@@ -113,27 +112,33 @@ model {
   Rmu[1] ~ normal(Rprop[1], Rsd) ;
   Mmu[1] ~ normal(Mprop[1], Msd) ;
 
+  // process error
   for ( i in 1:(Nobs-1) ) {
-    Smu[i+1] ~ normal( Smu[i] - BETA[i] * Smu[i] * Imu[i], Ssd)  ;
-    Imu[i+1] ~ normal( Imu[i] + BETA[i] * Smu[i] * Imu[i] - GAMMA * Imu[i] - EPSILON * Imu[i], Isd);
-    Rmu[i+1] ~ normal( Rmu[i] + GAMMA * Imu[i], Rsd ) ;
-    Mmu[i+1] ~ normal( Mmu[i] + EPSILON * Imu[i], Msd) ;
+    Smu[i+1] ~ normal( fmax(0, fmin( 1, Smu[i] - BETA[i] * Smu[i] * Imu[i])), Ssd)  ;
+    Imu[i+1] ~ normal( fmax(0, fmin( 1, Imu[i] + BETA[i] * Smu[i] * Imu[i] - GAMMA * Imu[i] - EPSILON * Imu[i])), Isd);
+    Rmu[i+1] ~ normal( fmax(0, fmin( 1, Rmu[i] + GAMMA * Imu[i])), Rsd ) ;
+    Mmu[i+1] ~ normal( fmax(0, fmin( 1, Mmu[i] + EPSILON * Imu[i])), Msd) ;
   }
 
   // data likelihoods, if *obs ==-1, then data was missing  . same conditions as in transformed parameters
-  // observation model:
+  // observation model with binomial observation error: slow .. swithcing to normal
   for (i in 1:Nobs) {
     if (Sobs[i] >= 0  ) {  // to handle missing values in SI
       Sprop[i] ~ normal( Smu[i] , Ssd );
+      // Sobs[i] ~ binomial( Npop, Smu[i] );
     }
     if (Iobs[i] >= 0 ) {
-      Iprop[i]  ~ normal( Imu[i], Isd );
+      Iprop[i] ~ normal( Imu[i], Isd );
+      // Iobs[i] ~ binomial( Npop, Imu[i] );
     }
     if (Robs[i] >= 0 ) {
       Rprop[i]  ~ normal( Rmu[i], Rsd );
+      // Robs[i] ~ binomial( Npop, Rmu[i] );
+
     }
     if (Mobs[i] >= 0 ) {
       Mprop[i]  ~ normal( Mmu[i], Msd );
+      // Mobs[i] ~ binomial( Npop, Mmu[i] );
     }
   }
 
@@ -146,10 +151,10 @@ generated quantities {
   int<lower = 0, upper =Npop> I[Ntimeall]; // latent I
   int<lower = 0, upper =Npop> R[Ntimeall]; // latent R (no mortality)
   int<lower = 0, upper =Npop> M[Ntimeall]; // latent M (mortality)
-  real<lower = 0.0, upper =1.0> Spp[Npreds]; // mean process S
-  real<lower = 0.0, upper =1.0> Ipp[Npreds]; // mean process I
-  real<lower = 0.0, upper =1.0> Rpp[Npreds]; // mean process Recoveries only (no deaths)
-  real<lower = 0.0, upper =1.0> Mpp[Npreds]; // mean process Mortalities
+  real<lower = 0.0, upper =1.0> Spp[Npreds+1]; // mean process S
+  real<lower = 0.0, upper =1.0> Ipp[Npreds+1]; // mean process I
+  real<lower = 0.0, upper =1.0> Rpp[Npreds+1]; // mean process Recoveries only (no deaths)
+  real<lower = 0.0, upper =1.0> Mpp[Npreds+1]; // mean process Mortalities
 
   for (i in 1:Nobs) {
     S[i] = binomial_rng( Npop, Smu[i] );
@@ -158,13 +163,13 @@ generated quantities {
     M[i] = binomial_rng( Npop, Mmu[i] );
   }
 
-
+  // initial conditions
   Spp[1] = Smu[Nobs];
   Ipp[1] = Imu[Nobs];
   Rpp[1] = Rmu[Nobs];
   Mpp[1] = Mmu[Nobs];
 
-  for ( i in 1:(Npreds-1) ) {
+  for ( i in 1:Npreds ) {
     Spp[i+1] = fmax(0, fmin( 1, Spp[i] - BETAproj * Spp[i] * Ipp[i] ) )  ;
     Ipp[i+1] = fmax(0, fmin( 1, Ipp[i] + BETAproj * Spp[i] * Ipp[i] - GAMMA * Ipp[i] - EPSILON * Ipp[i] ));
     Rpp[i+1] = fmax(0, fmin( 1, Rpp[i] + GAMMA * Ipp[i] )) ;
@@ -172,10 +177,10 @@ generated quantities {
   }
 
   for ( i in 1:Npreds ) {
-    S[Nobs+i] = binomial_rng( Npop, Spp[i] );
-    I[Nobs+i] = binomial_rng( Npop, Ipp[i] );
-    R[Nobs+i] = binomial_rng( Npop, Rpp[i] );
-    M[Nobs+i] = binomial_rng( Npop, Mpp[i] );
+    S[Nobs+i] = binomial_rng( Npop, Spp[i+1] );
+    I[Nobs+i] = binomial_rng( Npop, Ipp[i+1] );
+    R[Nobs+i] = binomial_rng( Npop, Rpp[i+1] );
+    M[Nobs+i] = binomial_rng( Npop, Mpp[i+1] );
   }
 
   // sample from  mean process (proportions to counts)
