@@ -64,7 +64,6 @@ parameters {
   real<lower=0.0, upper =GAMMA_max> GAMMA;     // recovery rate .. proportion of infected recovering
   real<lower=0.0, upper =EPSILON_max> EPSILON;   // death rate .. proportion of infected dying
   real<lower=0.0, upper =BETA_max> BETA[Nobs];  // == beta in SIR , here we do *not* separate out the Encounter Rate from the infection rate
-  real<lower = 0.0, upper =BETA_max> BETAproj ;
   real<lower = 1.0e-9, upper =0.2>  Ssd;  // these are fractional .. i.e CV's
   real<lower = 1.0e-9, upper =0.2>  Isd;
   real<lower = 1.0e-9, upper =0.2>  Rsd;
@@ -93,10 +92,10 @@ model {
   EPSILON ~ cauchy(0.0, 0.5);;  // recovery of I ... always < 1
 
   // AR(k=BNP) model for BETA
-  BETA[1:BNP] ~ double_exponential( 0.0, 1.0 );  // this is a 1/2 Laplace's distribution, centered on 0
-  ar1 ~ double_exponential( 0.0, 1.0 ); // autoregression (AR(k=BNP))
+  ar1 ~ cauchy( 0.0, 0.5 ); // autoregression (AR(k=BNP))
   ar1sd ~ normal(0.0, 0.2);
   ar1k ~ cauchy(0.0, 0.5);
+  BETA[1:BNP] ~ normal( 0.0, 0.1 );  //  centered on 0, shrink towards 0
   for ( i in (BNP+1):Nobs ) {
     real BETAmu = ar1k;
     for ( j in 1:BNP) {
@@ -104,7 +103,6 @@ model {
     }
     BETA[i] ~ normal( BETAmu, ar1sd );
   }
-  BETAproj ~ normal( mean( BETA[(Nobs-BNP):(Nobs)] ), sd(BETA[(Nobs-BNP):(Nobs)]) )  ;
 
   //set intial conditions
   Smu[1] ~ normal(Sprop[1], Ssd) ;
@@ -134,7 +132,6 @@ model {
     if (Robs[i] >= 0 ) {
       Rprop[i]  ~ normal( Rmu[i], Rsd );
       // Robs[i] ~ binomial( Npop, Rmu[i] );
-
     }
     if (Mobs[i] >= 0 ) {
       Mprop[i]  ~ normal( Mmu[i], Msd );
@@ -170,8 +167,8 @@ generated quantities {
   Mpp[1] = Mmu[Nobs];
 
   for ( i in 1:Npreds ) {
-    Spp[i+1] = fmax(0, fmin( 1, Spp[i] - BETAproj * Spp[i] * Ipp[i] ) )  ;
-    Ipp[i+1] = fmax(0, fmin( 1, Ipp[i] + BETAproj * Spp[i] * Ipp[i] - GAMMA * Ipp[i] - EPSILON * Ipp[i] ));
+    Spp[i+1] = fmax(0, fmin( 1, Spp[i] - BETA[Nobs] * Spp[i] * Ipp[i] ) )  ;
+    Ipp[i+1] = fmax(0, fmin( 1, Ipp[i] + BETA[Nobs] * Spp[i] * Ipp[i] - GAMMA * Ipp[i] - EPSILON * Ipp[i] ));
     Rpp[i+1] = fmax(0, fmin( 1, Rpp[i] + GAMMA * Ipp[i] )) ;
     Mpp[i+1] = fmax(0, fmin( 1, Mpp[i] + EPSILON * Ipp[i] )) ;
   }
@@ -188,7 +185,7 @@ generated quantities {
     K[i] = BETA[i] / GAMMA; // the contact number = fraction of S in contact with I
   }
   for (i in (Nobs+1):(Ntimeall-1) ) {
-    K[i] = BETAproj / GAMMA; // the contact number = fraction of S in contact with I
+    K[i] = BETA[Nobs] / GAMMA; // the contact number = fraction of S in contact with I
   }
 
 }
