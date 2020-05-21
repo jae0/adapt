@@ -30,7 +30,7 @@ can = data_provinces_of_canada(
   fn = fn,
   Npreds = 20,   # number of days for ode-based forward projections
   BNP = 1,       # beta dynamics is AR(BNP) ; also the number of days to average for forward ode-based projections (incubation time is ~ 5-7 days) .. higher than 1 can cause problems ... high var in reporting causes + and - corrs
-  BETA_max = 10,       # max rate param for S -> I  # approx number of contacts per person per time (day) multiplied by the probability of disease transmission in a contact between a susceptible and an infectious subject;  ~ 1/( typical time in days between contacts)
+  BETA_max = 5,       # max rate param for S -> I  # approx number of contacts per person per time (day) multiplied by the probability of disease transmission in a contact between a susceptible and an infectious subject;  ~ 1/( typical time in days between contacts)
   GAMMA_max = 0.1,    # max rate param for I -> R  # ~ 1/(typical time until removal = 14) = 0.07
   EPSILON_max = 0.01,  # max rate param for I -> M  # > recovery time; < rate ..
   modelname="default"
@@ -52,8 +52,9 @@ if ("model" %in% tasks ) {
     fn_model = file.path( workdir, paste( au, can[[au]]$modelname, "rdata", sep=".") )
     outdir = file.path( "~", "bio", "adapt", "inst", "doc", au)
     control.stan = list(adapt_delta = 0.95, max_treedepth=14 )
-      if ( au %in% c("Quebec", "Ontario", "Alberta" ) ) {
-        # these aus seem to have longer and more complex dynamics (i.e. parameter space) ... requires additional stabilzation
+      # some  au's  have longer and more complex dynamics (i.e. parameter space)and likely reporting issues ... requires additional stabilzation
+      if ( au %in% c("Saskatchewan", "BC", "Alberta"  ) ) can[[au]]$BNP = 3
+      if ( au %in% c("Quebec", "Ontario" ) ) {
         control.stan = list(adapt_delta = 0.975, max_treedepth=15 )
         can[[au]]$BNP = 7
       }
@@ -92,7 +93,7 @@ if ("forecast" %in% tasks ) {
     load(fn_model)
     M = extract(f)
     # --- simplistic stochastic simulations using joint posterior distributions from "current" day estimates:, if BNP is provided, this uses the average in the period specified
-    sim = simulate( M, istart=can[[au]]$Nobs, nsims=2000, nprojections=150  )
+    sim = simulate( M, istart=can[[au]]$Nobs, nsims=2000, nprojections=200  )  # note, BETA is conditioned on previous time step. . but BETA for Nobs is a copy so this is OK
     plot_model_fit( selection="forecasts", stan_data=can[[au]], M=M, outdir=outdir, sim=sim, to.screen=to.screen )
   }
 }
@@ -101,9 +102,7 @@ if ("forecast" %in% tasks ) {
 ## Comparisons across provinces: normalize to unit population
 fn.summary = file.path( workdir, "Covid19Canada_summary.rdata")
 
-# res = summary_adapt( "summary.create", can=can, fn=fn.summary )
-
-summary_adapt( "plot", can=can, fn=fn.summary, to.screen=TRUE )
-
-summary_adapt( "plot", can=can, fn=fn.summary, to.screen=FALSE )
+res = summary_adapt( "summary.create", can=can, fn=fn.summary )
+summary_adapt( "plot_all", can=can, fn=fn.summary, to.screen=TRUE )
+summary_adapt( "plot_all", can=can, fn=fn.summary, to.screen=FALSE )
 

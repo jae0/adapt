@@ -1,5 +1,5 @@
 
-summary_adapt = function( option="summary.load", can, fn=NULL, to.screen=TRUE ) {
+summary_adapt = function( selection="summary.load", can, fn=NULL, to.screen=TRUE ) {
 
   if (is.null(fn) ) fn = file.path(getwd(), "Covid19Canada_summary.rdata")  # default to current work directory
   outdir = dirname(fn)
@@ -7,7 +7,7 @@ summary_adapt = function( option="summary.load", can, fn=NULL, to.screen=TRUE ) 
 
   res = NULL
 
-  if (option=="summary.create" ) {
+  if (selection=="summary.create" ) {
 
     res = list()
 
@@ -70,7 +70,7 @@ summary_adapt = function( option="summary.load", can, fn=NULL, to.screen=TRUE ) 
   }
 
 
-  if (option=="summary.load" ) {
+  if (selection=="summary.load" ) {
     if (file.exists(fn)) {
       load(fn)
     } else {
@@ -81,7 +81,7 @@ summary_adapt = function( option="summary.load", can, fn=NULL, to.screen=TRUE ) 
 
   if (is.null(res)) res = summary_adapt( "summary.load", can=can, fn=fn )
 
-  if (option %in% c( "plot", "plot.infected") ) {
+  if ( grepl("plot", selection))  {
 
     aus = names(can)
     colours = 1:length(aus)
@@ -90,76 +90,104 @@ summary_adapt = function( option="summary.load", can, fn=NULL, to.screen=TRUE ) 
 
     nx = min( can[[1]]$Nobs, length(res[[1]]$time) )
 
-
-    if (!to.screen) {
-      png(filename = file.path(outdir, "infected.png"))
-    } else {
-      dev.new()
-    }
-      # using cubic folded root to visualize
-      frp = 1/3  # folded root power
-      xvals = seq(0, nx, by=10)
-      yrange = folded_root(c(0, 0.0135), frp)
-      yticks = seq( yrange[1], yrange[2], length.out=8)
-      yvals = round( folded_root( yticks, frp, inverse=TRUE) *100 , 2)  # convert to %
-      plot( 0,0, xlab="", ylab="", ylim=yrange, xlim=c(0, nx), axes=FALSE)
-      for (i in 1:length(aus) ) {
-        au = aus[i]
-        lines( folded_root(res[[au]]$I$median[1:nx], frp) ~ res[[au]]$timeall[1:nx], col=alpha(colours[i], 0.8), lty=ltypes[i], lwd=3   )
+    if (selection %in% c( "plot_all", "plot_susceptible") ) {
+      if (!to.screen) {
+        png(filename = file.path(outdir, "susceptible.png"))
+      } else {
+        dev.new()
       }
-      axis( 1, at=xvals )
-      axis( 2, at=yticks, labels=yvals )
-      legend( "topleft", legend=aus, col=colours, lty=ltypes, bty="n" )
-      title( xlab="Time (days)", ylab="Percent infected (Folded root=1/3)" )
-    if (!to.screen) dev.off()
-
-
-    if (!to.screen) {
-      png(filename = file.path(outdir, "recovered.png"))
-    } else {
-      dev.new()
+        # using cubic folded root to visualize
+        frp = 1/2  # folded root power
+        xvals = seq(0, nx, by=20)
+        yrange = folded_root(c(0.9925, 1), frp)
+        yticks = seq( yrange[1], yrange[2], length.out=8)
+        yvals = round( folded_root( yticks, frp, inverse=TRUE) *100 , 2)  # convert to %
+        plot( 0,0, type="n", xlab="", ylab="", ylim=yrange, xlim=c(0, nx), axes=FALSE)
+        for (i in 1:length(aus) ) {
+          au = aus[i]
+          lines( folded_root(res[[au]]$S$median[1:nx], frp) ~ res[[au]]$timeall[1:nx], col=alpha(colours[i], 0.9), lty=ltypes[i]   )
+        }
+        axis( 1, at=xvals )
+        axis( 2, at=yticks, labels=yvals )
+        legend( "bottomleft", legend=aus, col=colours, lty=ltypes, bty="n" )
+        title( xlab="Time (days)", ylab="Percent susceptible (Folded root=1/2)" )
+      if (!to.screen) dev.off()
     }
-      # using cubic folded root to visualize
-      frp = 1  # folded root power
-      xvals = seq(0, nx, by=10)
-      yrange = folded_root(c(0, 0.0012), frp)
-      yticks = seq( yrange[1], yrange[2], length.out=8)
-      yvals = round( folded_root( yticks, frp, inverse=TRUE) *100 , 2)  # convert to %
-      plot( 0,0, xlab="", ylab="", ylim=yrange, xlim=c(0, nx), axes=FALSE)
-      for (i in 1:length(aus) ) {
-        au = aus[i]
-        lines( folded_root(res[[au]]$R$median[1:nx], frp) ~ res[[au]]$timeall[1:nx], col=alpha(colours[i], 0.8), lty=ltypes[i], lwd=3   )
+
+    if (selection %in% c( "plot_all", "plot_infected") ) {
+      if (!to.screen) {
+        png(filename = file.path(outdir, "infected.png"))
+      } else {
+        dev.new()
       }
-      axis( 1, at=xvals )
-      axis( 2, at=yticks, labels=yvals )
-      legend( "topleft", legend=aus, col=colours, lty=ltypes, bty="n" )
-      title( xlab="Time (days)", ylab="Percent recovered (Folded root=1)" )
-    if (!to.screen) dev.off()
-
-
-    if (!to.screen) {
-      png(filename = file.path(outdir, "mortalities.png"))
-    } else {
-      dev.new()
+        # using cubic folded root to visualize
+        frp = 1/2  # folded root power
+        xvals = seq(0, nx, by=20)
+        yrange = folded_root(c(0, 0.003), frp)
+        yticks = seq( yrange[1], yrange[2], length.out=8)
+        yvals = round( folded_root( yticks, frp, inverse=TRUE) *100 , 2)  # convert to %
+        plot( 0,0, type="n", xlab="", ylab="", ylim=yrange, xlim=c(0, nx), axes=FALSE)
+        for (i in 1:length(aus) ) {
+          au = aus[i]
+          lines( folded_root(res[[au]]$I$median[1:nx], frp) ~ res[[au]]$timeall[1:nx], col=alpha(colours[i], 0.9), lty=ltypes[i]   )
+        }
+        axis( 1, at=xvals )
+        axis( 2, at=yticks, labels=yvals )
+        legend( "topleft", legend=aus, col=colours, lty=ltypes, bty="n" )
+        title( xlab="Time (days)", ylab="Percent infected (Folded root=1/2)" )
+      if (!to.screen) dev.off()
     }
-      # using cubic folded root to visualize
-      frp = 1/2  # folded root power
-      xvals = seq(0, nx, by=10)
-      yrange = folded_root(c(0, 0.00045), frp)
-      yticks = seq( yrange[1], yrange[2], length.out=8)
-      yvals = round( folded_root( yticks, frp, inverse=TRUE) *100 , 2)  # convert to %
-      plot( 0,0, xlab="", ylab="", ylim=yrange, xlim=c(0, nx), axes=FALSE)
-      for (i in 1:length(aus) ) {
-        au = aus[i]
-        lines( folded_root(res[[au]]$M$median[1:nx], frp) ~ res[[au]]$timeall[1:nx], col=alpha(colours[i], 0.8), lty=ltypes[i], lwd=3   )
-      }
-      axis( 1, at=xvals )
-      axis( 2, at=yticks, labels=yvals )
-      legend( "topleft", legend=aus, col=colours, lty=ltypes, bty="n" )
-      title( xlab="Time (days)", ylab="Percent mortality (Folded root=1/2)" )
-      abline(h =1, col="lightgray", lwd=3)
-    if (!to.screen) dev.off()
 
+
+    if (selection %in% c( "plot_all", "plot_recovered") ) {
+      if (!to.screen) {
+        png(filename = file.path(outdir, "recovered.png"))
+      } else {
+        dev.new()
+      }
+        # using cubic folded root to visualize
+        frp = 1  # folded root power
+        xvals = seq(0, nx, by=20)
+        yrange = folded_root(c(0, 0.0012), frp)
+        yticks = seq( yrange[1], yrange[2], length.out=8)
+        yvals = round( folded_root( yticks, frp, inverse=TRUE) *100 , 2)  # convert to %
+        plot( 0,0, type="n", xlab="", ylab="", ylim=yrange, xlim=c(0, nx), axes=FALSE)
+        for (i in 1:length(aus) ) {
+          au = aus[i]
+          lines( folded_root(res[[au]]$R$median[1:nx], frp) ~ res[[au]]$timeall[1:nx], col=alpha(colours[i], 0.9), lty=ltypes[i]   )
+        }
+        axis( 1, at=xvals )
+        axis( 2, at=yticks, labels=yvals )
+        legend( "topleft", legend=aus, col=colours, lty=ltypes, bty="n" )
+        title( xlab="Time (days)", ylab="Percent recovered (Folded root=1)" )
+      if (!to.screen) dev.off()
+    }
+
+    if (selection %in% c( "plot_all", "plot_mortalities") ) {
+
+      if (!to.screen) {
+        png(filename = file.path(outdir, "mortalities.png"))
+      } else {
+        dev.new()
+      }
+        # using cubic folded root to visualize
+        frp = 1/2  # folded root power
+        xvals = seq(0, nx, by=20)
+        yrange = folded_root(c(0, 0.00045), frp)
+        yticks = seq( yrange[1], yrange[2], length.out=8)
+        yvals = round( folded_root( yticks, frp, inverse=TRUE) *100 , 2)  # convert to %
+        plot( 0,0, type="n", xlab="", ylab="", ylim=yrange, xlim=c(0, nx), axes=FALSE)
+        for (i in 1:length(aus) ) {
+          au = aus[i]
+          lines( folded_root(res[[au]]$M$median[1:nx], frp) ~ res[[au]]$timeall[1:nx], col=alpha(colours[i], 0.9), lty=ltypes[i]   )
+        }
+        axis( 1, at=xvals )
+        axis( 2, at=yticks, labels=yvals )
+        legend( "topleft", legend=aus, col=colours, lty=ltypes, bty="n" )
+        title( xlab="Time (days)", ylab="Percent mortality (Folded root=1/2)" )
+        abline(h =1, col="lightgray")
+      if (!to.screen) dev.off()
+    }
 
 
     if (!to.screen) {
@@ -167,19 +195,19 @@ summary_adapt = function( option="summary.load", can, fn=NULL, to.screen=TRUE ) 
     } else {
       dev.new()
     }
-      xvals = seq(0, nx, by=10)
+      xvals = seq(0, nx, by=20)
       yrange = c(0, 10)
       yvals = seq(yrange[1], yrange[2], by =2)
-      plot( 0,0, xlab="", ylab="", ylim=yrange, xlim=c(0, nx), axes=FALSE)
+      plot( 0,0, type="n", xlab="", ylab="", ylim=yrange, xlim=c(0, nx), axes=FALSE)
       for (i in 1:length(aus) ) {
         au = aus[i]
-        lines( res[[au]]$K$median[1:nx] ~ res[[au]]$timeall[1:nx], col=alpha(colours[i], 0.6), lty=ltypes[i], lwd=2   )
+        lines( res[[au]]$K$median[1:nx] ~ res[[au]]$timeall[1:nx], col=alpha(colours[i], 0.9), lty=ltypes[i], lwd=2   )
       }
       axis( 1, at=xvals )
       axis( 2, at=yvals )
       legend( "topleft", legend=aus, col=colours, lty=ltypes, bty="n" )
       title( xlab="Time (days)", ylab="Reproductive number" )
-      abline(h =1, col="lightgray", lwd=3)
+      abline(h =1, col="lightgray")
     if (!to.screen) dev.off()
 
 
@@ -193,16 +221,46 @@ summary_adapt = function( option="summary.load", can, fn=NULL, to.screen=TRUE ) 
       xrange = c(0, 0.114)
       xvals = round( seq(xrange[1], xrange[2], length.out=8 ), 3)
       yvals = round( seq(yrange[1], yrange[2], length.out=8 ), 3)
-      plot( 0,0,  xlab="", ylab="", ylim=yrange, xlim=xrange, axes=FALSE)
+      plot( 0,0, type="n",  xlab="", ylab="", ylim=yrange, xlim=xrange, axes=FALSE)
       for (i in 1:length(aus) ) {
         au = aus[i]
-        points( res[[au]]$EPSILON$median ~ res[[au]]$GAMMA$median, pch=pchs[i], col=alpha(colours[i], 0.75), cex=1.5  )
+        points( res[[au]]$EPSILON$median ~ res[[au]]$GAMMA$median, pch=pchs[i], col=alpha(colours[i], 0.95), cex=1.5  )
       }
       axis( 1, at=xvals )
       axis( 2, at=yvals )
       legend( "topright", legend=aus, col=colours, pch=pchs, bty="n", cex=1.25 )
-      title( ylab="EPSILON (Mortality rate constant)", xlab="GAMMA (Recovery rate constant)" )
+      title( ylab="Mortality rate constant (EPSILON)", xlab="Recovery rate constant (GAMMA)" )
     if (!to.screen) dev.off()
+
+
+
+    if (selection=="reproductive_number_histograms") {
+      brks = 30
+      days0 = hist( M$K[,stan_data$Nobs] , breaks=brks, plot=FALSE)  # today's K ... Nobs-1 can be unstable and better for a "current estimate" as it is anchored on both sides
+      days1 = hist( M$K[,stan_data$Nobs-1] , breaks=brks, plot=FALSE )  # today's K
+      days7 = hist( M$K[,stan_data$Nobs-7] , breaks=brks, plot=FALSE )  # today's K
+      yrange = range( c(days0$density, days1$density, days7$density))
+      yrange[2] = yrange[2] * 1.15
+      xrange = range( c(0, days0$mides, days1$mids, days7$mids, 1.3))
+      xrange[2] = xrange[2] * 1.15
+
+      if (!to.screen) {
+        png(filename = file.path(outdir, "reproductive_number_today.png"))
+      } else {
+        dev.new()
+      }
+        plot(  days0$density ~ days0$mids, col="green", xlab="Reproductive number", ylab="Probability density", main="", xlim=xrange, ylim=yrange, type ="l")
+        lines( days1$density ~ days1$mids, col="slateblue", lty="dotted")
+        lines( days7$density ~ days7$mids, col="darkorange", lty="dashed")
+        abline( v=1, col="red" )
+        abline( h=0, col="gray", lwd=1 )
+        legend( "topright", "", paste( "Current date: ", stan_data$timestamp, " "), bty="n")
+        legend( "topleft", legend=c("Current", "Yesterday", "7 days ago"), lty=c("solid", "dotted", "dashed"), col=c("green", "slateblue", "darkorange"), lwd=c(3,3,3), bty="n")
+        title( main= paste( stan_data$au, "  Current date: ", stan_data$timestamp ) )
+      if (!to.screen) dev.off()
+
+    }
+
 
   }
 

@@ -70,12 +70,6 @@ plot_model_fit = function( selection="default", stan_data, M,
       lines( apply(M$S, 2, quantile, probs=0.975)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
       points( so ~ stan_data$time, col="darkgray", cex=1.2 )
       abline( v=stan_data$time[stan_data$Nobs], col="grey", lty="dashed" )
-      # if (stan_data$au=="Nova Scotia") {
-      #   abline( v=stan_data$time[time_distancing], col="orange", lty="dotted" )
-      #   abline( v=stan_data$time[time_relaxation], col="green", lty="dotted" )
-      #   legend( "bottomleft", "", "      [-- Social distancing -->\n\n", bty="n" )
-      #   legend( "bottom", "", "                                 [-- Parks open -->\n\n", bty="n" )
-      # }
       title( main= paste( stan_data$au, "Start: ", stan_data$time_start, "  Current date: ", stan_data$timestamp ) )
     if (!to.screen) dev.off()
   }
@@ -97,12 +91,6 @@ plot_model_fit = function( selection="default", stan_data, M,
       lines( apply(M$I, 2, quantile, probs=0.975)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
       points( io ~ stan_data$time, col="darkgray", cex=1.2 )
       abline( v=stan_data$time[stan_data$Nobs], col="grey", lty="dashed" )
-      # if (stan_data$au=="Nova Scotia") {
-      #   abline( v=stan_data$time[time_distancing], col="orange", lty="dotted" )
-      #   abline( v=stan_data$time[time_relaxation], col="green", lty="dotted" )
-      #   legend( "bottomleft", "", "      [-- Social distancing -->", bty="n" )
-      #   legend( "bottom", "", "                                 [-- Parks open -->", bty="n" )
-      # }
       title( main= paste( stan_data$au, "Start: ", stan_data$time_start, "  Current date: ", stan_data$timestamp ) )
    if (!to.screen) dev.off()
   }
@@ -124,12 +112,6 @@ plot_model_fit = function( selection="default", stan_data, M,
       lines( apply(M$R, 2, quantile, probs=0.975)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
       points( ro ~ stan_data$time, col="darkgray", cex=1.2 )
       abline( v=stan_data$time[stan_data$Nobs], col="grey", lty="dashed" )
-      # if (stan_data$au=="Nova Scotia") {
-      #   abline( v=stan_data$time[time_distancing], col="orange", lty="dotted" )
-      #   abline( v=stan_data$time[time_relaxation], col="green", lty="dotted" )
-      #   legend( "left", "", "\n\n      [-- Social distancing -->", bty="n" )
-      #   legend( "center", "", "\n\n                                [-- Parks open -->", bty="n" )
-      # }
       title( main= paste( stan_data$au, "Start: ", stan_data$time_start, "  Current date: ", stan_data$timestamp ) )
     if (!to.screen) dev.off()
   }
@@ -152,12 +134,6 @@ plot_model_fit = function( selection="default", stan_data, M,
       lines( apply(M$M, 2, quantile, probs=0.975)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
       points( mo ~ stan_data$time, col="darkgray", cex=1.2 )
       abline( v=stan_data$time[stan_data$Nobs], col="grey", lty="dashed" )
-      # if (stan_data$au=="Nova Scotia") {
-      #   abline( v=stan_data$time[time_distancing], col="orange", lty="dotted" )
-      #   abline( v=stan_data$time[time_relaxation], col="green", lty="dotted" )
-      #   legend( "topleft", "", "\n\n      [-- Social distancing -->", bty="n" )
-      #   legend( "top", "", "\n\n                                 [-- Parks open -->", bty="n" )
-      # }
       title( main= paste( stan_data$au, "Start: ", stan_data$time_start, "  Current date: ", stan_data$timestamp ) )
     if (!to.screen) dev.off()
   }
@@ -175,23 +151,17 @@ plot_model_fit = function( selection="default", stan_data, M,
       plot( rp ~ seq(1,nxr), type="l", lwd =3, col="slateblue", ylim=yrange, ylab="Reproductive number", xlab="Days" )
       lines( apply(M$K, 2, quantile, probs=0.025)[1:nxr] ~ seq(1,nxr), col="darkorange", lty="dashed" )
       lines( apply(M$K, 2, quantile, probs=0.975)[1:nxr] ~ seq(1,nxr), col="darkorange", lty="dashed" )
-      abline( h=1, col="red", lwd=3 )
-      abline( v=stan_data$time[stan_data$Nobs-1], col="grey", lty="dashed" )
-      # if (stan_data$au=="Nova Scotia") {
-      #   abline( v=stan_data$time[time_distancing], col="orange", lty="dotted" )
-      #   abline( v=stan_data$time[time_relaxation], col="green", lty="dotted" )
-      #   legend( "topleft", "", "\n\n      [-- Social distancing -->", bty="n" )
-      #   legend( "top", "", "\n\n                                 [-- Parks open -->", bty="n" )
-      # }
+      abline( h=1, col="red", lwd=2 )
+      abline( v=stan_data$time[stan_data$Nobs], col="grey", lty="dashed" )
       title( main= paste( stan_data$au, "Start: ", stan_data$time_start, "  Current date: ", stan_data$timestamp ) )
     if (!to.screen) dev.off()
   }
 
   if (selection=="reproductive_number_histograms") {
     brks = 30
-    days0 = hist( M$K[,stan_data$Nobs] , breaks=brks, plot=FALSE)  # today's K ... Nobs-1 can be unstable and better for a "current estimate" as it is anchored on both sides
-    days1 = hist( M$K[,stan_data$Nobs-1] , breaks=brks, plot=FALSE )  # today's K
-    days7 = hist( M$K[,stan_data$Nobs-7] , breaks=brks, plot=FALSE )  # today's K
+    days0 = hist( M$K[,stan_data$Nobs-1] , breaks=brks, plot=FALSE)  # "today" is actually today-1 as K has no data to condition for estimation
+    days1 = hist( M$K[,stan_data$Nobs-2] , breaks=brks, plot=FALSE )  # today's K
+    days7 = hist( M$K[,stan_data$Nobs-8] , breaks=brks, plot=FALSE )  # today's K
     yrange = range( c(days0$density, days1$density, days7$density))
     yrange[2] = yrange[2] * 1.15
     xrange = range( c(0, days0$mides, days1$mids, days7$mids, 1.3))
@@ -234,12 +204,6 @@ plot_model_fit = function( selection="default", stan_data, M,
       lines( apply(M$I, 2, quantile, probs=0.975)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
       points( io ~ stan_data$time, xlim=xrange, ylim=yrange, col="darkgray", cex=1.2 )
       abline( v=stan_data$time[stan_data$Nobs], col="grey", lty="dashed" )
-      # if (stan_data$au=="Nova Scotia") {
-      #   abline( v=stan_data$time[time_distancing], col="orange", lty="dotted" )
-      #   abline( v=stan_data$time[time_relaxation], col="green", lty="dotted" )
-      #   legend( "topleft", "", "\n\n   [-- Social distancing -->", bty="n" )
-      #   legend( "topleft", "", "\n\n\n                              [-- Parks open -->", bty="n" )
-      #  }
       title( main= paste( stan_data$au, "Start: ", stan_data$time_start, "  Current date: ", stan_data$timestamp ) )
     if (!to.screen) dev.off()
 
