@@ -126,10 +126,10 @@ data_provinces_of_canada = function( selection="default", fn=NULL, Npreds=5, ...
 
   # compute Susceptibles
   # fill with initial pop
-  for (j in 1:Ntimes) daily[j,,1] = Npop[au]
+  daily[1,,1] = Npop[au]  # start of data
   for (k in 1:length(au)) {
-  for (j in 1:Ntimes) {
-    daily[j,k,1] =  daily[j,k,1] - sum(daily[j,k,2:4], na.rm=TRUE )
+  for (j in 1:(Ntimes-1) ) {
+    daily[j+1,k,1] =  daily[j,k,1] - sum(daily[j,k,2:4], na.rm=TRUE )
   }}
 
   daily [ !is.finite(daily)] = -1

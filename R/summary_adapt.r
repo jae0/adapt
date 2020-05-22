@@ -1,5 +1,5 @@
 
-summary_adapt = function( selection="summary.load", can, fn=NULL, to.screen=TRUE ) {
+summary_adapt = function( selection="summary.load", can, fn=NULL, brks=30, to.screen=TRUE ) {
 
   if (is.null(fn) ) fn = file.path(getwd(), "Covid19Canada_summary.rdata")  # default to current work directory
   outdir = dirname(fn)
@@ -64,6 +64,9 @@ summary_adapt = function( selection="summary.load", can, fn=NULL, to.screen=TRUE
         low = apply(M$K, 2, quantile, probs=c(0.025), na.rm=TRUE),
         high = apply(M$K, 2, quantile, probs=c(0.975), na.rm=TRUE)
       ))
+      res[[au]]$histogram_K0 = hist( M$K[,res[[au]]$Nobs] , breaks=brks, plot=FALSE)
+      res[[au]]$histogram_K1 = hist( M$K[,res[[au]]$Nobs-1] , breaks=brks, plot=FALSE)
+      res[[au]]$histogram_K7 = hist( M$K[,res[[au]]$Nobs-7] , breaks=brks, plot=FALSE)
     }
 
     save ( res, file=fn, compress=TRUE )
@@ -163,6 +166,7 @@ summary_adapt = function( selection="summary.load", can, fn=NULL, to.screen=TRUE
       if (!to.screen) dev.off()
     }
 
+
     if (selection %in% c( "plot_all", "plot_mortalities") ) {
 
       if (!to.screen) {
@@ -190,72 +194,84 @@ summary_adapt = function( selection="summary.load", can, fn=NULL, to.screen=TRUE
     }
 
 
-    if (!to.screen) {
-      png(filename = file.path(outdir, "reproductive_number.png"))
-    } else {
-      dev.new()
-    }
-      xvals = seq(0, nx, by=20)
-      yrange = c(0, 10)
-      yvals = seq(yrange[1], yrange[2], by =2)
-      plot( 0,0, type="n", xlab="", ylab="", ylim=yrange, xlim=c(0, nx), axes=FALSE)
-      for (i in 1:length(aus) ) {
-        au = aus[i]
-        lines( res[[au]]$K$median[1:nx] ~ res[[au]]$timeall[1:nx], col=alpha(colours[i], 0.9), lty=ltypes[i], lwd=2   )
-      }
-      axis( 1, at=xvals )
-      axis( 2, at=yvals )
-      legend( "topleft", legend=aus, col=colours, lty=ltypes, bty="n" )
-      title( xlab="Time (days)", ylab="Reproductive number" )
-      abline(h =1, col="lightgray")
-    if (!to.screen) dev.off()
-
-
-
-    if (!to.screen) {
-      png(filename = file.path(outdir, "EPSILON_GAMMA.png"))
-    } else {
-      dev.new()
-    }
-      yrange = c(0,0.0057)
-      xrange = c(0, 0.114)
-      xvals = round( seq(xrange[1], xrange[2], length.out=8 ), 3)
-      yvals = round( seq(yrange[1], yrange[2], length.out=8 ), 3)
-      plot( 0,0, type="n",  xlab="", ylab="", ylim=yrange, xlim=xrange, axes=FALSE)
-      for (i in 1:length(aus) ) {
-        au = aus[i]
-        points( res[[au]]$EPSILON$median ~ res[[au]]$GAMMA$median, pch=pchs[i], col=alpha(colours[i], 0.95), cex=1.5  )
-      }
-      axis( 1, at=xvals )
-      axis( 2, at=yvals )
-      legend( "topright", legend=aus, col=colours, pch=pchs, bty="n", cex=1.25 )
-      title( ylab="Mortality rate constant (EPSILON)", xlab="Recovery rate constant (GAMMA)" )
-    if (!to.screen) dev.off()
-
-
-
-    if (selection=="reproductive_number_histograms") {
-      brks = 30
-      days0 = hist( M$K[,stan_data$Nobs] , breaks=brks, plot=FALSE)  # today's K ... Nobs-1 can be unstable and better for a "current estimate" as it is anchored on both sides
-      days1 = hist( M$K[,stan_data$Nobs-1] , breaks=brks, plot=FALSE )  # today's K
-      days7 = hist( M$K[,stan_data$Nobs-7] , breaks=brks, plot=FALSE )  # today's K
-      yrange = range( c(days0$density, days1$density, days7$density))
-      yrange[2] = yrange[2] * 1.15
-      xrange = range( c(0, days0$mides, days1$mids, days7$mids, 1.3))
-      xrange[2] = xrange[2] * 1.15
+    if (selection %in% c( "plot_all", "plot_EPSILON_GAMMA") ) {
 
       if (!to.screen) {
-        png(filename = file.path(outdir, "reproductive_number_today.png"))
+        png(filename = file.path(outdir, "EPSILON_GAMMA.png"))
       } else {
         dev.new()
       }
-        plot(  days0$density ~ days0$mids, col="green", xlab="Reproductive number", ylab="Probability density", main="", xlim=xrange, ylim=yrange, type ="l")
-        lines( days1$density ~ days1$mids, col="slateblue", lty="dotted")
-        lines( days7$density ~ days7$mids, col="darkorange", lty="dashed")
+        yrange = c(0,0.0057)
+        xrange = c(0, 0.114)
+        xvals = round( seq(xrange[1], xrange[2], length.out=8 ), 3)
+        yvals = round( seq(yrange[1], yrange[2], length.out=8 ), 3)
+        plot( 0,0, type="n",  xlab="", ylab="", ylim=yrange, xlim=xrange, axes=FALSE)
+        for (i in 1:length(aus) ) {
+          au = aus[i]
+          points( res[[au]]$EPSILON$median ~ res[[au]]$GAMMA$median, pch=pchs[i], col=alpha(colours[i], 0.95), cex=1.5  )
+        }
+        axis( 1, at=xvals )
+        axis( 2, at=yvals )
+        legend( "topright", legend=aus, col=colours, pch=pchs, bty="n", cex=1.25 )
+        title( ylab="Mortality rate constant (EPSILON)", xlab="Recovery rate constant (GAMMA)" )
+      if (!to.screen) dev.off()
+    }
+
+
+    if (selection %in% c( "plot_all", "plot_reproductive_number") ) {
+
+      if (!to.screen) {
+        png(filename = file.path(outdir, "reproductive_number.png"))
+      } else {
+        dev.new()
+      }
+        xvals = seq(0, nx, by=20)
+        yrange = c(0, 10)
+        yvals = seq(yrange[1], yrange[2], by =2)
+        plot( 0,0, type="n", xlab="", ylab="", ylim=yrange, xlim=c(0, nx), axes=FALSE)
+        for (i in 1:length(aus) ) {
+          au = aus[i]
+          lines( res[[au]]$K$median[1:nx] ~ res[[au]]$timeall[1:nx], col=alpha(colours[i], 0.9), lty=ltypes[i], lwd=2   )
+        }
+        axis( 1, at=xvals )
+        axis( 2, at=yvals )
+        legend( "topleft", legend=aus, col=colours, lty=ltypes, bty="n" )
+        title( xlab="Time (days)", ylab="Reproductive number" )
+        abline(h =1, col="lightgray")
+      if (!to.screen) dev.off()
+    }
+
+    if (selection %in% c( "plot_all", "plot_reproductive_number_histograms") ) {
+      brks = 30
+      yrange = 0
+      for ( i in 1:length(aus)) {
+        yrg0 = range( res[[au]]$histogram_k0$density, na.rm=TRUE )
+        yrg1 = range( res[[au]]$histogram_k1$density, na.rm=TRUE )
+        yrg7 = range( res[[au]]$histogram_k7$density, na.rm=TRUE )
+        yrange = range( c(yrange, yrg0, yrg1, yrg7 ) )
+      }
+      yrange[2] = yrange[2] * 1.15
+      xrange = range( c(0, days0$mides, days1$mids, days7$mids, 1.3))
+      xrange[2] = xrange[2] * 1.15
+      xvals = round( seq(xrange[1], xrange[2], length.out=8 ), 3)
+      yvals = round( seq(yrange[1], yrange[2], length.out=8 ), 3)
+
+      if (!to.screen) {
+        png(filename = file.path(outdir, "reproductive_number_histograms.png"))
+      } else {
+        dev.new()
+      }
+        plot(  0,0, type="n", xlab="Reproductive number", ylab="Probability density", main="", xlim=xrange, ylim=yrange )
+        for (i in 1:length(aus)) {
+          au = aus[i]
+          lines( res[[au]]$histogram_K0$density ~ res[[au]]$histogram_K0$mids,
+            col=alpha(colours[i], 0.95), lty=ltypes[i], cex=1.5)
+        }
         abline( v=1, col="red" )
         abline( h=0, col="gray", lwd=1 )
-        legend( "topright", "", paste( "Current date: ", stan_data$timestamp, " "), bty="n")
-        legend( "topleft", legend=c("Current", "Yesterday", "7 days ago"), lty=c("solid", "dotted", "dashed"), col=c("green", "slateblue", "darkorange"), lwd=c(3,3,3), bty="n")
+        axis( 1, at=xvals )
+        axis( 2, at=yvals )
+        legend( "topright", legend=aus, col=colours, lty=ltypes, bty="n", cex=1.25 )
         title( main= paste( stan_data$au, "  Current date: ", stan_data$timestamp ) )
       if (!to.screen) dev.off()
 

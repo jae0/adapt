@@ -29,17 +29,15 @@ if ("download.data" %in% tasks) res = data_provinces_of_canada( selection="downl
 can = data_provinces_of_canada(
   fn = fn,
   Npreds = 20,   # number of days for ode-based forward projections
-  BNP = 1,       # beta dynamics is AR(BNP) ; also the number of days to average for forward ode-based projections (incubation time is ~ 5-7 days) .. higher than 1 can cause problems ... high var in reporting causes + and - corrs
-  BETA_max = 5,       # max rate param for S -> I  # approx number of contacts per person per time (day) multiplied by the probability of disease transmission in a contact between a susceptible and an infectious subject;  ~ 1/( typical time in days between contacts)
+  BNP = 3,       # beta dynamics is AR(BNP) ; also the number of days to average for forward ode-based projections (incubation time is ~ 5-7 days) .. higher than 1 can cause problems ... high var in reporting causes + and - corrs
+  BETA_max = 1.0,     # max rate param for S -> I  # approx number of contacts per person per time (day) multiplied by the probability of disease transmission in a contact between a susceptible and an infectious subject;  ~ 1/( typical time in days between contacts)
+  # BETA_max is very important: seldom does this value go > 1 for Covid-19 in Canada,
+  # if BETA_max is set too large, and due to the long tails of a cauchy, convergence can be slow and error distributions become very wide when infected numbers -> 0, 1 is a good upper bound
   GAMMA_max = 0.1,    # max rate param for I -> R  # ~ 1/(typical time until removal = 14) = 0.07
-  EPSILON_max = 0.01,  # max rate param for I -> M  # > recovery time; < rate ..
+  EPSILON_max = 0.1,  # max rate param for I -> M  # > recovery time; < rate ..
   modelname="default"
 )
-provinces = c(setdiff( sort( names(can) ), c("Ontario", "Quebec") ), c("Ontario", "Quebec"))  # do Ontario and Quebec last as they are very slow
-# provinces = setdiff(provinces, "Nova Scotia")
-  # au = "Nova Scotia"
-
-
+provinces = c(setdiff( sort( names(can) ), c("Ontario", "Quebec") ), c("Ontario", "Quebec"))  # do Ontario and Quebec last as
 
 
 if ("model" %in% tasks ) {
@@ -51,23 +49,14 @@ if ("model" %in% tasks ) {
     print(au)
     fn_model = file.path( workdir, paste( au, can[[au]]$modelname, "rdata", sep=".") )
     outdir = file.path( "~", "bio", "adapt", "inst", "doc", au)
-    control.stan = list(adapt_delta = 0.95, max_treedepth=14 )
-      # some  au's  have longer and more complex dynamics (i.e. parameter space)and likely reporting issues ... requires additional stabilzation
-      if ( au %in% c("Saskatchewan", "BC", "Alberta"  ) ) can[[au]]$BNP = 3
-      if ( au %in% c("Quebec", "Ontario" ) ) {
-        control.stan = list(adapt_delta = 0.975, max_treedepth=15 )
-        can[[au]]$BNP = 7
-      }
-    f = rstan::sampling( stancode_compiled, data=can[[au]], chains=3, warmup=5000, iter=6000, control=control.stan  )
+    control.stan = list(adapt_delta = 0.975, max_treedepth=15 )
+    f = rstan::sampling( stancode_compiled, data=can[[au]], chains=3, warmup=6000, iter=8000, control=control.stan  )
     save(f, file=fn_model, compress=TRUE)
   }
-
 }
 
-if ( "plot" %in% tasks ) {
 
-#  to.screen = TRUE
-#  to.screen = FALSE
+if ( "plot" %in% tasks ) {
 
   for (au in  provinces) {
     print(au)
@@ -93,7 +82,7 @@ if ("forecast" %in% tasks ) {
     load(fn_model)
     M = extract(f)
     # --- simplistic stochastic simulations using joint posterior distributions from "current" day estimates:, if BNP is provided, this uses the average in the period specified
-    sim = simulate( M, istart=can[[au]]$Nobs, nsims=2000, nprojections=200  )  # note, BETA is conditioned on previous time step. . but BETA for Nobs is a copy so this is OK
+    sim = simulate( M, istart=can[[au]]$Nobs, nsims=1400, nprojections=200  )
     plot_model_fit( selection="forecasts", stan_data=can[[au]], M=M, outdir=outdir, sim=sim, to.screen=to.screen )
   }
 }

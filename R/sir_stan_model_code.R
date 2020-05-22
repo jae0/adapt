@@ -16,7 +16,7 @@ data {
   int<lower=0> Nobs;  //number of time slices
   int<lower=0> Npreds;  //additional number of time slices for prediction
   int<lower=0> BNP; // the last no days to use for BETA to project forward
-  real<lower=0> BETA_max; //
+  real<lower=0> BETA_max; // this value is important, seldom does this value go > 1 for Covid-19 in Canada, if too large then convergence is slow and error distributions become very wide when infected numbers ->0
   real<lower=0> GAMMA_max; //
   real<lower=0> EPSILON_max; //
   int Sobs[Nobs]; // observed S
@@ -78,6 +78,11 @@ parameters {
 }
 
 transformed parameters{
+  real<lower=0.0, upper =BETA_max> BETA_filtered[Nobs-1];  // == beta in SIR , filtered to make sense when dsi ->0
+
+  for ( i in 1:(Nobs-1) ) {
+    BETA_filtered[i] = step( Imu[i+1] ) * BETA[i];
+  }
 }
 
 model {
@@ -88,14 +93,15 @@ model {
   Rsd ~ cauchy(0.0, 0.1);
   Msd ~ cauchy(0.0, 0.1);
 
-  GAMMA ~ cauchy(0.0, 0.1);;  // recovery of I ... always < 1
-  EPSILON ~ cauchy(0.0, 0.1);;  // recovery of I ... always < 1
+  GAMMA ~ cauchy(0.0, 0.1);;  // recovery of I ... always < 1, shrinks towards 0
+  EPSILON ~ cauchy(0.0, 0.1);;  // recovery of I ... always < 1, shrinks towards 0
 
   // AR(k=BNP) model for BETA
-  ar1 ~ normal( 0.0, 0.01 ); // autoregression (AR(k=BNP))
-  ar1sd ~ normal( 0.0, 0.01 );
-  ar1k ~ normal( 0.0, 0.01 );
-  BETA[1:BNP] ~ normal( 0.0, 0.01 );  //  centered on 0, shrink towards 0
+  ar1 ~ cauchy( 0.0, 0.1 ); // autoregression (AR(k=BNP)) ..  shrink to 0
+  ar1sd ~ cauchy( 0.0, 0.1 ); // , shrinks towards 0
+  ar1k ~ cauchy( 0.0, 0.1 ); //, shrinks towards 0
+  BETA[1:BNP] ~ cauchy( 0.0, 0.1 );  //  centered on 0, shrink towards 0
+
   for ( i in (BNP+1):(Nobs-1) ) {
     real BETAmu = ar1k;
     for ( j in 1:BNP) {
@@ -112,10 +118,13 @@ model {
 
   // process error
   for ( i in 1:(Nobs-1) ) {
-    Smu[i+1] ~ normal( Smu[i] - BETA[i] * Smu[i] * Imu[i] , Ssd)  ;
-    Imu[i+1] ~ normal( Imu[i] + BETA[i] * Smu[i] * Imu[i] - GAMMA * Imu[i] - EPSILON * Imu[i] , Isd);
-    Rmu[i+1] ~ normal( Rmu[i] + GAMMA * Imu[i] , Rsd ) ;
-    Mmu[i+1] ~ normal( Mmu[i] + EPSILON * Imu[i] , Msd) ;
+    real dsi = BETA[i] * Smu[i] * Imu[i];
+    real dir = GAMMA * Imu[i];
+    real dim = EPSILON * Imu[i] ;
+    Smu[i+1] ~ normal( Smu[i] - dsi , Ssd)  ;
+    Imu[i+1] ~ normal( Imu[i] + dsi - dir - dim , Isd);
+    Rmu[i+1] ~ normal( Rmu[i] + dir , Rsd ) ;
+    Mmu[i+1] ~ normal( Mmu[i] + dim , Msd) ;
   }
 
   // data likelihoods, if *obs ==-1, then data was missing  . same conditions as in transformed parameters
@@ -167,10 +176,13 @@ generated quantities {
   Mpp[1] = Mmu[Nobs];
 
   for ( i in 1:Npreds ) {
-    Spp[i+1] = fmax(0, fmin( 1, Spp[i] - BETA[Nobs-1] * Spp[i] * Ipp[i] ) )  ;
-    Ipp[i+1] = fmax(0, fmin( 1, Ipp[i] + BETA[Nobs-1] * Spp[i] * Ipp[i] - GAMMA * Ipp[i] - EPSILON * Ipp[i] ));
-    Rpp[i+1] = fmax(0, fmin( 1, Rpp[i] + GAMMA * Ipp[i] )) ;
-    Mpp[i+1] = fmax(0, fmin( 1, Mpp[i] + EPSILON * Ipp[i] )) ;
+    real dsi = BETA_filtered[Nobs-1] * Spp[i] * Ipp[i];
+    real dir = GAMMA * Ipp[i];
+    real dim = EPSILON * Ipp[i] ;
+    Spp[i+1] = fmax(0, fmin( 1, Spp[i] - dsi ) )  ;
+    Ipp[i+1] = fmax(0, fmin( 1, Ipp[i] + dsi - dir - dim ));
+    Rpp[i+1] = fmax(0, fmin( 1, Rpp[i] + dir )) ;
+    Mpp[i+1] = fmax(0, fmin( 1, Mpp[i] + dim )) ;
   }
 
   for ( i in 1:Npreds ) {
@@ -182,10 +194,10 @@ generated quantities {
 
   // sample from  mean process (proportions to counts)
   for (i in 1:(Nobs-1) ) {
-    K[i] = BETA[i] / GAMMA; // the contact number = fraction of S in contact with I
+    K[i] = BETA_filtered[i] / (GAMMA+EPSILON); // the contact number = fraction of S in contact with I
   }
   for (i in Nobs:(Ntimeall-1) ) {
-    K[i] = BETA[Nobs-1] / GAMMA; // the contact number = fraction of S in contact with I
+    K[i] = BETA_filtered[Nobs-1] / (GAMMA+EPSILON); // the contact number = fraction of S in contact with I
   }
 
 }
