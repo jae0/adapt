@@ -75,6 +75,7 @@ parameters {
   real<lower = 0.0, upper =1.0> Imu[Nobs]; // mean process I
   real<lower = 0.0, upper =1.0> Rmu[Nobs]; // mean process Recoveries only (no deaths)
   real<lower = 0.0, upper =1.0> Mmu[Nobs]; // mean process Mortalities
+  real<lower = Q_min, upper =Q_max> Q;  // asymptomatics
 }
 
 transformed parameters{
@@ -92,6 +93,7 @@ model {
   Isd ~ cauchy(0.0, 0.1);
   Rsd ~ cauchy(0.0, 0.1);
   Msd ~ cauchy(0.0, 0.1);
+  Q ~ cauchy(1, 0.1);
 
   GAMMA ~ cauchy(0.0, 0.1);;  // recovery of I ... always < 1, shrinks towards 0
   EPSILON ~ cauchy(0.0, 0.1);;  // recovery of I ... always < 1, shrinks towards 0
@@ -135,7 +137,7 @@ model {
       // Sobs[i] ~ binomial( Npop, Smu[i] );  // slow
     }
     if (Iobs[i] >= 0 ) {
-      Iprop[i] ~ normal( Imu[i], Isd );
+      Q*Iprop[i] ~ normal( Imu[i], Isd );
       // Iobs[i] ~ binomial( Npop, Imu[i] );
     }
     if (Robs[i] >= 0 ) {

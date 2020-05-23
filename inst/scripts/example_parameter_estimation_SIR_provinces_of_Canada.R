@@ -50,6 +50,12 @@ if ("model" %in% tasks ) {
     fn_model = file.path( workdir, paste( au, can[[au]]$modelname, "rdata", sep=".") )
     outdir = file.path( "~", "bio", "adapt", "inst", "doc", au)
     control.stan = list(adapt_delta = 0.975, max_treedepth=15 )
+    # some  au's  have longer and more complex dynamics (i.e. parameter space)and likely reporting issues ... requires additional stabilzation
+      if ( au %in% c( "Quebec", "Ontario" ) ) {
+      #  control.stan = list(adapt_delta = 0.975, max_treedepth=15 )
+        can[[au]]$BNP = 7
+      }
+
     f = rstan::sampling( stancode_compiled, data=can[[au]], chains=3, warmup=6000, iter=8000, control=control.stan  )
     save(f, file=fn_model, compress=TRUE)
   }
@@ -88,10 +94,11 @@ if ("forecast" %in% tasks ) {
 }
 
 
+
 ## Comparisons across provinces: normalize to unit population
 fn.summary = file.path( workdir, "Covid19Canada_summary.rdata")
 
 res = summary_adapt( "summary.create", can=can, fn=fn.summary )
-summary_adapt( "plot_all", can=can, fn=fn.summary, to.screen=TRUE )
+summary_adapt( "plot_reproductive_number_histograms", can=can, fn=fn.summary, to.screen=TRUE )
 summary_adapt( "plot_all", can=can, fn=fn.summary, to.screen=FALSE )
 

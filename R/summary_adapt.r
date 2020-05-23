@@ -245,13 +245,14 @@ summary_adapt = function( selection="summary.load", can, fn=NULL, brks=30, to.sc
       brks = 30
       yrange = 0
       for ( i in 1:length(aus)) {
-        yrg0 = range( res[[au]]$histogram_k0$density, na.rm=TRUE )
-        yrg1 = range( res[[au]]$histogram_k1$density, na.rm=TRUE )
-        yrg7 = range( res[[au]]$histogram_k7$density, na.rm=TRUE )
-        yrange = range( c(yrange, yrg0, yrg1, yrg7 ) )
+        au = aus[i]
+        yrg0 = range( res[[au]]$histogram_K0$density, na.rm=TRUE )
+        # yrg1 = range( res[[au]]$histogram_K1$density, na.rm=TRUE )
+        # yrg7 = range( res[[au]]$histogram_K7$density, na.rm=TRUE )
+        yrange = range( c(yrange, yrg0 )) #, yrg1, yrg7 ) )
       }
       yrange[2] = yrange[2] * 1.15
-      xrange = range( c(0, days0$mides, days1$mids, days7$mids, 1.3))
+      xrange = range( c(0, res[[au]]$histogram_K0$mids) )
       xrange[2] = xrange[2] * 1.15
       xvals = round( seq(xrange[1], xrange[2], length.out=8 ), 3)
       yvals = round( seq(yrange[1], yrange[2], length.out=8 ), 3)
@@ -261,7 +262,7 @@ summary_adapt = function( selection="summary.load", can, fn=NULL, brks=30, to.sc
       } else {
         dev.new()
       }
-        plot(  0,0, type="n", xlab="Reproductive number", ylab="Probability density", main="", xlim=xrange, ylim=yrange )
+        plot(  0,0, type="n", xlab="Reproductive number", ylab="Probability density", main="", xlim=xrange, ylim=yrange, axes=FALSE )
         for (i in 1:length(aus)) {
           au = aus[i]
           lines( res[[au]]$histogram_K0$density ~ res[[au]]$histogram_K0$mids,
@@ -271,8 +272,8 @@ summary_adapt = function( selection="summary.load", can, fn=NULL, brks=30, to.sc
         abline( h=0, col="gray", lwd=1 )
         axis( 1, at=xvals )
         axis( 2, at=yvals )
-        legend( "topright", legend=aus, col=colours, lty=ltypes, bty="n", cex=1.25 )
-        title( main= paste( stan_data$au, "  Current date: ", stan_data$timestamp ) )
+        legend( "topright", legend=aus, col=colours, lty=ltypes, bty="n", cex=1.25, lwd=2 )
+        title( main= paste( "  Current date: ", can[[1]]$timestamp ) )
       if (!to.screen) dev.off()
 
     }

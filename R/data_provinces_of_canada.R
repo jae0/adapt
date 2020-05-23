@@ -104,12 +104,15 @@ data_provinces_of_canada = function( selection="default", fn=NULL, Npreds=5, ...
 
   totalRecoveries = daily[ ,,3]
   newRecoveries = totalRecoveries[] * 0
-  totalRecoveries[ which( !is.finite(newRecoveries))] = 0
+  totalRecoveries[ which( !is.finite(totalRecoveries))] = 0
   newRecoveries[2:Ntimes,] = totalRecoveries[ 2:Ntimes,] - totalRecoveries[ 1:(Ntimes-1),]
+  newRecoveries[ which(newRecoveries < 0)] = 0  ## there is a typo in Alberta 19-05-2020       Alberta                 5854
+  newRecoveries[ which( !is.finite(newRecoveries))] = 0
 
   # cummulative sums for Mortalities
   newDeaths = daily[ ,, 4]
   newDeaths[ which(!is.finite(newDeaths))] = 0
+  newDeaths[ which(newDeaths < 0)] = 0  ## in case of data entry errors
   daily[ , , 4] = 0
   for (k in 1:length(au)) {
     daily[,k,4] = cumsum(newDeaths[,k])
@@ -118,6 +121,7 @@ data_provinces_of_canada = function( selection="default", fn=NULL, Npreds=5, ...
   # compute infecteds
   newInfecteds = daily[ ,, 2]
   newInfecteds[ which(!is.finite(newInfecteds))] = 0
+  newInfecteds[ which(newInfecteds < 0)] = 0  ## in case of data entry errors
   daily[ , , 2] = 0
   for (k in 1:length(au)) {
   for (j in 1:(Ntimes-1)) {
