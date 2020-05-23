@@ -17,11 +17,10 @@ You can see the current status of COVID-19 disease progression by province, wher
 - ![Yukon](./inst/doc/Yukon/README.md)
 
 
-More information about the models and data can be found on the ![main page](https://github.com/jae0/adapt/blob/master/README.md)
 
-NOTE 1: These results are generated from an automated process. There might be problems due to unforeseen issues.
+NOTE 1: These results are generated from an automated process. There might be problems due to unforeseen issues. As of 23 May 2020, the methods have been tweaked to a point where trajectories from all provinces are numerically well behaved and data streams have been error checked.
 
-NOTE 2: As of 23 May 2020, the methods have been tweaked to a point where trajectories from all provinces are numerically well behaved. However, computations for Ontario and Quebec take quite a bit of time to complete on my poor laptop; I will update these less frequently.
+NOTE 2: Computations for Ontario and Quebec, however, take quite a bit of time to complete on my poor laptop; I will update these less frequently.
 
 
 ---
