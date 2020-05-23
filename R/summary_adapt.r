@@ -67,6 +67,11 @@ summary_adapt = function( selection="summary.load", can, fn=NULL, brks=30, to.sc
       res[[au]]$histogram_K0 = hist( M$K[,res[[au]]$Nobs] , breaks=brks, plot=FALSE)
       res[[au]]$histogram_K1 = hist( M$K[,res[[au]]$Nobs-1] , breaks=brks, plot=FALSE)
       res[[au]]$histogram_K7 = hist( M$K[,res[[au]]$Nobs-7] , breaks=brks, plot=FALSE)
+      res[[au]]$Q = data.frame( cbind(
+        median = apply(M$Q, 2, median, na.rm=TRUE),
+        low = apply(M$Q, 2, quantile, probs=c(0.025), na.rm=TRUE),
+        high = apply(M$Q, 2, quantile, probs=c(0.975), na.rm=TRUE)
+      ))
     }
 
     save ( res, file=fn, compress=TRUE )

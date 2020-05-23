@@ -75,14 +75,15 @@ parameters {
   real<lower = 0.0, upper =1.0> Imu[Nobs]; // mean process I
   real<lower = 0.0, upper =1.0> Rmu[Nobs]; // mean process Recoveries only (no deaths)
   real<lower = 0.0, upper =1.0> Mmu[Nobs]; // mean process Mortalities
-  real<lower = Q_min, upper =Q_max> Q;  // asymptomatics
+  real<lower = 0.01, upper = 100> Q[Nobs-1];  // effective pop size of infected (due to isolation, etc)
 }
 
 transformed parameters{
   real<lower=0.0, upper =BETA_max> BETA_filtered[Nobs-1];  // == beta in SIR , filtered to make sense when dsi ->0
 
   for ( i in 1:(Nobs-1) ) {
-    BETA_filtered[i] = step( Imu[i+1] ) * BETA[i];
+    //BETA_filtered[i] = step( Imu[i+1] ) * BETA[i];
+    BETA_filtered[i] =  BETA[i];
   }
 }
 
@@ -93,16 +94,16 @@ model {
   Isd ~ cauchy(0.0, 0.1);
   Rsd ~ cauchy(0.0, 0.1);
   Msd ~ cauchy(0.0, 0.1);
-  Q ~ cauchy(1, 0.1);
+  Q ~ normal(1, 0.25);
 
-  GAMMA ~ cauchy(0.0, 0.1);;  // recovery of I ... always < 1, shrinks towards 0
-  EPSILON ~ cauchy(0.0, 0.1);;  // recovery of I ... always < 1, shrinks towards 0
+  GAMMA ~ normal(0, 0.1/4.0);;  // recovery of I ... always < 1, shrinks towards 0
+  EPSILON ~ normal(0, 0.1/4.0);;  // recovery of I ... always < 1, shrinks towards 0
 
   // AR(k=BNP) model for BETA
-  ar1 ~ cauchy( 0.0, 0.1 ); // autoregression (AR(k=BNP)) ..  shrink to 0
+  ar1 ~ normal( 0.0, 0.25 ); // autoregression (AR(k=BNP)) ..  shrink to 0
   ar1sd ~ cauchy( 0.0, 0.1 ); // , shrinks towards 0
   ar1k ~ cauchy( 0.0, 0.1 ); //, shrinks towards 0
-  BETA[1:BNP] ~ cauchy( 0.0, 0.1 );  //  centered on 0, shrink towards 0
+  BETA[1:BNP] ~ normal( 0.0, 1.0/4.0 );  //  centered on 0, shrink towards 0
 
   for ( i in (BNP+1):(Nobs-1) ) {
     real BETAmu = ar1k;
@@ -120,7 +121,7 @@ model {
 
   // process error
   for ( i in 1:(Nobs-1) ) {
-    real dsi = BETA[i] * Smu[i] * Imu[i];
+    real dsi = BETA[i] *  Smu[i] * (Imu[i] * Q[i] ) ;
     real dir = GAMMA * Imu[i];
     real dim = EPSILON * Imu[i] ;
     Smu[i+1] ~ normal( Smu[i] - dsi , Ssd)  ;
@@ -137,7 +138,7 @@ model {
       // Sobs[i] ~ binomial( Npop, Smu[i] );  // slow
     }
     if (Iobs[i] >= 0 ) {
-      Q*Iprop[i] ~ normal( Imu[i], Isd );
+      Iprop[i] ~ normal( Imu[i], Isd );
       // Iobs[i] ~ binomial( Npop, Imu[i] );
     }
     if (Robs[i] >= 0 ) {
@@ -178,7 +179,7 @@ generated quantities {
   Mpp[1] = Mmu[Nobs];
 
   for ( i in 1:Npreds ) {
-    real dsi = BETA_filtered[Nobs-1] * Spp[i] * Ipp[i];
+    real dsi = BETA_filtered[Nobs-1] * Spp[i] * Ipp[i] * Q[Nobs-1];
     real dir = GAMMA * Ipp[i];
     real dim = EPSILON * Ipp[i] ;
     Spp[i+1] = fmax(0, fmin( 1, Spp[i] - dsi ) )  ;

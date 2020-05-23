@@ -29,7 +29,7 @@ if ("download.data" %in% tasks) res = data_provinces_of_canada( selection="downl
 can = data_provinces_of_canada(
   fn = fn,
   Npreds = 20,   # number of days for ode-based forward projections
-  BNP = 3,       # beta dynamics is AR(BNP) ; also the number of days to average for forward ode-based projections (incubation time is ~ 5-7 days) .. higher than 1 can cause problems ... high var in reporting causes + and - corrs
+  BNP = 1,       # beta dynamics is AR(BNP) ; also the number of days to average for forward ode-based projections (incubation time is ~ 5-7 days) .. higher than 1 can cause problems ... high var in reporting causes + and - corrs
   BETA_max = 1.0,     # max rate param for S -> I  # approx number of contacts per person per time (day) multiplied by the probability of disease transmission in a contact between a susceptible and an infectious subject;  ~ 1/( typical time in days between contacts)
   # BETA_max is very important: seldom does this value go > 1 for Covid-19 in Canada,
   # if BETA_max is set too large, and due to the long tails of a cauchy, convergence can be slow and error distributions become very wide when infected numbers -> 0, 1 is a good upper bound
@@ -37,7 +37,8 @@ can = data_provinces_of_canada(
   EPSILON_max = 0.1,  # max rate param for I -> M  # > recovery time; < rate ..
   modelname="default"
 )
-provinces = c(setdiff( sort( names(can) ), c("Ontario", "Quebec") ), c("Ontario", "Quebec"))  # do Ontario and Quebec last as
+
+provinces = names(can)
 
 
 if ("model" %in% tasks ) {
@@ -49,11 +50,11 @@ if ("model" %in% tasks ) {
     print(au)
     fn_model = file.path( workdir, paste( au, can[[au]]$modelname, "rdata", sep=".") )
     outdir = file.path( "~", "bio", "adapt", "inst", "doc", au)
-    control.stan = list(adapt_delta = 0.975, max_treedepth=15 )
+    control.stan = list(adapt_delta = 0.95, max_treedepth=15 )
     # some  au's  have longer and more complex dynamics (i.e. parameter space)and likely reporting issues ... requires additional stabilzation
       if ( au %in% c( "Quebec", "Ontario" ) ) {
       #  control.stan = list(adapt_delta = 0.975, max_treedepth=15 )
-        can[[au]]$BNP = 7
+       #  can[[au]]$BNP = 3
       }
 
     f = rstan::sampling( stancode_compiled, data=can[[au]], chains=3, warmup=6000, iter=8000, control=control.stan  )
@@ -72,10 +73,12 @@ if ( "plot" %in% tasks ) {
     M = extract(f)
     plot_model_fit( selection="susceptible", stan_data=can[[au]], M=M, outdir=outdir, to.screen=to.screen )
     plot_model_fit( selection="infected", stan_data=can[[au]], M=M, outdir=outdir, to.screen=to.screen )
+    plot_model_fit( selection="infected_effective", stan_data=can[[au]], M=M, outdir=outdir, to.screen=to.screen )
     plot_model_fit( selection="recovered", stan_data=can[[au]], M=M, outdir=outdir, to.screen=to.screen )
     plot_model_fit( selection="deaths", stan_data=can[[au]], M=M, outdir=outdir, to.screen=to.screen )
     plot_model_fit( selection="reproductive_number", stan_data=can[[au]], M=M, outdir=outdir, to.screen=to.screen )
     plot_model_fit( selection="reproductive_number_histograms", stan_data=can[[au]], M=M, outdir=outdir, to.screen=to.screen )
+    plot_model_fit( selection="effective_number", stan_data=can[[au]], M=M, outdir=outdir, to.screen=to.screen )
   }
 }
 
@@ -100,5 +103,5 @@ fn.summary = file.path( workdir, "Covid19Canada_summary.rdata")
 
 res = summary_adapt( "summary.create", can=can, fn=fn.summary )
 summary_adapt( "plot_reproductive_number_histograms", can=can, fn=fn.summary, to.screen=TRUE )
-summary_adapt( "plot_all", can=can, fn=fn.summary, to.screen=FALSE )
+summary_adapt( "plot_all", can=can, fn=fn.summary, to.screen=TRUE )
 

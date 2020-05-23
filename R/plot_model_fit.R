@@ -77,7 +77,9 @@ plot_model_fit = function( selection="default", stan_data, M,
   if (selection=="infected") {
     io = stan_data$Iobs
     io[io < 0] = NA
+
     ip = apply(M$I, 2, median)[1:nx]
+
     yrange = range( c(io, ip), na.rm=TRUE)
     yrange = c(yrange[1], yrange[2])
     if (!to.screen) {
@@ -94,6 +96,39 @@ plot_model_fit = function( selection="default", stan_data, M,
       title( main= paste( stan_data$au, "Start: ", stan_data$time_start, "  Current date: ", stan_data$timestamp ) )
    if (!to.screen) dev.off()
   }
+
+
+  if (selection=="infected_effective") {
+    io = stan_data$Iobs
+    io[io < 0] = NA
+
+    if (! exists("Q", M)) return("Nothing to do")  # nothing to do
+
+    ip = M$I * 0
+    ip[ , c(1:stan_data$Nobs-1)] = M$I[ , c(1:stan_data$Nobs-1)] * M$Q[, c(1:stan_data$Nobs-1)]
+    ip[ , c(stan_data$Nobs: nx)] = M$I[ , c(stan_data$Nobs: nx)] * M$Q[, stan_data$Nobs-1]
+
+    ipm = apply(ip, 2, median)[1:nx]
+    ipl = apply(ip, 2, quantile, probs=0.025)[1:nx]
+    ipu = apply(ip, 2, quantile, probs=0.975)[1:nx]
+
+    yrange = range( c(io, ipm), na.rm=TRUE)
+    yrange = c(yrange[1], yrange[2])
+    if (!to.screen) {
+      png(filename = file.path(outdir, "fit_with_projections_infected_effective.png"))
+    } else {
+      dev.new()
+    }
+      plot( io ~ stan_data$time, xlim=xrange, ylim=yrange, ylab="Effective nmber of infected", xlab="Days", type="n" )
+      lines( ipm ~ seq(1,nx), lwd =3, col="slateblue" )
+      lines( ipu ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
+      lines( ipl ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
+      points( io ~ stan_data$time, col="darkgray", cex=1.2 )
+      abline( v=stan_data$time[stan_data$Nobs], col="grey", lty="dashed" )
+      title( main= paste( stan_data$au, "Start: ", stan_data$time_start, "  Current date: ", stan_data$timestamp ) )
+   if (!to.screen) dev.off()
+  }
+
 
   if (selection=="recovered") {
     ro = stan_data$Robs
@@ -137,6 +172,32 @@ plot_model_fit = function( selection="default", stan_data, M,
       title( main= paste( stan_data$au, "Start: ", stan_data$time_start, "  Current date: ", stan_data$timestamp ) )
     if (!to.screen) dev.off()
   }
+
+
+  if (selection=="effective_number") {
+    if (!to.screen) {
+      png(filename = file.path(outdir, "effective_number.png"))
+    } else {
+      dev.new()
+    }
+
+    nxr = stan_data$Nobs-1
+    dr = c(1:nxr)
+    ipm = apply(M$Q[,dr], 2, median)
+    ipl = apply(M$Q[,dr], 2, quantile, probs=0.025)
+    ipu = apply(M$Q[,dr], 2, quantile, probs=0.975)
+
+    yrange = range( c(ipm, ipl, ipu) )
+
+    plot( ipm ~ dr, type="l", lwd =3, col="slateblue", ylim=yrange, ylab="Effective number (proportion of infected)", xlab="Days" )
+    lines( ipl ~ dr, col="darkorange", lty="dashed" )
+    lines( ipu ~ dr, col="darkorange", lty="dashed" )
+    abline( v=stan_data$time[stan_data$Nobs], col="grey", lty="dashed", lwd=2 )
+    abline( h=1, col="grey", lty="dashed", lwd=2 )
+    title( main= paste( stan_data$au, "Start: ", stan_data$time_start, "  Current date: ", stan_data$timestamp ) )
+    if (!to.screen) dev.off()
+  }
+
 
 
   if (selection=="reproductive_number") {

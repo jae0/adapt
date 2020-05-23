@@ -71,6 +71,7 @@ data_provinces_of_canada = function( selection="default", fn=NULL, Npreds=5, ...
 
   au = sort( unique( res$cases$province))
   au = setdiff(au,  "Repatriated")  # not clear what to do with these .. droppoing for now
+  au = c(setdiff( au, c("Ontario", "Quebec") ), c("Ontario", "Quebec"))  # do Ontario and Quebec last as they are slow
 
   infected = infected[ infected$province %in% au , ]
   death = death[ death$province %in% au , ]
