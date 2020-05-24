@@ -75,7 +75,7 @@ parameters {
   real<lower = 0.0, upper =1.0> Imu[Nobs]; // mean process I
   real<lower = 0.0, upper =1.0> Rmu[Nobs]; // mean process Recoveries only (no deaths)
   real<lower = 0.0, upper =1.0> Mmu[Nobs]; // mean process Mortalities
-  real<lower = 0.01, upper = 100> Q[Nobs-1];  // effective pop size of infected (due to isolation, etc)
+  real<lower = 0.1, upper = 10> Q[Nobs-1];  // effective pop size of infected (due to isolation, etc)
 }
 
 transformed parameters{
