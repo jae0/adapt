@@ -1,13 +1,5 @@
 
 
-
-remotes::install_github("epiforecasts/EpiNow", dependencies = TRUE)
-
-
-
-
-
-
 # param estimation via STAN
 
 BYM of params
@@ -17,14 +9,11 @@ BYM of status
 -- nf days forecasts
 for each au {
   -- sample from param dists and simulate
-
 }
 
 BYM of forecasts
 
-library(remotes)
-
-install_github("stewid/SimInf")
+remotes::install_github("stewid/SimInf")
 
   ## Create a SEIR model object.
   ## SimInf ...

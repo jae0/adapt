@@ -187,7 +187,7 @@ plot_model_fit = function( selection="default", stan_data, M,
     ipl = apply(M$Q[,dr], 2, quantile, probs=0.025)
     ipu = apply(M$Q[,dr], 2, quantile, probs=0.975)
 
-    yrange = range( c(ipm, ipl, ipu) )
+    yrange = c(0,2)  #range( c(ipm) ) #, ipl, ipu) )
 
     plot( ipm ~ dr, type="l", lwd =3, col="slateblue", ylim=yrange, ylab="Effective number (proportion of infected)", xlab="Days" )
     lines( ipl ~ dr, col="darkorange", lty="dashed" )

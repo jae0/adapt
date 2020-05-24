@@ -214,7 +214,7 @@ generated quantities {
 # ------------------
 
 
-  if ( selection %in% c("discrete_autoregressive_structured_beta_mortality_hybrid_latent") ) {
+  if ( selection %in% c("discrete_autoregressive_structured_beta_mortality_hybrid_latent_Q_ar") ) {
 
     ## this tried to add the binomial data costraints but STAN really does not permit integers as rando variables and
     ## so the probabilities are computed only for post-processing
