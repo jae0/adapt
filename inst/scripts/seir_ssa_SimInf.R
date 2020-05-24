@@ -37,6 +37,24 @@ plot(res)
 
 
 
+# events :
+
+statevars = c( "S", "I", "R", "M", "Q" )
+event_types = c( "external_source", "external_sink",  "internal_transfer")
+
+E = matrix( c(
+    1, 1, 1,
+    0, 1, 1,
+    0, 1, 1,
+    0, 0, 0,
+    0, 1, 0
+  ),
+  ncol=3, nrow=5, byrow=TRUE,
+  dimnames=list( statevars, event_types )
+)
+
+N = matrix( c( 4,3,2,0,0 ), ncol=1, dimnames=list(statevars, "quarantined") ) # move x forward, i.e, S->Q
+
 quarantine = data.frame(
    event="intTrans",
    time=rep(21:52, each=50),
@@ -44,25 +62,10 @@ quarantine = data.frame(
    dest=0,
    n=0,
    proportion=0.5,
-   select=3,
-   shift=1
+   select=3,  # select from 3rd column of E
+   shift=1  # move to compartment specified by first column of N
 )
 
-# events :
-
-statevars = c( "S", "I", "R", "M", "Q" )
-event_types = c( "external_source", "external_sink",  "internal_transfer")
-
-events = matrix( c(
-    1, 1, 1,
-    0, 1, 1,
-    0, 0, 0,
-    0, 1, 1,
-    0, 1, 0
-  ),
-  ncol=3, nrow=5, byrow=TRUE,
-  dimnames=list( statevars, event_types )
-)
 
 
 transitions = c(
@@ -72,6 +75,7 @@ transitions = c(
 )
 
 params = c( BETA=0.3, GAMMA=0.1, EPSILON=0.01)
+
 initial_conditions = data.frame( S=rep(99,n), I=rep(1,n), R=rep(0,n), M=rep(0,n) )
 
 SIRMQ = mparse(
@@ -79,6 +83,7 @@ SIRMQ = mparse(
   compartments = statevars,  # susceptible, infected, recovered, mortality, quarantined
   gdata = params,
   u0 = initial_conditions,
+  events = events, E=E, N=N,
   tspan = 1:100
 )
 
