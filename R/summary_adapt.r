@@ -107,7 +107,7 @@ summary_adapt = function( selection="summary.load", can, fn=NULL, brks=30, to.sc
         # using cubic folded root to visualize
         frp = 1/2  # folded root power
         xvals = seq(0, nx, by=20)
-        yrange = folded_root(c(0.9925, 1), frp)
+        yrange = folded_root(c(0.96, 1), frp)
         yticks = seq( yrange[1], yrange[2], length.out=8)
         yvals = round( folded_root( yticks, frp, inverse=TRUE) *100 , 2)  # convert to %
         plot( 0,0, type="n", xlab="", ylab="", ylim=yrange, xlim=c(0, nx), axes=FALSE)
@@ -230,8 +230,14 @@ summary_adapt = function( selection="summary.load", can, fn=NULL, brks=30, to.sc
       } else {
         dev.new()
       }
+        yrange = 0
+        for ( i in 1:length(aus)) {
+          au = aus[i]
+          yrg0 = range( res[[au]]$K$median, na.rm=TRUE )
+          yrange = range( c(yrange, yrg0 )) #, yrg1, yrg7 ) )
+        }
+        yrange[2] = yrange[2] * 1.1
         xvals = seq(0, nx, by=20)
-        yrange = c(0, 10)
         yvals = seq(yrange[1], yrange[2], by =2)
         plot( 0,0, type="n", xlab="", ylab="", ylim=yrange, xlim=c(0, nx), axes=FALSE)
         for (i in 1:length(aus) ) {
@@ -256,9 +262,9 @@ summary_adapt = function( selection="summary.load", can, fn=NULL, brks=30, to.sc
         # yrg7 = range( res[[au]]$histogram_K7$density, na.rm=TRUE )
         yrange = range( c(yrange, yrg0 )) #, yrg1, yrg7 ) )
       }
-      yrange[2] = yrange[2] * 1.15
+      yrange[2] = yrange[2] * 1.1
       xrange = range( c(0, res[[au]]$histogram_K0$mids) )
-      xrange[2] = xrange[2] * 1.15
+      xrange[2] = xrange[2] * 1.25
       xvals = round( seq(xrange[1], xrange[2], length.out=8 ), 3)
       yvals = round( seq(yrange[1], yrange[2], length.out=8 ), 3)
 
@@ -282,7 +288,6 @@ summary_adapt = function( selection="summary.load", can, fn=NULL, brks=30, to.sc
       if (!to.screen) dev.off()
 
     }
-
 
   }
 
