@@ -72,12 +72,12 @@ if ( "plot" %in% tasks ) {
     M = extract(f)
     plot_model_fit( selection="susceptible", stan_data=can[[au]], M=M, outdir=outdir, to.screen=to.screen )
     plot_model_fit( selection="infected", stan_data=can[[au]], M=M, outdir=outdir, to.screen=to.screen )
-#     plot_model_fit( selection="infected_effective", stan_data=can[[au]], M=M, outdir=outdir, to.screen=to.screen )
+    plot_model_fit( selection="infected_effective", stan_data=can[[au]], M=M, outdir=outdir, to.screen=to.screen )
     plot_model_fit( selection="recovered", stan_data=can[[au]], M=M, outdir=outdir, to.screen=to.screen )
     plot_model_fit( selection="deaths", stan_data=can[[au]], M=M, outdir=outdir, to.screen=to.screen )
     plot_model_fit( selection="reproductive_number", stan_data=can[[au]], M=M, outdir=outdir, to.screen=to.screen )
     plot_model_fit( selection="reproductive_number_histograms", stan_data=can[[au]], M=M, outdir=outdir, to.screen=to.screen )
-#    plot_model_fit( selection="effective_number", stan_data=can[[au]], M=M, outdir=outdir, to.screen=to.screen )
+    plot_model_fit( selection="effective_number", stan_data=can[[au]], M=M, outdir=outdir, to.screen=to.screen )
   }
 }
 

@@ -78,7 +78,7 @@ parameters {
   real<lower = 0.0, upper =1.0> Imu[Nobs]; // mean process I
   real<lower = 0.0, upper =1.0> Rmu[Nobs]; // mean process Recoveries only (no deaths)
   real<lower = 0.0, upper =1.0> Mmu[Nobs]; // mean process Mortalities
-  real<lower = 0.0, upper =2.0> Q[Nobs]; // unobserved
+  real<lower = 0.0, upper =2.0> Q[Nobs_1]; // unobserved
 }
 
 transformed parameters{
@@ -93,7 +93,6 @@ model {
 
   GAMMA ~ normal(0, 0.1/4.0);;  // recovery of I ... always < 1, shrinks towards 0
   EPSILON ~ normal(0, 0.1/4.0);;  // recovery of I ... always < 1, shrinks towards 0
-  // Q ~ normal(1, 0.1/4.0);;  // unobserved
 
   // AR(k=BNP) model for BETA
   BETAar ~ normal( 0.0, 0.25 ); // autoregression (AR(k=BNP)) ..  shrink to 0
@@ -101,6 +100,8 @@ model {
 
   BETAsd ~ cauchy( 0.0, 0.1 ); // , shrinks towards 0
   BETA[1:BNP] ~ normal( 0.0, 1.0/4.0 );  //  centered on 0, shrink towards 0
+
+  Q ~ normal( 1.0, 0.1 );  //  centered on 0, shrink towards 0
 
   //set intial conditions
   Smu[1] ~ normal(Sprop[1], Ssd) ;
@@ -117,15 +118,14 @@ model {
       }
       BETA[i] ~ normal( BETAmu, BETAsd );
     }
-    Smu[i+1] ~ normal( Smu[i] - BETA[i] *  Smu[i] * Imu[i] , Ssd)  ;
-    Imu[i+1] ~ normal( Imu[i] + BETA[i] *  Smu[i] * Imu[i] - GAMMA * Imu[i] - EPSILON * Imu[i] , Isd);
-    Rmu[i+1] ~ normal( Rmu[i] + GAMMA * Imu[i] , Rsd ) ;
-    Mmu[i+1] ~ normal( Mmu[i] + EPSILON * Imu[i] , Msd) ;
+    Smu[i+1] ~ normal( Smu[i] - BETA[i] *  Smu[i] * Imu[i] * Q[i] , Ssd)  ;
+    Imu[i+1] ~ normal( Imu[i] + BETA[i] *  Smu[i] * Imu[i] * Q[i] - GAMMA * Imu[i]* Q[i] - EPSILON * Imu[i]* Q[i] , Isd);
+    Rmu[i+1] ~ normal( Rmu[i] + GAMMA * Imu[i]* Q[i] , Rsd ) ;
+    Mmu[i+1] ~ normal( Mmu[i] + EPSILON * Imu[i]* Q[i] , Msd) ;
   }
 
   // data likelihoods, if *obs ==-1, then data was missing  . same conditions as in transformed parameters
   // observation model with binomial observation error: slow .. swithcing to normal
-  Q ~ normal( 1.0, 1.0/4.0 );  //  centered on 0, shrink towards 0
 
   for (i in 1:Nobs) {
     if (Sobs[i] >= 0  ) {  // to handle missing values in SI
@@ -133,7 +133,7 @@ model {
       // Sobs[i] ~ binomial( Npop, Smu[i] );  // slow
     }
     if (Iobs[i] >= 0 ) {
-      Iprop[i] ~ normal( Imu[i]*Q[i], Isd );
+      Iprop[i] ~ normal( Imu[i], Isd );
       // Iobs[i] ~ binomial( Npop, Imu[i] );
     }
     if (Robs[i] >= 0 ) {
@@ -174,11 +174,11 @@ generated quantities {
   Mpp[1] = Mmu[Nobs];
 
   for ( i in 1:Npreds ) {
-    real dsi = BETA[Nobs_1] * Spp[i] * Ipp[i] ;
-    real dir = GAMMA * Ipp[i] ;
-    real dim = EPSILON * Ipp[i]  ;
+    real dsi = BETA[Nobs_1] * Spp[i] * Ipp[i] * Q[Nobs_1] ;
+    real dir = GAMMA * Ipp[i]* Q[Nobs_1] ;
+    real dim = EPSILON * Ipp[i] * Q[Nobs_1] ;
     Spp[i+1] = fmax(0, fmin( 1, Spp[i] - dsi ) )  ;
-    Ipp[i+1] = fmax(0, fmin( 1, Ipp[i]  + dsi - dir - dim + Q[Nobs_1]*Ipp[i] ));
+    Ipp[i+1] = fmax(0, fmin( 1, Ipp[i] + dsi - dir - dim  ));
     Rpp[i+1] = fmax(0, fmin( 1, Rpp[i] + dir )) ;
     Mpp[i+1] = fmax(0, fmin( 1, Mpp[i] + dim )) ;
   }
