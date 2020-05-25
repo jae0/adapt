@@ -206,10 +206,22 @@ summary_adapt = function( selection="summary.load", can, fn=NULL, brks=30, to.sc
       } else {
         dev.new()
       }
-        yrange = c(0,0.0057)
-        xrange = c(0, 0.114)
-        xvals = round( seq(xrange[1], xrange[2], length.out=8 ), 3)
-        yvals = round( seq(yrange[1], yrange[2], length.out=8 ), 3)
+        xrange = NULL
+        yrange = NULL
+        for ( i in 1:length(aus)) {
+          au = aus[i]
+          xrg0 = range( res[[au]]$GAMMA$median, na.rm=TRUE )
+          xrange = range( c(xrange, xrg0 )) #, yrg1, yrg7 ) )
+          yrg0 = range( res[[au]]$EPSILON$median, na.rm=TRUE )
+          yrange = range( c(yrange, yrg0 )) #, yrg1, yrg7 ) )
+        }
+        yrange[1] =yrange[1]*0.8
+        yrange[2] =yrange[2]*1.2
+        xrange[1] =xrange[1]*0.8
+        xrange[2] =xrange[2]*1.2
+
+        xvals = round( seq(xrange[1], xrange[2], length.out=5 ), 3)
+        yvals = round( seq(yrange[1], yrange[2], length.out=5 ), 3)
         plot( 0,0, type="n",  xlab="", ylab="", ylim=yrange, xlim=xrange, axes=FALSE)
         for (i in 1:length(aus) ) {
           au = aus[i]

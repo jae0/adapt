@@ -10,10 +10,15 @@ simulate = function( M, istart=istart, nsims=1, nprojections=10, model="stochast
 
     u0=data.frame(
       S= M$S[iss, istart],
-      I= M$I[iss, istart],
       R= M$R[iss, istart] + M$M[iss, istart],
       gamma=M$GAMMA[iss]
     )
+
+    if (exists("Q", M) ) {
+      u0$I = trunc( M$I[iss, istart] * M$Q[iss, istart-1] )
+    } else {
+      u0$I = M$I[iss, istart]
+    }
 
     if (exists("BETA_filtered", M) ) {
       u0$beta= M$BETA_filtered[iss, istart-1]  # note, BETA is conditioned on previous time step. .

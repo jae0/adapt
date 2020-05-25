@@ -65,8 +65,8 @@ transformed data {
 }
 
 parameters {
-  real<lower=0.0, upper =GAMMA_max> GAMMA;     // recovery rate .. proportion of infected recovering
-  real<lower=0.0, upper =EPSILON_max> EPSILON;   // death rate .. proportion of infected dying
+  real<lower=1.0e-9, upper =GAMMA_max> GAMMA;     // recovery rate .. proportion of infected recovering
+  real<lower=1.0e-9, upper =EPSILON_max> EPSILON;   // death rate .. proportion of infected dying
   real<lower=0.0, upper =BETA_max> BETA[Nobs_1];  // == beta in SIR , here we do *not* separate out the Encounter Rate from the infection rate
   real<lower = -1.0, upper =1.0> ar1[BNP];
   real<lower = 0.0, upper =1.0> ar1k;  // BETA of AR(0) >=0 is sensible
@@ -83,12 +83,12 @@ parameters {
 }
 
 transformed parameters{
-  real<lower=0.0, upper =BETA_max> BETA_filtered[Nobs_1];  // == beta in SIR , filtered to make sense when dsi ->0
+  // real<lower=0.0, upper =BETA_max> BETA_filtered[Nobs_1];  // == beta in SIR , filtered to make sense when dsi ->0
 
-  for ( i in 1:Nobs_1 ) {
-    BETA_filtered[i] = step( Imu[i+1] ) * BETA[i]; // when infected numbers are 0 then BETA should be also
+  // for ( i in 1:Nobs_1 ) {
+    // BETA_filtered[i] = step( Imu[i+1] ) * BETA[i]; // when infected numbers are 0 then BETA should be also
     //BETA_filtered[i] =  BETA[i];
-  }
+  // }
 }
 
 model {
@@ -128,7 +128,7 @@ model {
   // process model
   for ( i in 1:Nobs_1 ) {
     real IQ = Imu[i] * Q[i];
-    real dsi = BETA[i] *  Smu[i] * IQ ) ;
+    real dsi = BETA[i] *  Smu[i] * IQ  ;
     real dir = GAMMA * IQ;
     real dim = EPSILON * IQ ;
     Smu[i+1] ~ normal( Smu[i] - dsi , Ssd)  ;
@@ -157,9 +157,8 @@ model {
       // Mobs[i] ~ binomial( Npop, Mmu[i] );
     }
   }
-
-
 }
+
 
 generated quantities {
   real<lower=0> K[Ntimeall-1];
@@ -187,8 +186,8 @@ generated quantities {
   Mpp[1] = Mmu[Nobs];
 
   for ( i in 1:Npreds ) {
-    real IQp = Ipp[i] * Q[Nobs_1];  // latent incidence
-    real dsi = BETA_filtered[Nobs_1] * Spp[i] * IQp;
+    real IQp = Ipp[i] * Q[Nobs_1];
+    real dsi = BETA[Nobs_1] * Spp[i] * IQp;
     real dir = GAMMA * IQp;
     real dim = EPSILON * IQp ;
     Spp[i+1] = fmax(0, fmin( 1, Spp[i] - dsi ) )  ;
@@ -207,10 +206,10 @@ generated quantities {
 
   // sample from  mean process (proportions to counts)
   for (i in 1:Nobs_1 ) {
-    K[i] = BETA_filtered[i] / (GAMMA+EPSILON); // the contact number = fraction of S in contact with I
+    K[i] = BETA[i] / (GAMMA+EPSILON); // the contact number = fraction of S in contact with I
   }
   for (i in Nobs:(Ntimeall-1) ) {
-    K[i] = BETA_filtered[Nobs_1] / (GAMMA+EPSILON); // the contact number = fraction of S in contact with I
+    K[i] = BETA[Nobs_1] / (GAMMA+EPSILON); // the contact number = fraction of S in contact with I
   }
 
 }

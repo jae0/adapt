@@ -103,5 +103,5 @@ fn.summary = file.path( workdir, "Covid19Canada_summary.rdata")
 
 res = summary_adapt( "summary.create", can=can, fn=fn.summary )
 res = summary_adapt( "plot_reproductive_number_histograms", can=can, fn=fn.summary, to.screen=TRUE )
-res = summary_adapt( "plot_all", can=can, fn=fn.summary, to.screen=TRUE )
+res = summary_adapt( "plot_all", can=can, fn=fn.summary, to.screen=FALSE )
 
