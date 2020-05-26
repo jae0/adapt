@@ -30,9 +30,9 @@ can = data_provinces_of_canada(
   fn = fn,
   Npreds = 20,   # number of days for ode-based forward projections
   BNP = 1,       # beta dynamics is AR(BNP) ; also the number of days to average for forward ode-based projections (incubation time is ~ 5-7 days) .. higher than 1 can cause problems ... high var in reporting causes + and - corrs
-  BETA_max = 1.0,     # max rate param for S -> I  # approx number of contacts per person per time (day) multiplied by the probability of disease transmission in a contact between a susceptible and an infectious subject;  ~ 1/( typical time in days between contacts)
+  BETA_max = 1.25,     # max rate param for S -> I  # approx number of contacts per person per time (day) multiplied by the probability of disease transmission in a contact between a susceptible and an infectious subject;  ~ 1/( typical time in days between contacts)
   # BETA_max is very important: seldom does this value go > 1 for Covid-19 in Canada,
-  GAMMA_max = 0.1,    # max rate param for I -> R  # ~ 1/(typical time until removal = 14) = 0.07
+  GAMMA_max = 0.125,    # max rate param for I -> R  # ~ 1/(typical time until removal = 14) = 0.07
   EPSILON_max = 0.1,  # max rate param for I -> M  # > recovery time; < rate ..
   modelname="default"
 )
@@ -72,13 +72,14 @@ if ( "plot" %in% tasks ) {
     M = extract(f)
     plot_model_fit( selection="susceptible", stan_data=can[[au]], M=M, outdir=outdir, to.screen=to.screen )
     plot_model_fit( selection="infected", stan_data=can[[au]], M=M, outdir=outdir, to.screen=to.screen )
-    plot_model_fit( selection="infected_effective", stan_data=can[[au]], M=M, outdir=outdir, to.screen=to.screen )
+    # plot_model_fit( selection="infected_effective", stan_data=can[[au]], M=M, outdir=outdir, to.screen=to.screen )
     plot_model_fit( selection="recovered", stan_data=can[[au]], M=M, outdir=outdir, to.screen=to.screen )
     plot_model_fit( selection="deaths", stan_data=can[[au]], M=M, outdir=outdir, to.screen=to.screen )
     plot_model_fit( selection="reproductive_number", stan_data=can[[au]], M=M, outdir=outdir, to.screen=to.screen )
     plot_model_fit( selection="reproductive_number_histograms", stan_data=can[[au]], M=M, outdir=outdir, to.screen=to.screen )
-    plot_model_fit( selection="effective_number", stan_data=can[[au]], M=M, outdir=outdir, to.screen=to.screen )
+    # plot_model_fit( selection="effective_number", stan_data=can[[au]], M=M, outdir=outdir, to.screen=to.screen )
   }
+
 }
 
 
@@ -90,7 +91,7 @@ if ("forecast" %in% tasks ) {
     load(fn_model)
     M = extract(f)
     # --- simplistic stochastic simulations using joint posterior distributions from "current" day estimates:, if BNP is provided, this uses the average in the period specified
-    sim = simulate( M, istart=can[[au]]$Nobs, nsims=1400, nprojections=200  )
+    sim = simulate( M, istart=can[[au]]$Nobs, nsims=1400, nprojections=200, nthreads=1  )
     plot_model_fit( selection="forecasts", stan_data=can[[au]], M=M, outdir=outdir, sim=sim,
       to.screen=to.screen )
   }
