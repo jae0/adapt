@@ -1,7 +1,7 @@
 
-# Current COVID-19 status by province in Canada:
+# Current COVID-19 status by province in Canada, based on an *adapt* analysis:
 
-You can see the current status of COVID-19 disease progression by province, where data are available, by choosing from the links below.
+You can see *adapt*'s assessement of the current status of COVID-19 by choosing from the links below.
 
 - ![Alberta](./inst/doc/Alberta/README.md)
 - ![British Columbia](./inst/doc/BC/README.md)
@@ -17,10 +17,11 @@ You can see the current status of COVID-19 disease progression by province, wher
 - ![Yukon](./inst/doc/Yukon/README.md)
 
 
+These assessments would be better for smaller areal units as they would make management decisions more relevant. This is because dynamics in one city or rural area is like very different from others, even if they are found in the same province. I do not have the computing resources to go to a finer scale.
 
-NOTE 1: These results are generated from an automated process. There might be problems due to unforeseen issues. As of 23 May 2020, the methods have been tweaked to a point where trajectories from all provinces are numerically well behaved and data streams have been error checked.
+NOTE 1: These results are generated from an automated process. There might be problems due to unforeseen issues.
 
-NOTE 2: Computations for Ontario and Quebec, however, take quite a bit of time to complete on my poor laptop; I will update these less frequently.
+NOTE 2: Computations for some provinces such Ontario and Quebec, however, take quite a bit of time to complete on my poor laptop; I will update these when I can.
 
 
 ---
@@ -39,7 +40,7 @@ and assimilated in https://github.com/jae0/adapt/blob/master/R/data_provinces_of
 
 # Analytical model
 
-The number of cases are modelled as a latent state-space variable in a variant of the compartmental SIR model. This is a technique we often use in fishery status and estimation problems. We deviate from the SIR model in that Mortalities are separated from Recovered people and the infection rate parameter is modelled as an autoregressive AR(K) process. For the purposes of these results, a K=3 day lag is used, a balance between computational time and stabilization of the estimates. No claims are made that these are "true" rates, even though latent in formulation as we do not have a good understanding of asymptomatic cases. Nonetheless, they represent an "effective" (that is, a pragmatic and consistent) estimate of the observed state of disease progression.
+The number of cases are modelled as a latent state-space variable in a variant of the compartmental SIR model. This is a technique we often use in fishery status and estimation problems. We deviate from the SIR model in that Mortalities are separated from Recovered people and the infection rate parameter is modelled as an autoregressive AR(K=1) process. A K=1 day lag is used as there exists temporal autocorelation in disease progression which if ignored can introduce biased parameter estimates; this represents a functional balance between computational time and stabilization of the estimates. No claims are made that these are "true" rates, even though latent in formulation as we do not have a good understanding of asymptomatic cases. Nonetheless, they represent an "effective" (that is, a pragmatic and consistent) estimate of the observed state of disease progression.
 
 "Simple" projections (i.e., deterministic, mean-field predictions) from this recursive model are presented with 95% posterior credible intervals, based upon an average and standard deviation of the infection rate parameter over the last K days (i.e., 3 days). A stochastic simulation from these parameters are also presented; these are based on a master equation formulation with a Gillespie approximation.
 
@@ -56,13 +57,13 @@ The model options and main results are created by running:
 
 *adapt* (Areal Disease Analysis and Predicion Tools) is a set of routines to analyze publicly available disease epidemic data such as COVID-19 that you can customize for your town, province or state or country. This data tends to be rather crude counts of cases and recovered people and deaths. Your area of interest probably has these announcements and the information is likely captured by concerned citizens. To make sense of this information, beyond the daily ups and downs, you need to model it. To help, *adapt* attempts to assimilate disease spread data for COVID-19 and other similar diseases and estimate model parameters of classical epidemiological models using Bayesian methods (MCMC via STAN: https://mc-stan.org/) and then simulate/forecast disease progression using stochastic simulation modelling approaches (via the Gillespie method, implemented beautifully by SimInf: https://github.com/stewid/SimInf). Areal unit-based approaches using CAR/BYM models (via INLA) are also used to help understand and model spatial patterns (todo).
 
-A basic model appropriate for such crude data is the SIR (Susceptible-Infected-Recovered) compartmental model. This is a well understood model that has its share of limitations but still sufficient to get a crude sense of what is going on. Look it up if you want to know details. The programs here are used to fit a variation of this model to the crude data, as best we can. It diverges from standard usage in that the default model's infection rate parameter is treated as an autoregressive AR(K) process, rather than as a static, disease-specific constant. It, therefore, absorbs the temporal variability in disease dynamics that a simple SIR cannot model. This "efective" infection rate and associated "effective" reproductive number can help us understand disease progression. *adapt*  approaches the estimation of these and associated parameters as a "latent, state-space" problem, also often encountered also in fisheries assessment problems where reality can not generally be directly observed.
+A basic model appropriate for such crude data is the SIR (Susceptible-Infected-Recovered) compartmental model. This is a well understood model that has its share of limitations but still sufficient to get a crude sense of what is going on. Look it up if you want to know details. The programs here are used to fit a variation of this model to the crude data, as best we can. It diverges from standard usage in that the default model's infection rate parameter is treated as an autoregressive AR(K=1) process, rather than as a static, disease-specific constant. It, therefore, absorbs the temporal variability in disease dynamics that a simple SIR cannot model. This "effective" infection rate and associated "effective" reproductive number can help us understand disease progression. More formally, *adapt*  approaches the estimation of these and associated parameters as a "latent, state-space" problem, also often encountered also in fisheries assessment problems, where due to the size of the oceans, reality can not generally be directly observed.
 
 Use of *adapt*, requires only some minimal understanding of programming, mostly R (https://cran.r-project.org/). If you just want to get a sense of what things are like for your area of interest, you need to change the input data (see below for examples). For Nova Scotia's status, it is accessing a Google sheet that stores the required information:
 
 https://docs.google.com/spreadsheets/d/1tgf2H9gDmRnGDGeQE-fC9IPhrmNxP8-JC7Nnnob_vuY/edit#gid=1323236978
 
-This data was compiled and updated by Jennifer Strang and Nathalie Saint-Jacques. You can use this as a template.
+This data were compiled and updated by Jennifer Strang and Nathalie Saint-Jacques. You can use this as a template.
 
 Alternatively, you can directly estimate the numbers required and manually create the data structures (see example in and assimilated in https://github.com/jae0/adapt/blob/master/R/data_provinces_of_canada.R ).
 
