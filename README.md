@@ -21,8 +21,7 @@ You can see *adapt*'s assessement of the current status of COVID-19 by choosing 
 - ![Yukon](./inst/doc/Yukon/README.md)
 
 
-These assessments would be better for smaller areal units as they would make management decisions more relevant. This is because dynamics in a city or a rural area is like very different and there are likely spatial variations depending upon how connected each town is to neighbouring areas. They are however, a demonstration of approach and functionality, for when the next wave of Covid-19 or similar disease strikes.
-
+These assessments would be more informative for smaller areal units as they would make management decisions more relevant. This is because dynamics in a city or a rural area is likely very different with spatial patterns related to how connected each area is to neighbouring areas. So if you have access to information for your city/town, you might want to run this for your city/town.
 
 ---
 
