@@ -21,14 +21,14 @@ You can see *adapt*'s assessement of the current status of COVID-19 by choosing 
 - ![Yukon](./inst/doc/Yukon/README.md)
 
 
-These assessments would be more informative for smaller areal units as they would make management decisions more relevant. This is because dynamics in a city or a rural area is likely very different with spatial patterns related to how connected each area is to neighbouring areas. So if you have access to information for your city/town, you might want to run this for your city/town.
+Some advice: These assessments would be more informative for smaller areal units as they would make management decisions more relevant. This is because dynamics in a city or a rural area is likely very different with spatial patterns related to how connected each area is to neighbouring areas and population behaviour in terms of distancing, service support, etc. So if you have access to information for your city/town, you might want to run this for your city/town to obtain the most relevant information.
 
 ---
 
 
 # Data
 
-The data are obtained directly from: https://github.com/ishaberry/Covid19Canada. This is a data repository maintained by:
+The data are obtained from: https://github.com/ishaberry/Covid19Canada. This is a data repository maintained by:
 
 Berry I, Soucy J-PR, Tuite A, Fisman D. Open access epidemiologic data and an interactive dashboard to monitor the COVID-19 outbreak in Canada. CMAJ. 2020 Apr 14;192(15):E420. doi: https://doi.org/10.1503/cmaj.75262
 
@@ -39,9 +39,9 @@ and assimilated in https://github.com/jae0/adapt/blob/master/R/data_provinces_of
 
 # Analytical model
 
-The number of cases are modelled as a latent state-space variable in a variant of the compartmental SIR model. This is a technique we often use in fishery status and estimation problems. We deviate from the SIR model in that Mortalities are separated from Recovered people and the infection rate parameter is modelled as an autoregressive AR(K=1) process. A K=1 day lag is used as there exists temporal autocorelation in disease progression which if ignored can introduce biased parameter estimates; this represents a functional balance between computational time and stabilization of the estimates. No claims are made that these are "true" rates, even though latent in formulation as we do not have a good understanding of asymptomatic cases. Nonetheless, they represent an "effective" (that is, a pragmatic and consistent) estimate of the observed state of disease progression.
+The number of cases are modelled as a latent state-space variable in a variant of the compartmental SIR model. This is a technique we often use in fishery status and estimation problems. We deviate from the SIR model in that Mortalities are separated from Recovered people and the infection rate parameter is modelled as an autoregressive AR(K=1) process. A K=1 day lag is used as there exists temporal autocorelation in disease progression which if ignored can introduce biased parameter estimates; this represents a functional balance between computational time and stabilization of the estimates. No claims are made that these are "true" rates, even though latent in formulation as we do not have a good understanding of asymptomatic cases. Nonetheless, they represent an "effective" (that is, a pragmatic and consistent) estimate of the observed state of disease progression in that all dynamics are absorbed by the "effective" infection rate. We can assess relative infectivity to the other rate processes via the manner in which the "Reproductive number" evolves over time. If this is below 1, then it means it is not spreading exponentially. Keeping this value low by wearing masks, social distancing, handwashing, etc. is critical.
 
-"Simple" projections (i.e., deterministic, mean-field predictions) from this recursive model are presented with 95% posterior credible intervals, based upon an average and standard deviation of the infection rate parameter over the last K days (i.e., 3 days). A stochastic simulation from these parameters are also presented; these are based on a master equation formulation with a Gillespie approximation.
+"Simple" projections (i.e., deterministic, "mean-field" predictions) from this recursive model are presented with 95% posterior credible intervals. A stochastic simulation from these parameters are also presented; these are based on a master equation formulation with a Gillespie approximation.
 
 The model options and main results are created by running:
 
