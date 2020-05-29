@@ -92,7 +92,7 @@ if ("forecast" %in% tasks ) {
     load(fn_model)
     M = extract(f)
     # --- simplistic stochastic simulations using joint posterior distributions from "current" day estimates:, if BNP is provided, this uses the average in the period specified
-    sim = simulate( M, istart=can[[au]]$Nobs, nsims=1400, nprojections=200, nthreads=1  )
+    sim = simulate( M, istart=can[[au]]$Nobs-1, nsims=1400, nprojections=200, nthreads=1  ) # predictions are conditioned on beta estimates from t-1
     plot_model_fit( selection="forecasts", stan_data=can[[au]], M=M, outdir=outdir, sim=sim,
       to.screen=to.screen )
   }

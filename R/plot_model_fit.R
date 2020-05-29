@@ -1,6 +1,6 @@
 
 plot_model_fit = function( selection="default", stan_data, M,
-  sim=NULL, outdir="", nx=NULL, to.screen =FALSE ) {
+  sim=NULL, nsimlines=2000, outdir="", nx=NULL, to.screen =FALSE ) {
 
   if (!dir.exists(outdir)) dir.create(outdir, showWarnings=FALSE, recursive=TRUE )
 
@@ -260,7 +260,8 @@ plot_model_fit = function( selection="default", stan_data, M,
       yrange = range( c(io, ip), na.rm=TRUE)
       yrange[2] = yrange[2] * 2
       plot( io ~ stan_data$time, xlim=xrange, ylim=yrange,  type="n", ylab="Infected", xlab="Days")
-      for ( i in 1:min( dim(sim)[1], 2000)) lines( sim[i,2,] ~ simxval, col=alpha("slategray", 0.1), lty="solid" )
+      nsimlines = min( nsimlines, dim(sim)[1])
+      for ( i in 1:min( dim(sim)[1], nsimlines)) lines( sim[i,2,] ~ simxval, col=alpha("slategray", 0.1), lty="solid" )
       lines( ip ~ seq(1,nx), lwd = 3, col="slateblue" )
       lines( apply(M$I, 2, quantile, probs=0.025)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
       lines( apply(M$I, 2, quantile, probs=0.975)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
