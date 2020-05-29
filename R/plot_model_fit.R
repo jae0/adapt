@@ -209,7 +209,7 @@ plot_model_fit = function( selection="default", stan_data, M,
     }
       nxr = stan_data$Nobs + stan_data$Npreds - 4  # in case data are not upto-date
       rp = apply(M$K[,1:nxr], 2, median)
-      yrange = range(rp)
+      yrange = range(c(0, rp, 3))
       plot( rp ~ seq(1,nxr), type="l", lwd =3, col="slateblue", ylim=yrange, ylab="Reproductive number", xlab="Days" )
       lines( apply(M$K, 2, quantile, probs=0.025)[1:nxr] ~ seq(1,nxr), col="darkorange", lty="dashed" )
       lines( apply(M$K, 2, quantile, probs=0.975)[1:nxr] ~ seq(1,nxr), col="darkorange", lty="dashed" )
