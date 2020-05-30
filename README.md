@@ -41,7 +41,7 @@ and assimilated in https://github.com/jae0/adapt/blob/master/R/data_provinces_of
 
 The number of cases are modelled as a latent state-space variable in a variant of the compartmental SIR model. This is a technique we often use in fishery status and estimation problems. We deviate from the SIR model in that Mortalities are separated from Recovered people and the infection rate parameter is modelled as an autoregressive AR(K=1) process. A K=1 day lag is used as there exists temporal autocorelation in disease progression which if ignored can introduce biased parameter estimates; this represents a functional balance between computational time and stabilization of the estimates. No claims are made that these are "true" rates, even though latent in formulation, as we do not have a good understanding of asymptomatic cases.
 
-Nonetheless, they represent an "effective" (that is, a pragmatic and consistent) estimate of the observed state of disease progression where all dynamics are absorbed by a time-varying "effective" infection rate. We can assess this "effective" infection rate relative to the other "effective" rate processes (death and recovery) by examining the manner in which the "effective" Reproductive number evolves over time. If this is above 1, then it means it is spreading exponentially. If below 1, then it is decreasing as an expnential decay. Keeping this value low by wearing masks, social distancing, handwashing, etc. is critical and indeed can be used as an indicator of the success of such measures adn identification of hot and cold-spots of infection spread that require additional measures.
+Nonetheless, they represent an "effective" (that is, a pragmatic and consistent) estimate of the observed state of disease progression where all dynamics are absorbed by a time-varying "effective" infection rate. We can assess this "effective" infection rate relative to the other "effective" rate processes (death and recovery) by examining the manner in which the "effective" Reproductive number evolves over time. If this is above 1, then it means it is spreading exponentially; if below 1, then it is decreasing exponentially; and if it is near 1, this  means the disease is steady where each new infetion is balanced by a recovery or death. Keeping this value low by wearing masks, social distancing, handwashing, etc. is critical and indeed can be reasonably used as an indicator of the success of such measures and eventually identification of hot and cold-spots of infection spread that require additional measures (to do next).
 
 "Simple" projections (i.e., deterministic, "mean-field" predictions) from this recursive model are presented with 95% posterior credible intervals. A stochastic simulation from these parameters are also presented; these are based on a master equation formulation with a Gillespie approximation.
 
@@ -64,12 +64,13 @@ Use of *adapt*, requires only some minimal understanding of programming, mostly 
 
 https://docs.google.com/spreadsheets/d/1tgf2H9gDmRnGDGeQE-fC9IPhrmNxP8-JC7Nnnob_vuY/edit#gid=1323236978
 
-This data were compiled and updated by Jennifer Strang and Nathalie Saint-Jacques. You can use this as a template.
+This was kindly compiled and updated by Jennifer Strang and Nathalie Saint-Jacques, though no longer maintained. You can use this as a template.
 
 Alternatively, you can directly estimate the numbers required and manually create the data structures (see example in and assimilated in https://github.com/jae0/adapt/blob/master/R/data_provinces_of_canada.R ).
 
 Please note: No guarantees are being made here. There are always errors in models, programs that implement such models and in the data itself. However, this is a functional way of helping make sense of information such that we can engage in more informed discussions with your community on next steps in these trying times.
 
+Finally, computations require a lot of time. Currently, due to the length of the timeseries and the complexity of dynamics, it can take 10 hours to finish some provinces (on my 4 year old laptop). Shorter term models runs updating only the recent dynamics are likely better operationally. I will try to get this done soon.
 
 Jae
 
@@ -95,16 +96,14 @@ Here is an example of the data structure that is expected in "stan_data":
 
 R> str(stan_data)
 List of 14
- $ Npop       : num 971395
- $ Nobs       : int 51
- $ Npreds     : num 30
- $ time       : int [1:51] 1 2 3 4 5 6 7 8 9 10 ...
- $ Sobs       : num [1:51] 971394 971392 971390 971390 -1 ...
- $ Iobs       : num [1:51] 1 3 5 5 -1 28 41 51 68 73 ...
- $ Robs       : num [1:51] 0 0 0 0 -1 0 0 0 0 0 ...
- $ Mobs       : num [1:51] 0 0 0 0 -1 0 0 0 0 0 ...
- $ BNP        : num 3
- $ modelname  : chr "discrete_autoregressive_without_observation_error"
- $ plotlabel  : chr "Nova Scotia"
+ $ Npop       : num 971395  # total population size
+ $ Nobs       : int 51      # number of observed time slices (days)
+ $ Npreds     : num 30      # number of prediction time slices (days)
+ $ time       : int [1:51] 1 2 3 4 5 6 7 8 9 10 ... # time index
+ $ Sobs       : num [1:51] 971394 971392 971390 971390 -1 ... # total susceptible population size
+ $ Iobs       : num [1:51] 1 3 5 5 -1 28 41 51 68 73 ...      # infected population size
+ $ Robs       : num [1:51] 0 0 0 0 -1 0 0 0 0 0 ...           # total recovered population size
+ $ Mobs       : num [1:51] 0 0 0 0 -1 0 0 0 0 0 ...           # total mortalities population size
+ $ BNP        : num 1                                         # number of lags in BETA (infection rate); AR(K=BNP)
 
 ```

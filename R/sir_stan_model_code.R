@@ -78,8 +78,8 @@ parameters {
   real<lower = 0.0, upper =1.0> Imu[Nobs]; // mean process I
   real<lower = 0.0, upper =1.0> Rmu[Nobs]; // mean process Recoveries only (no deaths)
   real<lower = 0.0, upper =1.0> Mmu[Nobs]; // mean process Mortalities
-  real<lower = 1.0e-9, upper =GAMMA_max/5.0 > GAMMAsd;
-  real<lower = 1.0e-9, upper =EPSILON_max/5.0 > EPSILONsd;
+  // real<lower = 1.0e-9, upper =GAMMA_max/5.0 > GAMMAsd;
+  // real<lower = 1.0e-9, upper =EPSILON_max/5.0 > EPSILONsd;
 }
 
 model {
@@ -89,17 +89,17 @@ model {
   Rsd ~ normal(0.0, 0.05);
   Msd ~ normal(0.0, 0.05);
 
-  GAMMAsd ~ normal(0.0, GAMMA_max/5.0);  // assuming normal,  5*SD  -> most of the distrbution of the data on one-tail .. SD ~ 1/5 max right tail
-  GAMMA ~ normal(0, GAMMAsd);;  // recovery of I ... always < 1, shrinks towards 0
+  // GAMMAsd ~ normal(0.0, GAMMA_max/5.0);  // assuming normal,  5*SD  -> most of the distrbution of the data on one-tail .. SD ~ 1/5 max right tail
+  GAMMA ~ normal(0, GAMMA_max/5.0);;  // recovery of I ... always < 1, shrinks towards 0
 
-  EPSILONsd ~ normal(0.0, EPSILON_max/5.0);
-  EPSILON ~ normal(0, EPSILONsd);;  // recovery of I ... always < 1, shrinks towards 0
+  // EPSILONsd ~ normal(0.0, EPSILON_max/5.0);
+  EPSILON ~ normal(0, EPSILON_max/5.0);;  // recovery of I ... always < 1, shrinks towards 0
 
   // AR(k=BNP) model for BETA
   BETAar ~ normal( 0.0, 0.2 ); // autoregression (AR(k=BNP)) ..  shrink to 0
   BETAark ~ normal( 0.0, 0.2 ); //, shrinks towards 0
 
-  BETAsd ~ normal( 0.0, BETA_max/5.0 ); // , shrinks towards 0
+  // BETAsd ~ normal( 0.0, BETA_max/5.0 ); // , shrinks towards 0
   BETA[1:BNP] ~ normal( 0.0, BETAsd );  //  centered on 0, shrink towards 0
 
   //set intial conditions
