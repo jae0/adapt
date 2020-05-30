@@ -1,7 +1,5 @@
 
 ---
-NOTE: As interest in these results seem to be mostly in Nova Scotia, I will stop updating the other provinces. If you wish for your province to be updated, let me know and I will try to fit it in.
----
 
 # Current COVID-19 status by province in Canada, based on an *adapt* analysis:
 
