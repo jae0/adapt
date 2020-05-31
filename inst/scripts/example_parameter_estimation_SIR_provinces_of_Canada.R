@@ -30,10 +30,10 @@ can = data_provinces_of_canada(
   fn = fn,
   Npreds = 20,   # number of days for ode-based forward projections
   BNP = 1,       # beta dynamics is AR(BNP) ; also the number of days to average for forward ode-based projections (incubation time is ~ 5-7 days) .. higher than 1 can cause problems ... high var in reporting causes + and - corrs
-  BETA_max = 1.25,     # max rate param for S -> I  # approx number of contacts per person per time (day) multiplied by the probability of disease transmission in a contact between a susceptible and an infectious subject;  ~ 1/( typical time in days between contacts)
+  BETA_max = 1.0,     # max rate param for S -> I  # approx number of contacts per person per time (day) multiplied by the probability of disease transmission in a contact between a susceptible and an infectious subject;  ~ 1/( typical time in days between contacts)
   # BETA_max is very important: seldom does this value go > 1 for Covid-19 in Canada,
-  GAMMA_max = 0.2,    # max rate param for I -> R  # ~ 1/(typical time until removal = 14) = 0.07
-  EPSILON_max = 0.1,  # max rate param for I -> M  # > recovery time; < rate ..
+  GAMMA_max = 0.1,    # max rate param for I -> R  # ~ 1/(typical time until removal = 14) = 0.07
+  EPSILON_max = 0.05,  # max rate param for I -> M  # > recovery time; < rate ..
   modelname="default"
 )
 
@@ -49,14 +49,14 @@ if ("model" %in% tasks ) {
     print(au)
     fn_model = file.path( workdir, paste( au, can[[au]]$modelname, "rdata", sep=".") )
     outdir = file.path( "~", "bio", "adapt", "inst", "doc", au)
-    control.stan = list(adapt_delta = 0.95, max_treedepth=15 )
+    control.stan = list(adapt_delta = 0.9, max_treedepth=14 )
     # some  au's  have longer and more complex dynamics (i.e. parameter space)and likely reporting issues ... requires additional stabilzation
       if ( au %in% c( "Quebec", "Ontario" ) ) {
       #  control.stan = list(adapt_delta = 0.975, max_treedepth=15 )
        #  can[[au]]$BNP = 3
       }
 
-    f = rstan::sampling( stancode_compiled, data=can[[au]], chains=3, warmup=4000, iter=5000, control=control.stan  )
+    f = rstan::sampling( stancode_compiled, data=can[[au]], chains=3, warmup=4000, iter=6000, control=control.stan  )
     save(f, file=fn_model, compress=TRUE)
   }
 
