@@ -51,7 +51,7 @@ for (au in  provinces) {
     stan_results = list( stan_inputs=can[[au]] )
     fn_model = file.path( workdir, paste( au, stan_results$stan_inputs$modelname, "rdata", sep=".") )
     outdir = file.path( "~", "bio", "adapt", "inst", "doc", au)
-    control.stan = list(adapt_delta = 0.9, max_treedepth=14 )
+    control.stan = list(adapt_delta = 0.925, max_treedepth=15 )
 
     if ("model" %in% tasks ) {
       stan_results$stan_samples = rstan::sampling( stancode_compiled, data=stan_results$stan_inputs, chains=3, warmup=4000, iter=6000, control=control.stan  )
