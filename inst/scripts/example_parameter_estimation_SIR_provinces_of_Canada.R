@@ -20,8 +20,6 @@ fn = file.path( workdir, "Covid19Canada.rdata")
 tasks = c("download.data", "model", "plot", "forecast")
 
 
-to.screen = FALSE
-# to.screen = TRUE
 
 
 if ("download.data" %in% tasks) res = data_provinces_of_canada( selection="download", fn=fn )
@@ -40,62 +38,47 @@ can = data_provinces_of_canada(
 provinces = names(can)
 
 
-if ("model" %in% tasks ) {
 # compile code
 
-  stancode_compiled = rstan::stan_model( model_code=sir_stan_model_code( selection="default" ) )  # compile the code
+stancode_compiled = rstan::stan_model( model_code=sir_stan_model_code( selection="default" ) )  # compile the code
 
-  for (au in  provinces) {
+to.screen = FALSE
+# to.screen = TRUE
+
+for (au in  provinces) {
+
     print(au)
-    fn_model = file.path( workdir, paste( au, can[[au]]$modelname, "rdata", sep=".") )
+    stan_results = list( stan_inputs=can[[au]] )
+    fn_model = file.path( workdir, paste( au, stan_results$stan_inputs$modelname, "rdata", sep=".") )
     outdir = file.path( "~", "bio", "adapt", "inst", "doc", au)
     control.stan = list(adapt_delta = 0.9, max_treedepth=14 )
-    # some  au's  have longer and more complex dynamics (i.e. parameter space)and likely reporting issues ... requires additional stabilzation
-      if ( au %in% c( "Quebec", "Ontario" ) ) {
-      #  control.stan = list(adapt_delta = 0.975, max_treedepth=15 )
-       #  can[[au]]$BNP = 3
-      }
 
-    f = rstan::sampling( stancode_compiled, data=can[[au]], chains=3, warmup=4000, iter=6000, control=control.stan  )
-    save(f, file=fn_model, compress=TRUE)
-  }
+    if ("model" %in% tasks ) {
+      stan_results$stan_samples = rstan::sampling( stancode_compiled, data=stan_results$stan_inputs, chains=3, warmup=4000, iter=6000, control=control.stan  )
+      save(stan_results, file=fn_model, compress=TRUE)
+    } else {
+      load(fn_model)
+    }
 
-}
+    if ( "plot" %in% tasks ) {
+      plot_model_fit( selection="susceptible", stan_results=stan_results, outdir=outdir, to.screen=to.screen )
+      plot_model_fit( selection="infected", stan_results=stan_results, outdir=outdir, to.screen=to.screen )
+      # plot_model_fit( selection="infected_effective", stan_results=stan_results, outdir=outdir, to.screen=to.screen )
+      plot_model_fit( selection="recovered", stan_results=stan_results, outdir=outdir, to.screen=to.screen )
+      plot_model_fit( selection="deaths", stan_results=stan_results, outdir=outdir, to.screen=to.screen )
+      plot_model_fit( selection="reproductive_number", stan_results=stan_results, outdir=outdir, to.screen=to.screen )
+      plot_model_fit( selection="reproductive_number_histograms", stan_results=stan_results, outdir=outdir, to.screen=to.screen )
+      # plot_model_fit( selection="effective_number", stan_results=stan_results, outdir=outdir, to.screen=to.screen )
+    }
 
+    if ("forecast" %in% tasks ) {
+      # --- simplistic stochastic simulations using joint posterior distributions from "current" day estimates:, if BNP is provided, this uses the average in the period specified
+      sim = simulate( stan_results=stan_results, nsims=1400, nprojections=200, nthreads=1  ) # predictions are conditioned on beta estimates from t-1 by default
+      plot_model_fit( selection="forecasts", stan_results=stan_results, sim=sim, outdir=outdir,
+        to.screen=to.screen )
 
-if ( "plot" %in% tasks ) {
+    }
 
-  for (au in  provinces) {
-    print(au)
-    fn_model = file.path( workdir, paste( au, can[[au]]$modelname, "rdata", sep=".") )
-    outdir = file.path( "~", "bio", "adapt", "inst", "doc", au)
-    load(fn_model)
-    M = extract(f)
-    plot_model_fit( selection="susceptible", stan_data=can[[au]], M=M, outdir=outdir, to.screen=to.screen )
-    plot_model_fit( selection="infected", stan_data=can[[au]], M=M, outdir=outdir, to.screen=to.screen )
-    # plot_model_fit( selection="infected_effective", stan_data=can[[au]], M=M, outdir=outdir, to.screen=to.screen )
-    plot_model_fit( selection="recovered", stan_data=can[[au]], M=M, outdir=outdir, to.screen=to.screen )
-    plot_model_fit( selection="deaths", stan_data=can[[au]], M=M, outdir=outdir, to.screen=to.screen )
-    plot_model_fit( selection="reproductive_number", stan_data=can[[au]], M=M, outdir=outdir, to.screen=to.screen )
-    plot_model_fit( selection="reproductive_number_histograms", stan_data=can[[au]], M=M, outdir=outdir, to.screen=to.screen )
-    # plot_model_fit( selection="effective_number", stan_data=can[[au]], M=M, outdir=outdir, to.screen=to.screen )
-  }
-
-}
-
-
-if ("forecast" %in% tasks ) {
-  for (au in  provinces) {
-    print(au)
-    fn_model = file.path( workdir, paste( au, can[[au]]$modelname, "rdata", sep=".") )
-    outdir = file.path( "~", "bio", "adapt", "inst", "doc", au)
-    load(fn_model)
-    M = extract(f)
-    # --- simplistic stochastic simulations using joint posterior distributions from "current" day estimates:, if BNP is provided, this uses the average in the period specified
-    sim = simulate( M, istart=can[[au]]$Nobs-1, nsims=1400, nprojections=200, nthreads=1  ) # predictions are conditioned on beta estimates from t-1
-    plot_model_fit( selection="forecasts", stan_data=can[[au]], M=M, outdir=outdir, sim=sim,
-      to.screen=to.screen )
-  }
 }
 
 

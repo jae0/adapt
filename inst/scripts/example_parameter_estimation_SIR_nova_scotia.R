@@ -15,7 +15,7 @@ options(mc.cores = parallel::detectCores())
 
 # loadfunctions("adapt")
 
-nscovid = data_nova_scotia(
+stan_results = list( stan_inputs =  data_nova_scotia(
   # interpolate_missing_data=TRUE,  # linear interpolation of missing data as a preprocessing step or estimate via imputation inside stan
   Npop = 971395,  # total population
   Npreds = 15,   # number of days for forward projectins
@@ -24,60 +24,63 @@ nscovid = data_nova_scotia(
   GAMMA_max = 0.1,    # max rate param for I -> R  # ~ 1/(typical time until removal = 14) = 0.07
   EPSILON_max = 0.1,  # max rate param for I -> M  # about 5% seem to die ..
   modelname = "default" # "discrete_autoregressive_structured_beta_mortality_hybrid"  # splitting recovered and mortalities
-)
-
-time_relaxation = as.numeric(nscovid$time_relaxation - nscovid$time_start)
-time_distancing = as.numeric(nscovid$time_distancing - nscovid$time_start)
+) )
 
 
-stancode_compiled = rstan::stan_model( model_code=sir_stan_model_code( selection=nscovid$modelname ) )  # compile the code
+
+time_relaxation = as.numeric(stan_results$stan_inputs$time_relaxation - stan_results$stan_inputs$time_start)
+time_distancing = as.numeric(stan_results$stan_inputs$time_distancing - stan_results$stan_inputs$time_start)
 
 
-f = rstan::sampling( stancode_compiled, data=nscovid, chains=3, warmup=7000, iter=10000, control= list(adapt_delta = 0.95, max_treedepth=15 ))
+stancode_compiled = rstan::stan_model( model_code=sir_stan_model_code( selection=stan_results$stan_inputs$modelname ) )  # compile the code
+
+
+
+stan_results$stan_samples = rstan::sampling( stancode_compiled, data=stan_results$stan_inputs, chains=3, warmup=7000, iter=10000, control= list(adapt_delta = 0.95, max_treedepth=15 ))
 
 
 if (0) {
-  fn = file.path("~", "tmp", paste( nscovid$modelname, "rdata", sep="."))
-  save( f, file=fn, compress=TRUE)
+  fn = file.path("~", "tmp", paste( stan_results$stan_inputs$modelname, "rdata", sep="."))
+  save( stan_results, file=fn, compress=TRUE)
   load(fn)
 }
 
-  M = extract(f)
+  posteriors = extract(stan_results$stan_samples)
 
   province = "Nova Scotia"
   outdir = file.path( "~", "bio", "adapt", "inst", "doc", province )
   to.screen = TRUE
       # to.screen = FALSE
 
-  plot_model_fit( selection="susceptible", stan_data=nscovid, M=M, outdir=outdir, to.screen=to.screen )
-  plot_model_fit( selection="infected", stan_data=nscovid, M=M, outdir=outdir, to.screen=to.screen )
-  plot_model_fit( selection="recovered", stan_data=nscovid, M=M, outdir=outdir, to.screen=to.screen )
-  plot_model_fit( selection="deaths", stan_data=nscovid, M=M, outdir=outdir, to.screen=to.screen )
-  plot_model_fit( selection="reproductive_number", stan_data=nscovid, M=M, outdir=outdir, to.screen=to.screen )
-  plot_model_fit( selection="reproductive_number_histograms", stan_data=nscovid, M=M, outdir=outdir, to.screen=to.screen )
+  plot_model_fit( selection="susceptible", stan_results=stan_results, outdir=outdir, to.screen=to.screen )
+  plot_model_fit( selection="infected", stan_results=stan_results, outdir=outdir, to.screen=to.screen )
+  plot_model_fit( selection="recovered", stan_results=stan_results, outdir=outdir, to.screen=to.screen )
+  plot_model_fit( selection="deaths", stan_results=stan_results, outdir=outdir, to.screen=to.screen )
+  plot_model_fit( selection="reproductive_number", stan_results=stan_results, outdir=outdir, to.screen=to.screen )
+  plot_model_fit( selection="reproductive_number_histograms", stan_results=stan_results, outdir=outdir, to.screen=to.screen )
 
 
 # --- now some simplistic stochastic simulations using joint posterior distributions from current day estimates:
 
-sim = simulate( M, istart=nscovid$Nobs-1, nsims=2000, nprojections=150 )
-plot_model_fit( selection="forecasts", stan_data=nscovid, M=M, outdir=outdir, sim=sim )
+sim = simulate( stan_results, nsims=2000, nprojections=150 )
+plot_model_fit( selection="forecasts", stan_results=stan_results, outdir=outdir, sim=sim )
 
 
 if (0) {
 
-    plot(f)
-    plot(f, pars="I")
-    print(f)
+    plot(stan_results$stan_samples)
+    plot(stan_results$stan_samples, pars="I")
+    print(stan_results$stan_samples)
 
-    traceplot(f)
-    e = rstan::extract(f, permuted = TRUE) # return a list of arrays
-    m2 = as.array(f)
-    traceplot(f, pars=c("GAMMA"))
-    traceplot(f, pars=c("MSErrorI"))
-    traceplot(f, pars=c("MSErrorR"))
-    traceplot(f, pars="lp__")
-    summary(f)$summary[,"K1"]
-    est=colMeans(M)
-    prob=apply(M,2,function(x) I(length(x[x>0.10])/length(x) > 0.8)*1)
+    traceplot(stan_results$stan_samples)
+    e = rstan::extract(stan_results$stan_samples, permuted = TRUE) # return a list of arrays
+    m2 = as.array(stan_results$stan_samples)
+    traceplot(stan_results$stan_samples, pars=c("GAMMA"))
+    traceplot(stan_results$stan_samples, pars=c("MSErrorI"))
+    traceplot(stan_results$stan_samples, pars=c("MSErrorR"))
+    traceplot(stan_results$stan_samples, pars="lp__")
+    summary(stan_results$stan_samples)$summary[,"K1"]
+    est=colMeans(posteriors)
+    prob=apply(posteriors,2,function(x) I(length(x[x>0.10])/length(x) > 0.8)*1)
 
 }

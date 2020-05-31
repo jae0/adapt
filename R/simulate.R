@@ -1,7 +1,12 @@
 
-simulate = function( M, istart=istart, nsims=1, nprojections=10, nthreads=1, model="stochastic.simulation.sir" ) {
+simulate = function(  stan_results, istart=NULL, nsims=1, nprojections=10, nthreads=1, model="stochastic.simulation.sir" ) {
 
   require(SimInf)
+
+  stan_data = stan_results$stan_inputs
+  posteriors = rstan::extract( stan_results$stan_samples )  # posteriors = mcmc posteriors from STAN
+
+  if (is.null(istart)) istart = stan_data$Nobs-1
 
   if (model=="stochastic.simulation.sir") {
 
@@ -13,23 +18,23 @@ simulate = function( M, istart=istart, nsims=1, nprojections=10, nthreads=1, mod
 
     SC = c( "S", "I", "R", "M" )
 
-    nsims = min( nsims, nrow(M$S) )
-    iss = sample.int( nrow(M$S), nsims )
+    nsims = min( nsims, nrow(posteriors$S) )
+    iss = sample.int( nrow(posteriors$S), nsims )
     sim = array( NA, dim=c(nsims, length(SC), nprojections) )
 
-    u0=data.frame(
-      S= M$S[iss, istart],
-      R= M$R[iss, istart],
-      M= M$M[iss, istart],
-      BETA= M$BETA[iss, istart-1],  # note, BETA is conditioned on previous time step. .
-      GAMMA=M$GAMMA[iss],
-      EPSILON=M$EPSILON[iss]
+    u0 = data.frame(
+      S= posteriors$S[iss, istart],
+      R= posteriors$R[iss, istart],
+      M= posteriors$M[iss, istart],
+      BETA= posteriors$BETA[iss, istart-1],  # note, BETA is conditioned on previous time step. .
+      GAMMA=posteriors$GAMMA[iss],
+      EPSILON=posteriors$EPSILON[iss]
     )
 
-    if (exists("Q", M) ) {
-      u0$I = trunc( M$I[iss, istart] * M$Q[iss, istart-1] )
+    if (exists("Q", posteriors) ) {
+      u0$I = trunc( posteriors$I[iss, istart] * posteriors$Q[iss, istart-1] )
     } else {
-      u0$I = M$I[iss, istart]
+      u0$I = posteriors$I[iss, istart]
     }
 
     for (i in 1:nsims) {

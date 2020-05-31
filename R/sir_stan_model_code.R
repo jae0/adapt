@@ -99,7 +99,7 @@ model {
   BETAar ~ normal( 0.0, 0.2 ); // autoregression (AR(k=BNP)) ..  shrink to 0
   BETAark ~ normal( 0.0, 0.2 ); //, shrinks towards 0
 
-  // BETAsd ~ normal( 0.0, BETA_max/5.0 ); // , shrinks towards 0
+  BETAsd ~ normal( 0.0, BETA_max/5.0 ); // , shrinks towards 0
   BETA[1:BNP] ~ normal( 0.0, BETAsd );  //  centered on 0, shrink towards 0
 
   //set intial conditions
