@@ -26,7 +26,7 @@ if ("download.data" %in% tasks) res = data_provinces_of_canada( selection="downl
 
 can = data_provinces_of_canada(
   fn = fn,
-  Npreds = 20,   # number of days for ode-based forward projections
+  Npreds = 14,   # number of days for ode-based forward projections
   BNP = 1,       # beta dynamics is AR(BNP) ; also the number of days to average for forward ode-based projections (incubation time is ~ 5-7 days) .. higher than 1 can cause problems ... high var in reporting causes + and - corrs
   BETA_max = 1.0,     # max rate param for S -> I  # approx number of contacts per person per time (day) multiplied by the probability of disease transmission in a contact between a susceptible and an infectious subject;  ~ 1/( typical time in days between contacts)
   # BETA_max is very important: seldom does this value go > 1 for Covid-19 in Canada,
