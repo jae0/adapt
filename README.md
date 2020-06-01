@@ -1,6 +1,11 @@
 
 ---
 
+# NOTE: As of 1 June 2020, I will reduce the frequency of results. This is because interest in the results seems to be only local (Nova Scotia) and it requires a lot of computational time on my ageing laptop. I will update Nova Scotia more frequently. Let me know if you would like me to update your province more frequently.
+
+
+---
+
 # Current COVID-19 status by province in Canada, based on an *adapt* analysis:
 
 You can see *adapt*'s assessement of the current status of COVID-19 by choosing from the links below.
@@ -19,7 +24,7 @@ You can see *adapt*'s assessement of the current status of COVID-19 by choosing 
 - ![Yukon](./inst/doc/Yukon/README.md)
 
 
-Some advice: These assessments would be more informative for smaller areal units as they would make management decisions more relevant. This is because dynamics in a city or a rural area is likely very different with spatial patterns related to how connected each area is to neighbouring areas and population behaviour in terms of distancing, service support, etc. So if you have access to information for your city/town, you might want to run this for your city/town to obtain the most relevant information.
+Some advice: These assessments would be more informative for smaller areal units as they would make management decisions more relevant. This is because dynamics in a city or a rural area is likely very different with spatial patterns related to how connected each area is to neighbouring areas and population behaviour in terms of density, mobility, distancing, service support, etc. So if you have access to information for your city/town, you might want to run this for your city/town to obtain the most relevant information.
 
 ---
 
