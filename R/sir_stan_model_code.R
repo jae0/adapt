@@ -116,7 +116,7 @@ model {
     if ( i >= BNP1 ) {
       real BETAmu = BETAark;
       for ( j in 1:BNP) {
-        BETAmu += step(dsi) * BETAar[j] *  BETA[i-j];  // force zero beta if I or S == 0 .. otherwise it will wander
+        BETAmu += step(dsi) * BETAar[j] *  BETA[i-j];  // force zero beta if I or S == 0 .. otherwise it will wander towards prior
       }
       BETA[i] ~ normal( BETAmu, BETAsd );
     }
