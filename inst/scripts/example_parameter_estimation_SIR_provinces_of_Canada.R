@@ -37,6 +37,7 @@ can = data_provinces_of_canada(
 
 provinces = names(can)
 
+provinces = c("Nova Scotia", "Quebec")
 
 # compile code
 
