@@ -1,5 +1,5 @@
 
-summary_adapt = function( selection="summary.load", can, fn=NULL, brks=30, to.screen=TRUE ) {
+summary_adapt = function( selection="summary.load", aus, fn=NULL, workdir=getwd(), modelname="default", brks=30, to.screen=TRUE ) {
 
   if (is.null(fn) ) fn = file.path(getwd(), "Covid19Canada_summary.rdata")  # default to current work directory
   outdir = dirname(fn)
@@ -11,62 +11,63 @@ summary_adapt = function( selection="summary.load", can, fn=NULL, brks=30, to.sc
 
     res = list()
 
-    for (au in names(can) ) {
+    for (au in aus ) {
 
-      # au = names(can)[i]
       print(au)
-      Npop = can[[au]]$Npop
 
-      fn_model = file.path( workdir, paste( au, can[[au]]$modelname, "rdata", sep=".") )
+      fn_model = file.path( workdir, paste( au, modelname, "rdata", sep=".") )
       outdir = file.path( "~", "bio", "adapt", "inst", "doc", au)
 
       load(fn_model)
-      M = extract(f)
 
-      res[[au]]$time = can[[au]]$time
-      res[[au]]$Npop = can[[au]]$Npop
-      res[[au]]$Nobs = can[[au]]$Nobs
-      res[[au]]$Npreds = can[[au]]$Npreds
+      posteriors = rstan::extract( stan_results$stan_samples )  # posteriors = mcmc posteriors from STAN
+
+      res[[au]]$timestamp = stan_results$stan_inputs$timestamp
+      res[[au]]$time = stan_results$stan_inputs$time
+      res[[au]]$Npop = stan_results$stan_inputs$Npop
+      res[[au]]$Nobs = stan_results$stan_inputs$Nobs
+      res[[au]]$Npreds = stan_results$stan_inputs$Npreds
       res[[au]]$Nts = res[[au]]$Nobs + res[[au]]$Npreds
       res[[au]]$timeall = 1:res[[au]]$Nts
+
       res[[au]]$S = data.frame( cbind(
-        median = apply(M$S/res[[au]]$Npop, 2, median, na.rm=TRUE),
-        low = apply(M$S/res[[au]]$Npop, 2, quantile, probs=c(0.025), na.rm=TRUE),
-        high = apply(M$S/res[[au]]$Npop, 2, quantile, probs=c(0.975), na.rm=TRUE)
+        median = apply(posteriors$S/res[[au]]$Npop, 2, median, na.rm=TRUE),
+        low = apply(posteriors$S/res[[au]]$Npop, 2, quantile, probs=c(0.025), na.rm=TRUE),
+        high = apply(posteriors$S/res[[au]]$Npop, 2, quantile, probs=c(0.975), na.rm=TRUE)
       ))
       res[[au]]$I = data.frame( cbind(
-        median = apply(M$I/res[[au]]$Npop, 2, median, na.rm=TRUE),
-        low = apply(M$I/res[[au]]$Npop, 2, quantile, probs=c(0.025), na.rm=TRUE),
-        high = apply(M$I/res[[au]]$Npop, 2, quantile, probs=c(0.975), na.rm=TRUE)
+        median = apply(posteriors$I/res[[au]]$Npop, 2, median, na.rm=TRUE),
+        low = apply(posteriors$I/res[[au]]$Npop, 2, quantile, probs=c(0.025), na.rm=TRUE),
+        high = apply(posteriors$I/res[[au]]$Npop, 2, quantile, probs=c(0.975), na.rm=TRUE)
       ))
       res[[au]]$R = data.frame( cbind(
-        median = apply(M$R/res[[au]]$Npop, 2, median, na.rm=TRUE),
-        low = apply(M$R/res[[au]]$Npop, 2, quantile, probs=c(0.025), na.rm=TRUE),
-        high = apply(M$R/res[[au]]$Npop, 2, quantile, probs=c(0.975), na.rm=TRUE)
+        median = apply(posteriors$R/res[[au]]$Npop, 2, median, na.rm=TRUE),
+        low = apply(posteriors$R/res[[au]]$Npop, 2, quantile, probs=c(0.025), na.rm=TRUE),
+        high = apply(posteriors$R/res[[au]]$Npop, 2, quantile, probs=c(0.975), na.rm=TRUE)
       ))
       res[[au]]$M = data.frame( cbind(
-        median = apply(M$M/res[[au]]$Npop, 2, median, na.rm=TRUE),
-        low = apply(M$M/res[[au]]$Npop, 2, quantile, probs=c(0.025), na.rm=TRUE),
-        high = apply(M$M/res[[au]]$Npop, 2, quantile, probs=c(0.975), na.rm=TRUE)
+        median = apply(posteriors$M/res[[au]]$Npop, 2, median, na.rm=TRUE),
+        low = apply(posteriors$M/res[[au]]$Npop, 2, quantile, probs=c(0.025), na.rm=TRUE),
+        high = apply(posteriors$M/res[[au]]$Npop, 2, quantile, probs=c(0.975), na.rm=TRUE)
       ))
       res[[au]]$GAMMA = data.frame( cbind(
-        median = apply(t(M$GAMMA), 1, median, na.rm=TRUE),
-        low = apply(t(M$GAMMA), 1, quantile, probs=c(0.025), na.rm=TRUE),
-        high = apply(t(M$GAMMA), 1, quantile, probs=c(0.975), na.rm=TRUE)
+        median = apply(t(posteriors$GAMMA), 1, median, na.rm=TRUE),
+        low = apply(t(posteriors$GAMMA), 1, quantile, probs=c(0.025), na.rm=TRUE),
+        high = apply(t(posteriors$GAMMA), 1, quantile, probs=c(0.975), na.rm=TRUE)
       ))
       res[[au]]$EPSILON = data.frame( cbind(
-        median = apply(t(M$EPSILON), 1, median, na.rm=TRUE),
-        low = apply(t(M$EPSILON), 1, quantile, probs=c(0.025), na.rm=TRUE),
-        high = apply(t(M$EPSILON), 1, quantile, probs=c(0.975), na.rm=TRUE)
+        median = apply(t(posteriors$EPSILON), 1, median, na.rm=TRUE),
+        low = apply(t(posteriors$EPSILON), 1, quantile, probs=c(0.025), na.rm=TRUE),
+        high = apply(t(posteriors$EPSILON), 1, quantile, probs=c(0.975), na.rm=TRUE)
       ))
       res[[au]]$K = data.frame( cbind(
-        median = apply(M$K, 2, median, na.rm=TRUE),
-        low = apply(M$K, 2, quantile, probs=c(0.025), na.rm=TRUE),
-        high = apply(M$K, 2, quantile, probs=c(0.975), na.rm=TRUE)
+        median = apply(posteriors$K, 2, median, na.rm=TRUE),
+        low = apply(posteriors$K, 2, quantile, probs=c(0.025), na.rm=TRUE),
+        high = apply(posteriors$K, 2, quantile, probs=c(0.975), na.rm=TRUE)
       ))
-      res[[au]]$histogram_K0 = hist( M$K[,res[[au]]$Nobs] , breaks=brks, plot=FALSE)
-      res[[au]]$histogram_K1 = hist( M$K[,res[[au]]$Nobs-1] , breaks=brks, plot=FALSE)
-      res[[au]]$histogram_K7 = hist( M$K[,res[[au]]$Nobs-7] , breaks=brks, plot=FALSE)
+      res[[au]]$histogram_K0 = hist( posteriors$K[,res[[au]]$Nobs] , breaks=brks, plot=FALSE)
+      res[[au]]$histogram_K1 = hist( posteriors$K[,res[[au]]$Nobs-1] , breaks=brks, plot=FALSE)
+      res[[au]]$histogram_K7 = hist( posteriors$K[,res[[au]]$Nobs-7] , breaks=brks, plot=FALSE)
     }
 
     save ( res, file=fn, compress=TRUE )
@@ -77,21 +78,23 @@ summary_adapt = function( selection="summary.load", can, fn=NULL, brks=30, to.sc
     if (file.exists(fn)) {
       load(fn)
     } else {
-      res = summary_adapt( "summary.create", can=can, fn=fn )
+      res = summary_adapt( "summary.create", aus=aus, fn=fn, workdir=workdir, modelname=modelname )
     }
     return(res)
   }
 
-  if (is.null(res)) res = summary_adapt( "summary.load", can=can, fn=fn )
+  if (is.null(res)) res = summary_adapt( "summary.load", aus=aus, fn=fn, workdir=workdir, modelname=modelname )
 
   if ( grepl("plot", selection))  {
 
-    aus = names(can)
     colours = 1:length(aus)
     ltypes = 1:length(aus)
     pchs = 1:length(aus)
 
-    nx = min( can[[1]]$Nobs, length(res[[1]]$time) )
+    nx = 0
+    for (i in 1:length(aus) ) {
+      nx = max( nx, length(res[[aus[i]]]$time) + 3 )
+    }
 
     if (selection %in% c( "plot_all", "plot_susceptible") ) {
       if (!to.screen) {
@@ -108,7 +111,7 @@ summary_adapt = function( selection="summary.load", can, fn=NULL, brks=30, to.sc
         plot( 0,0, type="n", xlab="", ylab="", ylim=yrange, xlim=c(0, nx), axes=FALSE)
         for (i in 1:length(aus) ) {
           au = aus[i]
-          lines( folded_root(res[[au]]$S$median[1:nx], frp) ~ res[[au]]$timeall[1:nx], col=alpha(colours[i], 0.9), lty=ltypes[i]   )
+          lines( folded_root(res[[au]]$S$median, frp) ~ res[[au]]$timeall, col=alpha(colours[i], 0.9), lty=ltypes[i]   )
         }
         axis( 1, at=xvals )
         axis( 2, at=yticks, labels=yvals )
@@ -132,7 +135,7 @@ summary_adapt = function( selection="summary.load", can, fn=NULL, brks=30, to.sc
         plot( 0,0, type="n", xlab="", ylab="", ylim=yrange, xlim=c(0, nx), axes=FALSE)
         for (i in 1:length(aus) ) {
           au = aus[i]
-          lines( folded_root(res[[au]]$I$median[1:nx], frp) ~ res[[au]]$timeall[1:nx], col=alpha(colours[i], 0.9), lty=ltypes[i]   )
+          lines( folded_root(res[[au]]$I$median, frp) ~ res[[au]]$timeall, col=alpha(colours[i], 0.9), lty=ltypes[i]   )
         }
         axis( 1, at=xvals )
         axis( 2, at=yticks, labels=yvals )
@@ -157,7 +160,7 @@ summary_adapt = function( selection="summary.load", can, fn=NULL, brks=30, to.sc
         plot( 0,0, type="n", xlab="", ylab="", ylim=yrange, xlim=c(0, nx), axes=FALSE)
         for (i in 1:length(aus) ) {
           au = aus[i]
-          lines( folded_root(res[[au]]$R$median[1:nx], frp) ~ res[[au]]$timeall[1:nx], col=alpha(colours[i], 0.9), lty=ltypes[i]   )
+          lines( folded_root(res[[au]]$R$median, frp) ~ res[[au]]$timeall, col=alpha(colours[i], 0.9), lty=ltypes[i]   )
         }
         axis( 1, at=xvals )
         axis( 2, at=yticks, labels=yvals )
@@ -183,7 +186,7 @@ summary_adapt = function( selection="summary.load", can, fn=NULL, brks=30, to.sc
         plot( 0,0, type="n", xlab="", ylab="", ylim=yrange, xlim=c(0, nx), axes=FALSE)
         for (i in 1:length(aus) ) {
           au = aus[i]
-          lines( folded_root(res[[au]]$M$median[1:nx], frp) ~ res[[au]]$timeall[1:nx], col=alpha(colours[i], 0.9), lty=ltypes[i]   )
+          lines( folded_root(res[[au]]$M$median, frp) ~ res[[au]]$timeall, col=alpha(colours[i], 0.9), lty=ltypes[i]   )
         }
         axis( 1, at=xvals )
         axis( 2, at=yticks, labels=yvals )
@@ -237,6 +240,10 @@ summary_adapt = function( selection="summary.load", can, fn=NULL, brks=30, to.sc
       } else {
         dev.new()
       }
+        # using cubic folded root to visualize
+        frp = 1/3  # folded root power
+        KMAX = 100
+
         yrange = 0
         for ( i in 1:length(aus)) {
           au = aus[i]
@@ -244,18 +251,23 @@ summary_adapt = function( selection="summary.load", can, fn=NULL, brks=30, to.sc
           yrange = range( c(yrange, yrg0 )) #, yrg1, yrg7 ) )
         }
         yrange[2] = yrange[2] * 1.1
+        yrange = folded_root(yrange/KMAX, frp)
+
         xvals = seq(0, nx, by=20)
-        yvals = seq(yrange[1], yrange[2], by =2)
+
+        yticks = seq( yrange[1], yrange[2], length.out=8)
+        yvals = round( folded_root( yticks, frp, inverse=TRUE)* KMAX )
+
         plot( 0,0, type="n", xlab="", ylab="", ylim=yrange, xlim=c(0, nx), axes=FALSE)
         for (i in 1:length(aus) ) {
           au = aus[i]
-          lines( res[[au]]$K$median[1:nx] ~ res[[au]]$timeall[1:nx], col=alpha(colours[i], 0.9), lty=ltypes[i], lwd=2   )
-        }
+          lines( folded_root(res[[au]]$K$median/KMAX, frp) ~ res[[au]]$timeall[-1], col=alpha(colours[i], 0.9), lty=ltypes[i], lwd=2   )
+       }
         axis( 1, at=xvals )
-        axis( 2, at=yvals )
+        axis( 2, at=yticks, labels=yvals )
         legend( "topleft", legend=aus, col=colours, lty=ltypes, bty="n" )
-        title( xlab="Time (days)", ylab="Reproductive number" )
-        abline(h =1, col="lightgray")
+        title( xlab="Time (days)", ylab="Reproductive number (Folded root=1/3)" )
+        abline( h =folded_root(1/KMAX, frp), col="lightgray")
       if (!to.screen) dev.off()
     }
 
@@ -292,7 +304,7 @@ summary_adapt = function( selection="summary.load", can, fn=NULL, brks=30, to.sc
         axis( 1, at=xvals )
         axis( 2, at=yvals )
         legend( "topright", legend=aus, col=colours, lty=ltypes, bty="n", cex=1.25, lwd=2 )
-        title( main= paste( "  Current date: ", can[[1]]$timestamp ) )
+        title( main= paste( "  Current date: ", res[[1]]$timestamp ) )
       if (!to.screen) dev.off()
 
     }

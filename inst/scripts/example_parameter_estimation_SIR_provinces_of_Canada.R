@@ -82,11 +82,13 @@ for (au in  provinces) {
 }
 
 
-
 ## Comparisons across provinces: normalize to unit population
 fn.summary = file.path( workdir, "Covid19Canada_summary.rdata")
+modelname = can[[1]]$modelname
 
-res = summary_adapt( "summary.create", can=can, fn=fn.summary )
-res = summary_adapt( "plot_reproductive_number_histograms", can=can, fn=fn.summary, to.screen=TRUE )
-res = summary_adapt( "plot_all", can=can, fn=fn.summary, to.screen=FALSE )
+res = summary_adapt( "summary.create", aus=provinces, fn=fn.summary, workdir=workdir, modelname=modelname )
+
+res = summary_adapt( "plot_reproductive_number_histograms", aus=provinces, fn=fn.summary, workdir=workdir, modelname=modelname, to.screen=TRUE )
+
+res = summary_adapt( "plot_all", aus=provinces, fn=fn.summary, workdir=workdir, modelname=modelname, to.screen=FALSE )
 
