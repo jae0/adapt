@@ -37,7 +37,7 @@ can = data_provinces_of_canada(
 
 provinces = names(can)
 
-provinces = c("Nova Scotia", "Quebec")
+provinces = c("Nova Scotia", "Quebec", "Ontario")
 
 # compile code
 
@@ -47,6 +47,8 @@ to.screen = FALSE
 # to.screen = TRUE
 
 for (au in  provinces) {
+
+    # au = "Nova Scotia"
 
     print(au)
     stan_results = list( stan_inputs=can[[au]] )
