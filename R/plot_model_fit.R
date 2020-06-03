@@ -55,10 +55,43 @@ plot_model_fit = function( selection="default", stan_results=NULL,
   }
 
 
+  if (selection=="infected_affected") {
+
+    ap = (posteriors$R + posteriors$I+ posteriors$M)[,1:nx]
+    ip = posteriors$I[,1:nx]
+
+    col_palette = alpha( rep(c( "slateblue", "darkgreen", "cyan", "magenta", "gray", "darkorange" ), length.out=nx), 0.02 )
+    cols = matrix( col_palette, ncol=nx, nrow=nrow(ip), byrow=TRUE )
+    xrange = c(0, log10( max( ap, na.rm=TRUE) ) )
+    yrange = c(0, log10( max( ip, na.rm=TRUE) ) )
+
+    xticks = seq( xrange[1], xrange[2], length.out=7)
+    yticks = seq( yrange[1], yrange[2], length.out=7)
+
+    xvals = round( 10^xticks )
+    yvals = round( 10^yticks )
+
+    if (!to.screen) {
+      png(filename = file.path(outdir, "infected_affected.png"))
+    } else {
+      dev.new()
+    }
+      plot( 0 , 0, xlim=xrange, ylim=yrange, ylab="Infected", xlab="Total affected", type="n", axes=FALSE )
+      points( log10(ip) ~ log10(ap), col=cols, cex=0.8, pch=19 )
+      lines( log10(apply( ip, 2, median)) ~ log10( apply( ap, 2, median) ), col="orange", lty="solid", lwd=2 )
+      title( main= paste( stan_data$au, "Start: ", stan_data$time_start, "  Current date: ", stan_data$timestamp ) )
+      axis( 1, at=xticks, labels=xvals )
+      axis( 2, at=yticks, labels=yvals )
+
+    if (!to.screen) dev.off()
+  }
+
+
   if (selection=="susceptible") {
     so = stan_data$Sobs
     so[so < 0] = NA
     sp = apply(posteriors$S, 2, median)[1:nx]
+    xrange = range(1:nx)
     yrange = range( c(so, sp), na.rm=TRUE)
     yrange = c(yrange[1], yrange[2] )
     if (!to.screen) {
@@ -66,37 +99,22 @@ plot_model_fit = function( selection="default", stan_results=NULL,
     } else {
       dev.new()
     }
+      cols = alpha( "magenta", 0.005 )
       plot( so ~ stan_data$time, xlim=xrange, ylim=yrange, ylab="Susceptible", xlab="Days", type="n" )
-      lines( sp ~ seq(1,nx), lwd =3, col="slateblue" )
-      lines( apply(posteriors$S, 2, quantile, probs=0.025)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
-      lines( apply(posteriors$S, 2, quantile, probs=0.975)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
+      lines( sp ~ seq(1,nx), lwd = 3, col="slateblue" )
+
+      nr = nrow(posteriors$S)
+      ny = min( nr, 1000)
+
+      for (i in sample.int(nr, ny)) {
+        points( posteriors$S [i,1:nx] ~ c(1:nx) , col=cols, cex=0.8, pch=19 )
+      }
+#      lines( apply(posteriors$S, 2, quantile, probs=0.025)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
+#      lines( apply(posteriors$S, 2, quantile, probs=0.975)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
       points( so ~ stan_data$time, col="darkgray", cex=1.2 )
       abline( v=stan_data$time[stan_data$Nobs], col="grey", lty="dashed" )
       title( main= paste( stan_data$au, "Start: ", stan_data$time_start, "  Current date: ", stan_data$timestamp ) )
     if (!to.screen) dev.off()
-  }
-
-  if (selection=="infected") {
-    io = stan_data$Iobs
-    io[io < 0] = NA
-
-    ip = apply(posteriors$I, 2, median)[1:nx]
-
-    yrange = range( c(io, ip), na.rm=TRUE)
-    yrange = c(yrange[1], yrange[2])
-    if (!to.screen) {
-      png(filename = file.path(outdir, "fit_with_projections_infected.png"))
-    } else {
-      dev.new()
-    }
-      plot( io ~ stan_data$time, xlim=xrange, ylim=yrange, ylab="Infected", xlab="Days", type="n" )
-      lines( ip ~ seq(1,nx), lwd =3, col="slateblue" )
-      lines( apply(posteriors$I, 2, quantile, probs=0.025)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
-      lines( apply(posteriors$I, 2, quantile, probs=0.975)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
-      points( io ~ stan_data$time, col="darkgray", cex=1.2 )
-      abline( v=stan_data$time[stan_data$Nobs], col="grey", lty="dashed" )
-      title( main= paste( stan_data$au, "Start: ", stan_data$time_start, "  Current date: ", stan_data$timestamp ) )
-   if (!to.screen) dev.off()
   }
 
 
@@ -121,6 +139,7 @@ plot_model_fit = function( selection="default", stan_results=NULL,
     } else {
       dev.new()
     }
+
       plot( io ~ stan_data$time, xlim=xrange, ylim=yrange, ylab="Effective nmber of infected", xlab="Days", type="n" )
       lines( ipm ~ seq(1,nx), lwd =3, col="slateblue" )
       lines( ipu ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
@@ -132,21 +151,63 @@ plot_model_fit = function( selection="default", stan_results=NULL,
   }
 
 
+  if (selection=="infected") {
+    io = stan_data$Iobs
+    io[io < 0] = NA
+
+    ip = apply(posteriors$I, 2, median)[1:nx]
+
+    yrange = range( c(io, posteriors$I), na.rm=TRUE)
+    yrange = c(yrange[1], yrange[2])
+    if (!to.screen) {
+      png(filename = file.path(outdir, "fit_with_projections_infected.png"))
+    } else {
+      dev.new()
+    }
+      cols = alpha( "magenta", 0.005 )
+      plot( io ~ stan_data$time, xlim=xrange, ylim=yrange, ylab="Infected", xlab="Days", type="n" )
+
+      nr = nrow(posteriors$I)
+      ny = min( nr, 1000)
+
+      for (i in sample.int(nr, ny)) {
+        points( posteriors$I[i,1:nx] ~ c(1:nx) , col=cols, cex=1, pch=19 )
+      }
+      lines( ip ~ seq(1,nx), lwd =3, col="lightblue" )
+      # lines( apply(posteriors$I, 2, quantile, probs=0.025)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
+      # lines( apply(posteriors$I, 2, quantile, probs=0.975)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
+      points( io ~ stan_data$time, col="slateblue", cex=1.2 )
+      abline( v=stan_data$time[stan_data$Nobs], col="grey", lty="dashed" )
+      title( main= paste( stan_data$au, "Start: ", stan_data$time_start, "  Current date: ", stan_data$timestamp ) )
+   if (!to.screen) dev.off()
+  }
+
   if (selection=="recovered") {
     ro = stan_data$Robs
     ro[ro < 0] = NA
     rp = apply(posteriors$R, 2, median)[1:nx]
+
     yrange = range( c(ro, rp),  na.rm=TRUE)
     yrange = c(yrange[1], yrange[2])
+
     if (!to.screen) {
       png(filename = file.path(outdir, "fit_with_projections_recovered.png"))
     } else {
       dev.new()
     }
+      cols = alpha( "magenta", 0.002 )
+
       plot( ro ~ stan_data$time, xlim=xrange, ylim=yrange, ylab="Recovered", xlab="Days", type="n" )
+
+      nr = nrow(posteriors$R)
+      ny = min( nr, 1000)
+
+      for (i in sample.int(nr, ny)) {
+        points( posteriors$R[i,1:nx] ~ c(1:nx) , col=cols, cex=0.8, pch=19 )
+      }
       lines( rp ~ seq(1,nx), lwd =3, col="slateblue" )
-      lines( apply(posteriors$R, 2, quantile, probs=0.025)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
-      lines( apply(posteriors$R, 2, quantile, probs=0.975)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
+    #  lines( apply(posteriors$R, 2, quantile, probs=0.025)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
+    #  lines( apply(posteriors$R, 2, quantile, probs=0.975)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
       points( ro ~ stan_data$time, col="darkgray", cex=1.2 )
       abline( v=stan_data$time[stan_data$Nobs], col="grey", lty="dashed" )
       title( main= paste( stan_data$au, "Start: ", stan_data$time_start, "  Current date: ", stan_data$timestamp ) )
@@ -165,10 +226,19 @@ plot_model_fit = function( selection="default", stan_results=NULL,
     } else {
       dev.new()
     }
+      cols = alpha( "magenta", 0.002 )
+
       plot( mo ~ stan_data$time, xlim=xrange, ylim=yrange, ylab="Mortalities", xlab="Days", type="n" )
+
+      nr = nrow(posteriors$M)
+      ny = min( nr, 1000)
+
+      for (i in sample.int(nr, ny)) {
+        points( posteriors$M[i,1:nx] ~ c(1:nx) , col=cols, cex=0.8, pch=19 )
+      }
       lines( mp ~ seq(1,nx), lwd =3, col="slateblue" )
-      lines( apply(posteriors$M, 2, quantile, probs=0.025)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
-      lines( apply(posteriors$M, 2, quantile, probs=0.975)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
+#      lines( apply(posteriors$M, 2, quantile, probs=0.025)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
+#      lines( apply(posteriors$M, 2, quantile, probs=0.975)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
       points( mo ~ stan_data$time, col="darkgray", cex=1.2 )
       abline( v=stan_data$time[stan_data$Nobs], col="grey", lty="dashed" )
       title( main= paste( stan_data$au, "Start: ", stan_data$time_start, "  Current date: ", stan_data$timestamp ) )
@@ -209,10 +279,21 @@ plot_model_fit = function( selection="default", stan_results=NULL,
     } else {
       dev.new()
     }
+      cols = alpha( "magenta", 0.002 )
+
+      nr = nrow(posteriors$K)
+      ny = min( nr, 1200)
+
       nxr = stan_data$Nobs + stan_data$Npreds - 4  # in case data are not upto-date
       rp = apply(posteriors$K[,1:nxr], 2, median)
-      yrange = range(c(0, rp, 3))
+      yrange = range(c(0, rp, posteriors$K[,1:nxr], 3))
+
       plot( rp ~ seq(1,nxr), type="l", lwd =3, col="slateblue", ylim=yrange, ylab="Reproductive number", xlab="Days" )
+
+      for (i in sample.int(nr, ny)) {
+        points( posteriors$K[i,1:nxr] ~ c(1:nxr) , col=cols, cex=0.8, pch=19 )
+      }
+
       lines( apply(posteriors$K, 2, quantile, probs=0.025)[1:nxr] ~ seq(1,nxr), col="darkorange", lty="dashed" )
       lines( apply(posteriors$K, 2, quantile, probs=0.975)[1:nxr] ~ seq(1,nxr), col="darkorange", lty="dashed" )
       abline( h=1, col="red", lwd=2 )
