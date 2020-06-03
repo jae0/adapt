@@ -35,6 +35,14 @@ The number of deaths as a function of time (days) in circles. Vertical line repr
 
 ---
 
+# Infected vs total affected population
+
+![](./infected_affected.png)
+
+The number of infected people as a function of the total number of people affected by Covid-19 (infected, recovered, mortality), on log10 - log10 scales. This is commonly used to pinpoint the moment of the flattening of the infection curve (i.e., when it deviates from an exponential increase). To help identify days, they are coloured in alternating sequences.  These are posterior estimates derived from the model fit. The median value is shown as a solid line.
+
+---
+
 # Reproductive number
 
 ![](./reproductive_number.png)
