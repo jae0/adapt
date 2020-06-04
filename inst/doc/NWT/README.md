@@ -15,7 +15,7 @@ Please note that these results are generated from an automated process. There mi
 
 ![](./fit_with_projections_infected.png)
 
-The number of infected people as a function of time (days) in circles. Vertical line represents "today". The blue line shown is the model fit to a modified SIR model with 95% Credible Intervals in orange. Simple deterministic (mean-field) forecasts from the recursive model are shown.
+The number of infected people as a function of time (days) in circles. Vertical line represents "today". The blue line shown is the model fit to a modified SIR model with 95% Credible Intervals in orange  and posterior distributions in cyan. Simple deterministic (mean-field) forecasts from the recursive model are shown.
 
 ---
 
@@ -23,7 +23,7 @@ The number of infected people as a function of time (days) in circles. Vertical 
 
 ![](./fit_with_projections_recovered.png)
 
-The number of recovered people as a function of time (days) in circles. Vertical line represents "today". The blue line shown is the model fit to a modified SIR model with 95% Credible Intervals in orange. Simple deterministic (mean-field) forecasts from the recursive model are shown.
+The number of recovered people as a function of time (days) in circles. Vertical line represents "today". The blue line shown is the model median fit to a modified SIR model with posterior distributions in cyan. Simple deterministic (mean-field) forecasts from the recursive model are shown.
 
 ---
 
@@ -31,7 +31,15 @@ The number of recovered people as a function of time (days) in circles. Vertical
 
 ![](./fit_with_projections_mortalities.png)
 
-The number of deaths as a function of time (days) in circles. Vertical line represents "today". The blue line shown is the model fit to a modified SIR model with 95% Credible Intervals in orange. Simple deterministic (mean-field) forecasts from the recursive model are shown.
+The number of deaths as a function of time (days) in circles. Vertical line represents "today". The blue line shown is the model fit to a modified SIR model with 95% Credible Intervals in orange  and posterior distributions in cyan. Simple deterministic (mean-field) forecasts from the recursive model are shown.
+
+---
+
+# Infected vs total affected population
+
+![](./infected_affected.png)
+
+The number of infected people as a function of the total number of people affected by Covid-19 (infected, recovered, mortality), on log10 - log10 scales. This is commonly used to pinpoint the moment of the flattening of the infection curve (i.e., when it deviates from an exponential increase). To help identify days, they are coloured in alternating sequences.  These are posterior estimates derived from the model fit. The median value is shown as a solid line.
 
 ---
 
@@ -39,7 +47,7 @@ The number of deaths as a function of time (days) in circles. Vertical line repr
 
 ![](./reproductive_number.png)
 
-How the reproductive number has been changing over the course of the epidemic. If this value is below the critical value of 1, then disease spread is being controlled. If it is above 1, an epidemic is more likely. The blue line shown is the model fit to a modified SIR model with 95% Credible Intervals in orange.
+How the reproductive number has been changing over the course of the epidemic. If this value is below the critical value of 1, then disease spread is being controlled. If it is above 1, an epidemic is more likely. The blue line shown is the model fit to a modified SIR model with 95% Credible Intervals in orange and posterior distributions in cyan.
 
 ![](./reproductive_number_today.png)
 

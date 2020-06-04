@@ -66,13 +66,11 @@ for (au in  provinces) {
     if ( "plot" %in% tasks ) {
       plot_model_fit( selection="susceptible", stan_results=stan_results, outdir=outdir, to.screen=to.screen )
       plot_model_fit( selection="infected", stan_results=stan_results, outdir=outdir, to.screen=to.screen )
-      # plot_model_fit( selection="infected_effective", stan_results=stan_results, outdir=outdir, to.screen=to.screen )
       plot_model_fit( selection="recovered", stan_results=stan_results, outdir=outdir, to.screen=to.screen )
       plot_model_fit( selection="deaths", stan_results=stan_results, outdir=outdir, to.screen=to.screen )
       plot_model_fit( selection="reproductive_number", stan_results=stan_results, outdir=outdir, to.screen=to.screen )
       plot_model_fit( selection="reproductive_number_histograms", stan_results=stan_results, outdir=outdir, to.screen=to.screen )
       plot_model_fit( selection="infected_affected", stan_results=stan_results, outdir=outdir, to.screen=to.screen )
-      # plot_model_fit( selection="effective_number", stan_results=stan_results, outdir=outdir, to.screen=to.screen )
     }
 
     if ("forecast" %in% tasks ) {

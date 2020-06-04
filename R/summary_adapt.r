@@ -170,6 +170,76 @@ summary_adapt = function( selection="summary.load", aus, fn=NULL, workdir=getwd(
     }
 
 
+
+    if (selection %in% c( "plot_all", "plot_infected_affected") ) {
+      if (!to.screen) {
+        png(filename = file.path(outdir, "infected_affected.png"))
+      } else {
+        dev.new()
+      }
+
+        yrange = NULL
+        xrange = NULL
+
+        for ( i in 1:length(aus)) {
+          au = aus[i]
+          fn_model = file.path( workdir, paste( au, modelname, "rdata", sep=".") )
+          outdir = file.path( "~", "bio", "adapt", "inst", "doc", au)
+
+          load(fn_model)
+
+          posteriors = rstan::extract( stan_results$stan_samples )  # posteriors = mcmc posteriors from STAN
+
+          ooo = (posteriors$I + posteriors$R + posteriors$M) / stan_results$stan_inputs$Npop
+          xrg0 = quantile( ooo[ooo>0] , probs=c(0.001, 0.95), na.rm=TRUE )
+          xrange = range( c(xrange, xrg0 )) #, yrg1, yrg7 ) )
+
+          ppp = posteriors$I / stan_results$stan_inputs$Npop
+          yrg0 = quantile( ppp[ppp>0] , probs=c(0.001, 0.95) , na.rm=TRUE )
+          yrange = range( c(yrange, yrg0 )) #, yrg1, yrg7 ) )
+        }
+
+        xrange[2] = xrange[2]
+        yrange[2] = yrange[2]
+
+        xrange = log10( xrange  )
+        xticks = seq( xrange[1], xrange[2], length.out=5)
+        xvals = round( 10^( xticks )  , 7) *100 # convert to %
+
+        yrange = log10( yrange  )
+        yticks = seq( yrange[1], yrange[2], length.out=5)
+        yvals = round( 10^( yticks ) , 7) *100 # convert to %
+
+        cs =  alpha( colours, 0.01)
+
+        plot( 0,0, type="n", xlab="", ylab="", ylim=yrange, xlim=xrange, axes=FALSE)
+
+        for (i in 1:length(aus) ) {
+          au = aus[i]
+          fn_model = file.path( workdir, paste( au, modelname, "rdata", sep=".") )
+          outdir = file.path( "~", "bio", "adapt", "inst", "doc", au)
+
+          load(fn_model)
+
+          posteriors = rstan::extract( stan_results$stan_samples )  # posteriors = mcmc posteriors from STAN
+
+          oo = ( posteriors$I + posteriors$R + posteriors$M) / stan_results$stan_inputs$Npop
+
+          nr = nrow(posteriors$I)
+          ny = min( nr, 800)
+          for (j in sample.int(nr, ny)) {
+            points( log10(posteriors$I[j,] / stan_results$stan_inputs$Npop ) ~ log10(oo[j,]), col=cs[i], cex=0.5, pch=19)
+          }
+        }
+        axis( 1, at=xticks, labels=xvals )
+        axis( 2, at=yticks, labels=yvals )
+        legend( "topleft", legend=aus, col=colours, lty=ltypes, bty="n" )
+        title( ylab="Percent infected", xlab="Percent affected" )
+      if (!to.screen) dev.off()
+    }
+
+
+
     if (selection %in% c( "plot_all", "plot_mortalities") ) {
 
       if (!to.screen) {
@@ -231,6 +301,7 @@ summary_adapt = function( selection="summary.load", aus, fn=NULL, workdir=getwd(
         title( ylab="Mortality rate constant (EPSILON)", xlab="Recovery rate constant (GAMMA)" )
       if (!to.screen) dev.off()
     }
+
 
 
     if (selection %in% c( "plot_all", "plot_reproductive_number") ) {

@@ -109,8 +109,8 @@ plot_model_fit = function( selection="default", stan_results=NULL,
       for (i in sample.int(nr, ny)) {
         points( posteriors$S [i,1:nx] ~ c(1:nx) , col=cols, cex=0.8, pch=19 )
       }
-#      lines( apply(posteriors$S, 2, quantile, probs=0.025)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
-#      lines( apply(posteriors$S, 2, quantile, probs=0.975)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
+      lines( apply(posteriors$S, 2, quantile, probs=0.025)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
+      lines( apply(posteriors$S, 2, quantile, probs=0.975)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
       points( so ~ stan_data$time, col="darkgray", cex=1.2 )
       abline( v=stan_data$time[stan_data$Nobs], col="grey", lty="dashed" )
       title( main= paste( stan_data$au, "Start: ", stan_data$time_start, "  Current date: ", stan_data$timestamp ) )
@@ -174,8 +174,8 @@ plot_model_fit = function( selection="default", stan_results=NULL,
         points( posteriors$I[i,1:nx] ~ c(1:nx) , col=cols, cex=1, pch=19 )
       }
       lines( ip ~ seq(1,nx), lwd =3, col="lightblue" )
-      # lines( apply(posteriors$I, 2, quantile, probs=0.025)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
-      # lines( apply(posteriors$I, 2, quantile, probs=0.975)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
+      lines( apply(posteriors$I, 2, quantile, probs=0.025)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
+      lines( apply(posteriors$I, 2, quantile, probs=0.975)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
       points( io ~ stan_data$time, col="slateblue", cex=1.2 )
       abline( v=stan_data$time[stan_data$Nobs], col="grey", lty="dashed" )
       title( main= paste( stan_data$au, "Start: ", stan_data$time_start, "  Current date: ", stan_data$timestamp ) )
@@ -206,8 +206,8 @@ plot_model_fit = function( selection="default", stan_results=NULL,
         points( posteriors$R[i,1:nx] ~ c(1:nx) , col=cols, cex=0.8, pch=19 )
       }
       lines( rp ~ seq(1,nx), lwd =3, col="slateblue" )
-    #  lines( apply(posteriors$R, 2, quantile, probs=0.025)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
-    #  lines( apply(posteriors$R, 2, quantile, probs=0.975)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
+      lines( apply(posteriors$R, 2, quantile, probs=0.025)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
+      lines( apply(posteriors$R, 2, quantile, probs=0.975)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
       points( ro ~ stan_data$time, col="darkgray", cex=1.2 )
       abline( v=stan_data$time[stan_data$Nobs], col="grey", lty="dashed" )
       title( main= paste( stan_data$au, "Start: ", stan_data$time_start, "  Current date: ", stan_data$timestamp ) )
@@ -237,8 +237,8 @@ plot_model_fit = function( selection="default", stan_results=NULL,
         points( posteriors$M[i,1:nx] ~ c(1:nx) , col=cols, cex=0.8, pch=19 )
       }
       lines( mp ~ seq(1,nx), lwd =3, col="slateblue" )
-#      lines( apply(posteriors$M, 2, quantile, probs=0.025)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
-#      lines( apply(posteriors$M, 2, quantile, probs=0.975)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
+      lines( apply(posteriors$M, 2, quantile, probs=0.025)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
+      lines( apply(posteriors$M, 2, quantile, probs=0.975)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
       points( mo ~ stan_data$time, col="darkgray", cex=1.2 )
       abline( v=stan_data$time[stan_data$Nobs], col="grey", lty="dashed" )
       title( main= paste( stan_data$au, "Start: ", stan_data$time_start, "  Current date: ", stan_data$timestamp ) )
