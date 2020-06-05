@@ -9,7 +9,7 @@ plot_model_fit = function( selection="default", stan_results=NULL,
 
   # nx = stan_data$Nobs + trunc( stan_data$Npreds *0.2 )
   if (is.null (nx)) nx = stan_data$Nobs + stan_data$Npreds - 1
-
+  ndat = stan_data$Nobs
   xrange = c(0, nx)
 
   if (selection=="default") {
@@ -57,13 +57,13 @@ plot_model_fit = function( selection="default", stan_results=NULL,
 
   if (selection=="infected_affected") {
 
-    ap = (posteriors$R + posteriors$I+ posteriors$M)[,1:nx]
-    ip = posteriors$I[,1:nx]
+    ap = (posteriors$R + posteriors$I+ posteriors$M)[,1:ndat]
+    ip = posteriors$I[,1:ndat]
 
     col_palette = alpha( rep(c( "slateblue", "darkgreen", "cyan", "magenta", "gray", "darkorange" ), length.out=nx), 0.02 )
     cols = matrix( col_palette, ncol=nx, nrow=nrow(ip), byrow=TRUE )
     xrange = c(0, log10( max( ap, na.rm=TRUE) ) )
-    yrange = c(0, log10( max( ip, na.rm=TRUE) ) )
+    yrange = c(0, log10( max( ip[,1:ndat], na.rm=TRUE) ) )
 
     xticks = seq( xrange[1], xrange[2], length.out=7)
     yticks = seq( yrange[1], yrange[2], length.out=7)
@@ -92,7 +92,7 @@ plot_model_fit = function( selection="default", stan_results=NULL,
     so[so < 0] = NA
     sp = apply(posteriors$S, 2, median)[1:nx]
     xrange = range(1:nx)
-    yrange = range( c(so, sp), na.rm=TRUE)
+    yrange = range( c(so, sp[1:ndat]), na.rm=TRUE)
     yrange = c(yrange[1], yrange[2] )
     if (!to.screen) {
       png(filename = file.path(outdir, "fit_with_projections_susceptible.png"))
@@ -132,7 +132,7 @@ plot_model_fit = function( selection="default", stan_results=NULL,
     ipl = apply(ip, 2, quantile, probs=0.025)[1:nx]
     ipu = apply(ip, 2, quantile, probs=0.975)[1:nx]
 
-    yrange = range( c(io, ipm), na.rm=TRUE)
+    yrange = range( c(io, ipm[1:ndat]), na.rm=TRUE)
     yrange = c(yrange[1], yrange[2])
     if (!to.screen) {
       png(filename = file.path(outdir, "fit_with_projections_infected_effective.png"))
@@ -157,7 +157,7 @@ plot_model_fit = function( selection="default", stan_results=NULL,
 
     ip = apply(posteriors$I, 2, median)[1:nx]
 
-    yrange = range( c(io, posteriors$I), na.rm=TRUE)
+    yrange = range( c(io, posteriors$I[,1:ndat]), na.rm=TRUE)
     yrange = c(yrange[1], yrange[2])
     if (!to.screen) {
       png(filename = file.path(outdir, "fit_with_projections_infected.png"))
@@ -187,7 +187,7 @@ plot_model_fit = function( selection="default", stan_results=NULL,
     ro[ro < 0] = NA
     rp = apply(posteriors$R, 2, median)[1:nx]
 
-    yrange = range( c(ro, rp),  na.rm=TRUE)
+    yrange = range( c(ro, rp[1:ndat]),  na.rm=TRUE)
     yrange = c(yrange[1], yrange[2])
 
     if (!to.screen) {
@@ -219,7 +219,7 @@ plot_model_fit = function( selection="default", stan_results=NULL,
     mo = stan_data$Mobs
     mo[mo < 0] = NA
     mp = apply(posteriors$M, 2, median)[1:nx]
-    yrange = range( c(mo, mp), na.rm=TRUE)
+    yrange = range( c(mo, mp[1:ndat]), na.rm=TRUE)
     yrange = c(yrange[1], yrange[2])
     if (!to.screen) {
       png(filename = file.path(outdir, "fit_with_projections_mortalities.png"))
