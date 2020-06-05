@@ -18,8 +18,8 @@ You can see *adapt*'s assessement of the current status of COVID-19 by choosing 
 - ![Northwest Territories](./inst/doc/NWT/README.md)
 - ![Nova Scotia](./inst/doc/Nova%20Scotia/README.md)
 - ![Ontario](./inst/doc/Ontario/README.md)
-- ![Prince Edward Island](./PEI/README.md)
-- ![Saskatchewan](./Saskatchewan/README.md)
+- ![Prince Edward Island](./inst/doc/PEI/README.md)
+- ![Saskatchewan](./inst/doc/Saskatchewan/README.md)
 - ![Quebec](./inst/doc/Quebec/README.md)
 - ![Yukon](./inst/doc/Yukon/README.md)
 
