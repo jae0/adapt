@@ -1,7 +1,7 @@
 
 ---
 
-# NOTE: As of 1 June 2020, I will reduce the frequency of results. This is because interest in the results seems to be only local (Nova Scotia) and it requires a lot of computational time on my ageing laptop. I will update Nova Scotia more frequently. Let me know if you would like me to update your province more frequently.
+# NOTE: As of 1 June 2020, I am reducing the frequency of updates to the results. This is because interest in the results is waning as provinces start relaxing distancing measures and closures. I will continue with local updates (Nova Scotia) for a little longer. Let me know if you would like me to update your province more frequently as well.
 
 
 ---
