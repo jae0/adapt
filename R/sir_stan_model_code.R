@@ -27,7 +27,6 @@ data {
 transformed data {
   int Ntimeall;
   int Nobs_1;
-  int BNP1;
   real<lower = 0.0, upper =1.0> Sprop[Nobs]; // observed S in proportion of total pop
   real<lower = 0.0, upper =1.0> Iprop[Nobs]; // observed I
   real<lower = 0.0, upper =1.0> Rprop[Nobs]; // observed R excluding deaths  ..  chaning meaning of R here (vs Robs)
@@ -35,7 +34,6 @@ transformed data {
 
   Nobs_1 = Nobs - 1;
   Ntimeall = Nobs + Npreds;
-  BNP1 = BNP+1;
 
   // * 1.0 is fiddling to convert int to real
   // checking for > 0 is to check for missing values == -1
@@ -113,10 +111,10 @@ model {
     real dsi = Smu[i] * Imu[i];
     real dir = GAMMA  * Imu[i];
     real dim = EPSILON * Imu[i];
-    if ( i >= BNP1 ) {
+    if ( i > BNP ) {
       real BETAmu = BETAark;
       for ( j in 1:BNP) {
-        BETAmu += step(dsi) * BETAar[j] *  BETA[i-j];  // force zero beta if I or S == 0 .. otherwise it will wander towards prior
+        BETAmu +=  BETAar[j] *  BETA[i-j];  // force zero beta if I or S == 0 .. otherwise it will wander towards prior
       }
       BETA[i] ~ normal( BETAmu, BETAsd );
     }
@@ -129,16 +127,20 @@ model {
   // data likelihoods, if *obs ==-1, then data was missing  . same conditions as in transformed parameters
   for (i in 1:Nobs) {
     if (Sobs[i] >= 0  ) {  // to handle missing values in SI
-      Sobs[i] ~ binomial( Npop, Smu[i] );
+      // Sobs[i] ~ binomial( Npop, Smu[i] );
+      Sobs[i] ~ poisson( (Npop*1.0) * Smu[i] );
     }
     if (Iobs[i] >= 0 ) {
-      Iobs[i] ~ binomial( Npop, Imu[i] );
+      // Iobs[i] ~ binomial( Npop, Imu[i] );
+      Iobs[i] ~ poisson( (Npop*1.0) * Imu[i] );
     }
     if (Robs[i] >= 0 ) {
-      Robs[i] ~ binomial( Npop, Rmu[i] );
+      // Robs[i] ~ binomial( Npop, Rmu[i] );
+      Robs[i] ~ poisson( (Npop*1.0) * Rmu[i] );
     }
     if (Mobs[i] >= 0 ) {
-      Mobs[i] ~ binomial( Npop, Mmu[i] );
+      // Mobs[i] ~ binomial( Npop, Mmu[i] );
+      Mobs[i] ~ poisson( (Npop*1.0) * Mmu[i] );
     }
   }
 }
@@ -232,7 +234,6 @@ data {
 transformed data {
   int Ntimeall;
   int Nobs_1;
-  int BNP1;
   real<lower = 0.0, upper =1.0> Sprop[Nobs]; // observed S in proportion of total pop
   real<lower = 0.0, upper =1.0> Iprop[Nobs]; // observed I
   real<lower = 0.0, upper =1.0> Rprop[Nobs]; // observed R excluding deaths  ..  chaning meaning of R here (vs Robs)
@@ -240,7 +241,6 @@ transformed data {
 
   Nobs_1 = Nobs - 1;
   Ntimeall = Nobs + Npreds;
-  BNP1 = BNP+1;
 
   // * 1.0 is fiddling to convert int to real
   // checking for > 0 is to check for missing values == -1
@@ -319,7 +319,7 @@ model {
     real dsi = Smu[i] * Imu[i];
     real dir = GAMMA  * Imu[i];
     real dim = EPSILON * Imu[i];
-    if ( i >= BNP1 ) {
+    if ( i > BNP ) {
       real BETAmu = BETAark;
       for ( j in 1:BNP) {
         BETAmu += BETAar[j] *  BETA[i-j];
