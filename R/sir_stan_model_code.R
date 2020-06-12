@@ -27,6 +27,9 @@ data {
 transformed data {
   int Ntimeall;
   int Nobs_1;
+  real Npop_real = Npop *1.0;
+  real eps = 1e-9;
+  real sd_error = 0.01;
   real<lower = 0.0, upper =1.0> Sprop[Nobs]; // observed S in proportion of total pop
   real<lower = 0.0, upper =1.0> Iprop[Nobs]; // observed I
   real<lower = 0.0, upper =1.0> Rprop[Nobs]; // observed R excluding deaths  ..  chaning meaning of R here (vs Robs)
@@ -62,36 +65,36 @@ transformed data {
 }
 
 parameters {
-  real<lower=1.0e-9, upper =GAMMA_max> GAMMA;     // recovery rate .. proportion of infected recovering
-  real<lower=1.0e-9, upper =EPSILON_max> EPSILON;   // death rate .. proportion of infected dying
+  real<lower=eps, upper =GAMMA_max> GAMMA;     // recovery rate .. proportion of infected recovering
+  real<lower=eps, upper =EPSILON_max> EPSILON;   // death rate .. proportion of infected dying
   real<lower=0.0, upper =BETA_max> BETA[Nobs_1];  // == beta in SIR , here we do *not* separate out the Encounter Rate from the infection rate
   real<lower = -1.0, upper =1.0> BETAar[BNP];
   real<lower = -1.0, upper =1.0> BETAark;  // BETA of AR(0) >=0 is sensible
-  real<lower = 1.0e-9, upper =BETA_max/5.0> BETAsd;
-  real<lower = 1.0e-9, upper =0.2>  Ssd;  // these are fractional .. i.e CV's
-  real<lower = 1.0e-9, upper =0.2>  Isd;
-  real<lower = 1.0e-9, upper =0.2>  Rsd;
-  real<lower = 1.0e-9, upper =0.2>  Msd;
+  real<lower = eps, upper =BETA_max/5.0> BETAsd;
+  real<lower = eps, upper =sd_error>  Ssd;  // these are fractional .. i.e CV's  .. usually << 0.001
+  real<lower = eps, upper =sd_error>  Isd;
+  real<lower = eps, upper =sd_error>  Rsd;
+  real<lower = eps, upper =sd_error>  Msd;
   real<lower = 0.0, upper =1.0> Smu[Nobs]; // mean process S
   real<lower = 0.0, upper =1.0> Imu[Nobs]; // mean process I
   real<lower = 0.0, upper =1.0> Rmu[Nobs]; // mean process Recoveries only (no deaths)
   real<lower = 0.0, upper =1.0> Mmu[Nobs]; // mean process Mortalities
-  real<lower = 1.0e-9, upper =GAMMA_max/5.0 > GAMMAsd;
-  real<lower = 1.0e-9, upper =EPSILON_max/5.0 > EPSILONsd;
+  real<lower = eps, upper =GAMMA_max/5.0 > GAMMAsd;
+  real<lower = eps, upper =EPSILON_max/5.0 > EPSILONsd;
 }
 
 model {
   // non informative hyperpriors (process error)
-  Ssd ~ normal(0.0, 0.05);  // max error in proportion has an SD ~ 5% of population .. seems a safe upper limit
-  Isd ~ normal(0.0, 0.05);
-  Rsd ~ normal(0.0, 0.05);
-  Msd ~ normal(0.0, 0.05);
+  Ssd ~ normal(0.0, sd_error);  // max error in proportion has an SD ~ 5% of population .. seems a safe upper limit
+  Isd ~ normal(0.0, sd_error);
+  Rsd ~ normal(0.0, sd_error);
+  Msd ~ normal(0.0, sd_error);
 
   GAMMAsd ~ normal(0.0, GAMMA_max/5.0);  // assuming normal,  5*SD  -> most of the distrbution of the data on one-tail .. SD ~ 1/5 max right tail
-  GAMMA ~ normal(0, GAMMAsd);;  // recovery of I ... always < 1, shrinks towards 0
+  GAMMA ~ normal(0.0, GAMMAsd);;  // recovery of I ... always < 1, shrinks towards 0
 
   EPSILONsd ~ normal(0.0, EPSILON_max/5.0);
-  EPSILON ~ normal(0, EPSILONsd);;  // recovery of I ... always < 1, shrinks towards 0
+  EPSILON ~ normal(0.0, EPSILONsd);;  // recovery of I ... always < 1, shrinks towards 0
 
   // AR(k=BNP) model for BETA
   BETAar ~ normal( 0.0, 0.2 ); // autoregression (AR(k=BNP)) ..  shrink to 0
@@ -116,6 +119,7 @@ model {
       for ( j in 1:BNP) {
         BETAmu +=  BETAar[j] *  BETA[i-j];  // force zero beta if I or S == 0 .. otherwise it will wander towards prior
       }
+      BETAmu = BETAmu * step( dsi );
       BETA[i] ~ normal( BETAmu, BETAsd );
     }
     Smu[i+1] ~ normal( Smu[i] - BETA[i] * dsi, Ssd)  ;
@@ -127,16 +131,16 @@ model {
   // data likelihoods, if *obs ==-1, then data was missing  . same conditions as in transformed parameters
   for (i in 1:Nobs) {
     if (Sobs[i] >= 0  ) {  // to handle missing values in SI
-      Sobs[i] ~ poisson( (Npop*1.0) * Smu[i] );
+      Sobs[i] ~ poisson( Npop_real * Smu[i] );
     }
     if (Iobs[i] >= 0 ) {
-      Iobs[i] ~ poisson( (Npop*1.0) * Imu[i] );
+      Iobs[i] ~ poisson( Npop_real * Imu[i] );
     }
     if (Robs[i] >= 0 ) {
-      Robs[i] ~ poisson( (Npop*1.0) * Rmu[i] );
+      Robs[i] ~ poisson( Npop_real * Rmu[i] );
     }
     if (Mobs[i] >= 0 ) {
-      Mobs[i] ~ poisson( (Npop*1.0) * Mmu[i] );
+      Mobs[i] ~ poisson( Npop_real * Mmu[i] );
     }
   }
 }
