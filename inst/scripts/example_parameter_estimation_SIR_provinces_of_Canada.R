@@ -39,7 +39,7 @@ provinces = names(can)
 
 # provinces = setdiff( provinces, c("Nova Scotia", "Quebec", "Ontario", "Alberta", "BC" ) )
 
-# provinces = c("Quebec", "Ontario", "BC", "New Brunswick")
+# provinces = c( "Nova Scotia", "New Brunswick", "Quebec", "Ontario", "BC")
 
 # compile code
 

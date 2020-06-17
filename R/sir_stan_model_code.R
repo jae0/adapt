@@ -155,10 +155,10 @@ generated quantities {
   int<lower = 0> I[Ntimeall]; // latent I
   int<lower = 0> R[Ntimeall]; // latent R (no mortality)
   int<lower = 0> M[Ntimeall]; // latent M (mortality)
-  real<lower = 0.0, upper =1.0> Spp[Npreds+1]; // mean process S
-  real<lower = 0.0, upper =1.0> Ipp[Npreds+1]; // mean process I observed
-  real<lower = 0.0, upper =1.0> Rpp[Npreds+1]; // mean process Recoveries only (no deaths)
-  real<lower = 0.0, upper =1.0> Mpp[Npreds+1]; // mean process Mortalities
+  real<lower = eps, upper =1.0> Spp[Npreds+1]; // mean process S
+  real<lower = eps, upper =1.0> Ipp[Npreds+1]; // mean process I observed
+  real<lower = eps, upper =1.0> Rpp[Npreds+1]; // mean process Recoveries only (no deaths)
+  real<lower = eps, upper =1.0> Mpp[Npreds+1]; // mean process Mortalities
 
   // predicted observations
   for (i in 1:Nobs) {
@@ -178,10 +178,10 @@ generated quantities {
     real dsi = BETA[Nobs_1] * Spp[i] * Ipp[i] ;
     real dir = GAMMA * Ipp[i] ;
     real dim = EPSILON * Ipp[i] ;
-    Spp[i+1] = fmax(0, fmin( 1, Spp[i] - dsi ) )  ;
-    Ipp[i+1] = fmax(0, fmin( 1, Ipp[i] + dsi - dir - dim  ));
-    Rpp[i+1] = fmax(0, fmin( 1, Rpp[i] + dir )) ;
-    Mpp[i+1] = fmax(0, fmin( 1, Mpp[i] + dim )) ;
+    Spp[i+1] = fmax(eps, fmin( 1, Spp[i] - dsi ) )  ;
+    Ipp[i+1] = fmax(eps, fmin( 1, Ipp[i] + dsi - dir - dim  ));
+    Rpp[i+1] = fmax(eps, fmin( 1, Rpp[i] + dir )) ;
+    Mpp[i+1] = fmax(eps, fmin( 1, Mpp[i] + dim )) ;
   }
 
   // predicted observations
