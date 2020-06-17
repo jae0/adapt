@@ -1,7 +1,11 @@
 sir_stan_model_code = function( selection="default"  ) {
 
+## NOTE: poisson and binomial observation errors and gausian process errors tend to work well and fast ..current default is poisson
 
-  if ( selection %in% c( "default",   "discrete_autoregressive_structured_beta_mortality_poisson") ) {
+############
+
+
+  if ( selection %in% c( "default",  "discrete_autoregressive_structured_beta_mortality_poissonobservation_gaussianprocess") ) {
 
     ## this tried to add the binomial data costraints but STAN really does not permit integers as rando variables and
     ## so the probabilities are computed only for post-processing
@@ -147,10 +151,10 @@ model {
 
 generated quantities {
   real<lower=0> K[Ntimeall-1];
-  int<lower = 0, upper =Npop> S[Ntimeall]; // latent S
-  int<lower = 0, upper =Npop> I[Ntimeall]; // latent I
-  int<lower = 0, upper =Npop> R[Ntimeall]; // latent R (no mortality)
-  int<lower = 0, upper =Npop> M[Ntimeall]; // latent M (mortality)
+  int<lower = 0> S[Ntimeall]; // latent S
+  int<lower = 0> I[Ntimeall]; // latent I
+  int<lower = 0> R[Ntimeall]; // latent R (no mortality)
+  int<lower = 0> M[Ntimeall]; // latent M (mortality)
   real<lower = 0.0, upper =1.0> Spp[Npreds+1]; // mean process S
   real<lower = 0.0, upper =1.0> Ipp[Npreds+1]; // mean process I observed
   real<lower = 0.0, upper =1.0> Rpp[Npreds+1]; // mean process Recoveries only (no deaths)
@@ -158,10 +162,10 @@ generated quantities {
 
   // predicted observations
   for (i in 1:Nobs) {
-    S[i] = binomial_rng( Npop, Smu[i] );
-    I[i] = binomial_rng( Npop, Imu[i] ) ;
-    R[i] = binomial_rng( Npop, Rmu[i] );
-    M[i] = binomial_rng( Npop, Mmu[i] );
+    S[i] = poisson_rng( Npop_real * Smu[i] );
+    I[i] = poisson_rng( Npop_real * Imu[i] ) ;
+    R[i] = poisson_rng( Npop_real * Rmu[i] );
+    M[i] = poisson_rng( Npop_real * Mmu[i] );
   }
 
   // initial conditions
@@ -182,10 +186,10 @@ generated quantities {
 
   // predicted observations
   for ( i in 1:Npreds ) {
-    S[Nobs+i] = binomial_rng( Npop, Spp[i+1] );
-    I[Nobs+i] = binomial_rng( Npop, Ipp[i+1] );
-    R[Nobs+i] = binomial_rng( Npop, Rpp[i+1] );
-    M[Nobs+i] = binomial_rng( Npop, Mpp[i+1] );
+    S[Nobs+i] = poisson_rng( Npop_real * Spp[i+1] );
+    I[Nobs+i] = poisson_rng( Npop_real * Ipp[i+1] );
+    R[Nobs+i] = poisson_rng( Npop_real * Rpp[i+1] );
+    M[Nobs+i] = poisson_rng( Npop_real * Mpp[i+1] );
   }
 
   // sample from  mean process (proportions to counts)
@@ -205,10 +209,212 @@ generated quantities {
 ############
 
 
+  if ( selection %in% c(   "discrete_autoregressive_structured_beta_mortality_poissonobservation_lognormalprocess") ) {
+
+    ## this tried to add the binomial data costraints but STAN really does not permit integers as rando variables and
+    ## so the probabilities are computed only for post-processing
+
+    return(
+
+"
+data {
+  //declare variables
+  int<lower=0> Npop;  // Npop total
+  int<lower=0> Nobs;  //number of time slices
+  int<lower=0> Npreds;  //additional number of time slices for prediction
+  int<lower=0> BNP; // the last no days to use for BETA to project forward
+  real<lower=0> BETA_max; // this value is important, seldom does this value go > 1 for Covid-19 in Canada, if too large then convergence is slow and error distributions become very wide when infected numbers ->0
+  real<lower=0> GAMMA_max; //
+  real<lower=0> EPSILON_max; //
+  int Sobs[Nobs]; // observed S
+  int Iobs[Nobs]; // observed I
+  int Robs[Nobs]; // observed Recovered (including deaths  .. because this generally tends to be how it is reported)
+  int Mobs[Nobs]; // observed mortality (Deaths only)
+}
+
+transformed data {
+  int Ntimeall;
+  int Nobs_1;
+  real Npop_real_log = log( Npop *1.0);
+  real eps = 1e-9;
+  real sd_error = 1.0;
+  real Sprop[Nobs]; // observed S in proportion of total pop
+  real Iprop[Nobs]; // observed I
+  real Rprop[Nobs]; // observed R excluding deaths  ..  chaning meaning of R here (vs Robs)
+  real Mprop[Nobs]; // observed mortalities
+
+  Nobs_1 = Nobs - 1;
+  Ntimeall = Nobs + Npreds;
+
+  // * 1.0 is fiddling to convert int to real
+  // checking for > 0 is to check for missing values == -1
+  for (i in 1:Nobs) {
+    if (Sobs[i] >= 0 ) {
+      Sprop[i] = log( fmin(1.0, fmax( eps, (Sobs[i] * 1.0) / (Npop * 1.0) ))) ; // observation error .. some portion of infected is not captured
+    } else {
+      Sprop[i] = negative_infinity(); //dummy value
+    }
+    if ( Iobs[i] >= 0) {
+      Iprop[i] = log( fmin(1.0, fmax( eps, (Iobs[i]* 1.0 )/ ( Npop * 1.0) ))) ;
+    } else {
+      Iprop[i]=negative_infinity(); //dummy value
+    }
+    if (Mobs[i] >= 0) {
+      Mprop[i] = log( fmin(1.0, fmax( eps, (Mobs[i]* 1.0 )/ (Npop* 1.0) )) ) ;  // deaths
+    } else {
+      Mprop[i]=negative_infinity(); //dummy value
+    }
+    if (Robs[i] >= 0 && Mobs[i] >= 0) {
+      Rprop[i] = log( fmin(1.0, fmax( eps, ( (Robs[i] - Mobs[i])*1.0)/ (Npop* 1.0) ) ));  // recoveries only (with no deaths)
+    } else {
+      Rprop[i]=negative_infinity(); //dummy value
+    }
+  }
+}
+
+parameters {
+  real<lower=eps, upper =GAMMA_max> GAMMA;     // recovery rate .. proportion of infected recovering
+  real<lower=eps, upper =EPSILON_max> EPSILON;   // death rate .. proportion of infected dying
+  real<lower=0.0, upper =BETA_max> BETA[Nobs_1];  // == beta in SIR , here we do *not* separate out the Encounter Rate from the infection rate
+  real<lower = -1.0, upper =1.0> BETAar[BNP];
+  real<lower = -1.0, upper =1.0> BETAark;  // BETA of AR(0) >=0 is sensible
+  real<lower = eps, upper =BETA_max/5.0> BETAsd;
+  real<lower = eps, upper =sd_error>  Ssd;  // these are fractional .. i.e CV's  .. usually << 0.001
+  real<lower = eps, upper =sd_error>  Isd;
+  real<lower = eps, upper =sd_error>  Rsd;
+  real<lower = eps, upper =sd_error>  Msd;
+  real<lower = eps, upper =1.0> Smu[Nobs]; // mean process S
+  real<lower = eps, upper =1.0> Imu[Nobs]; // mean process I
+  real<lower = eps, upper =1.0> Rmu[Nobs]; // mean process Recoveries only (no deaths)
+  real<lower = eps, upper =1.0> Mmu[Nobs]; // mean process Mortalities
+  real<lower = eps, upper =GAMMA_max/5.0 > GAMMAsd;
+  real<lower = eps, upper =EPSILON_max/5.0 > EPSILONsd;
+}
+
+model {
+  // non informative hyperpriors (process error)
+  Ssd ~ cauchy(eps, 0.5);  // max error in proportion has an SD ~ 5% of population .. seems a safe upper limit
+  Isd ~ cauchy(eps, 0.5);
+  Rsd ~ cauchy(eps, 0.5);
+  Msd ~ cauchy(eps, 0.5);
+
+  GAMMAsd ~ normal(0.0, GAMMA_max/5.0);  // assuming normal,  5*SD  -> most of the distrbution of the data on one-tail .. SD ~ 1/5 max right tail
+  GAMMA ~ normal(0.0, GAMMAsd);;  // recovery of I ... always < 1, shrinks towards 0
+
+  EPSILONsd ~ normal(0.0, EPSILON_max/5.0);
+  EPSILON ~ normal(0.0, EPSILONsd);;  // recovery of I ... always < 1, shrinks towards 0
+
+  // AR(k=BNP) model for BETA
+  BETAar ~ normal( 0.0, 0.2 ); // autoregression (AR(k=BNP)) ..  shrink to 0
+  BETAark ~ normal( 0.0, 0.2 ); //, shrinks towards 0
+
+  BETAsd ~ normal( 0.0, BETA_max/5.0 ); // , shrinks towards 0
+  BETA[1:BNP] ~ normal( 0.0, BETAsd );  //  centered on 0, shrink towards 0
+
+  //set intial conditions
+  Smu[1] ~ lognormal( Sprop[1], Ssd) ;
+  Imu[1] ~ lognormal( Iprop[1], Isd) ;
+  Rmu[1] ~ lognormal( Rprop[1], Rsd) ;
+  Mmu[1] ~ lognormal( Mprop[1], Msd) ;
+
+  // process model
+  for ( i in 1:Nobs_1 ) {
+    real dsi = Smu[i] * Imu[i];
+    real dir = GAMMA  * Imu[i];
+    real dim = EPSILON * Imu[i];
+    if ( i > BNP ) {
+      real BETAmu = BETAark;
+      for ( j in 1:BNP) {
+        BETAmu +=  BETAar[j] *  BETA[i-j];  // force zero beta if I or S == 0 .. otherwise it will wander towards prior
+      }
+      BETAmu = BETAmu * step( dsi );
+      BETA[i] ~ normal( BETAmu, BETAsd );
+    }
+    Smu[i+1] ~ lognormal( log( fmax(eps, fmin( 1.0, Smu[i] - BETA[i] * dsi) )), Ssd)  ;
+    Imu[i+1] ~ lognormal( log( fmax(eps, fmin( 1.0, Imu[i] + BETA[i] * dsi - dir - dim) )) , Isd);
+    Rmu[i+1] ~ lognormal( log( fmax(eps, fmin( 1.0, Rmu[i] + dir) )), Rsd ) ;
+    Mmu[i+1] ~ lognormal( log( fmax(eps, fmin( 1.0, Mmu[i] + dim) )), Msd ) ;
+  }
+
+  // data likelihoods, if *obs ==-1, then data was missing  . same conditions as in transformed parameters
+  for (i in 1:Nobs) {
+    if (Sobs[i] >= 0  ) {  // to handle missing values in SI
+      Sobs[i] ~ poisson( Npop_real_log + log( Smu[i] ) );
+    }
+    if (Iobs[i] >= 0 ) {
+      Iobs[i] ~ poisson_log( Npop_real_log + log( Imu[i] ) );
+    }
+    if (Robs[i] >= 0 ) {
+      Robs[i] ~ poisson_log( Npop_real_log + log( Rmu[i] ) );
+    }
+    if (Mobs[i] >= 0 ) {
+      Mobs[i] ~ poisson_log( Npop_real_log + log( Mmu[i] ) );
+    }
+  }
+}
+
+generated quantities {
+  real<lower=0> K[Ntimeall-1];
+  int<lower = 0> S[Ntimeall]; // latent S
+  int<lower = 0> I[Ntimeall]; // latent I
+  int<lower = 0> R[Ntimeall]; // latent R (no mortality)
+  int<lower = 0> M[Ntimeall]; // latent M (mortality)
+  real<lower = 0.0, upper =1.0> Spp[Npreds+1]; // mean process S
+  real<lower = 0.0, upper =1.0> Ipp[Npreds+1]; // mean process I observed
+  real<lower = 0.0, upper =1.0> Rpp[Npreds+1]; // mean process Recoveries only (no deaths)
+  real<lower = 0.0, upper =1.0> Mpp[Npreds+1]; // mean process Mortalities
+
+  // predicted observations
+  for (i in 1:Nobs) {
+    S[i] = poisson_log_rng( Npop_real_log + log( Smu[i]) );
+    I[i] = poisson_log_rng( Npop_real_log + log( Imu[i]) ) ;
+    R[i] = poisson_log_rng( Npop_real_log + log( Rmu[i]) );
+    M[i] = poisson_log_rng( Npop_real_log + log( Mmu[i]) );
+  }
+
+  // initial conditions
+  Spp[1] = Smu[Nobs];
+  Ipp[1] = Imu[Nobs];
+  Rpp[1] = Rmu[Nobs];
+  Mpp[1] = Mmu[Nobs];
+
+  for ( i in 1:Npreds ) {
+    real dsi = BETA[Nobs_1] * Spp[i] * Ipp[i] ;
+    real dir = GAMMA * Ipp[i] ;
+    real dim = EPSILON * Ipp[i] ;
+    Spp[i+1] = fmax(eps, fmin( 1.0, Spp[i] - dsi ) )  ;
+    Ipp[i+1] = fmax(eps, fmin( 1.0, Ipp[i] + dsi - dir - dim  ));
+    Rpp[i+1] = fmax(eps, fmin( 1.0, Rpp[i] + dir )) ;
+    Mpp[i+1] = fmax(eps, fmin( 1.0, Mpp[i] + dim )) ;
+  }
+
+  // predicted observations
+  for ( i in 1:Npreds ) {
+    S[Nobs+i] = poisson_log_rng( Npop_real_log + log( Spp[i+1] ) );
+    I[Nobs+i] = poisson_log_rng( Npop_real_log + log( Ipp[i+1] ) );
+    R[Nobs+i] = poisson_log_rng( Npop_real_log + log( Rpp[i+1] ) );
+    M[Nobs+i] = poisson_log_rng( Npop_real_log + log( Mpp[i+1] ) );
+  }
+
+  // sample from  mean process (proportions to counts)
+  for (i in 1:Nobs_1 ) {
+    K[i] = BETA[i] / (GAMMA+EPSILON); // the contact number = fraction of S in contact with I
+  }
+  for (i in Nobs:(Ntimeall-1) ) {
+    K[i] = BETA[Nobs_1] / (GAMMA+EPSILON); // the contact number = fraction of S in contact with I
+  }
+
+}
+"
+    )  # end return
+  } # end selection
+
+
+
 ############
 
 
-  if ( selection %in% c( "discrete_autoregressive_structured_beta_mortality_binomial") ) {
+  if ( selection %in% c( "discrete_autoregressive_structured_beta_mortality_binomialobservations_gaussianprocess") ) {
 
     ## this tried to add the binomial data costraints but STAN really does not permit integers as rando variables and
     ## so the probabilities are computed only for post-processing
