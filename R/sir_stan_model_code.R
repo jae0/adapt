@@ -32,7 +32,7 @@ transformed data {
   int Ntimeall;
   int Nobs_1;
   real Npop_real = Npop *1.0;
-  real eps = 1e-9;
+  real eps = 1e-12;
   real sd_error = 0.01;
   real<lower = 0.0, upper =1.0> Sprop[Nobs]; // observed S in proportion of total pop
   real<lower = 0.0, upper =1.0> Iprop[Nobs]; // observed I
@@ -178,10 +178,10 @@ generated quantities {
     real dsi = BETA[Nobs_1] * Spp[i] * Ipp[i] ;
     real dir = GAMMA * Ipp[i] ;
     real dim = EPSILON * Ipp[i] ;
-    Spp[i+1] = fmax(eps, fmin( 1, Spp[i] - dsi ) )  ;
-    Ipp[i+1] = fmax(eps, fmin( 1, Ipp[i] + dsi - dir - dim  ));
-    Rpp[i+1] = fmax(eps, fmin( 1, Rpp[i] + dir )) ;
-    Mpp[i+1] = fmax(eps, fmin( 1, Mpp[i] + dim )) ;
+    Spp[i+1] = fmax(eps, fmin( 1.0, Spp[i] - dsi ) )  ;
+    Ipp[i+1] = fmax(eps, fmin( 1.0, Ipp[i] + dsi - dir - dim  ));
+    Rpp[i+1] = fmax(eps, fmin( 1.0, Rpp[i] + dir )) ;
+    Mpp[i+1] = fmax(eps, fmin( 1.0, Mpp[i] + dim )) ;
   }
 
   // predicted observations
