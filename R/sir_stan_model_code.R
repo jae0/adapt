@@ -155,10 +155,10 @@ generated quantities {
   int<lower = 0> I[Ntimeall]; // latent I
   int<lower = 0> R[Ntimeall]; // latent R (no mortality)
   int<lower = 0> M[Ntimeall]; // latent M (mortality)
-  real<lower = eps, upper =1.0> Spp[Npreds+1]; // mean process S
-  real<lower = eps, upper =1.0> Ipp[Npreds+1]; // mean process I observed
-  real<lower = eps, upper =1.0> Rpp[Npreds+1]; // mean process Recoveries only (no deaths)
-  real<lower = eps, upper =1.0> Mpp[Npreds+1]; // mean process Mortalities
+  real<lower = 0.0, upper =1.0> Spp[Npreds+1]; // mean process S
+  real<lower = 0.0, upper =1.0> Ipp[Npreds+1]; // mean process I observed
+  real<lower = 0.0, upper =1.0> Rpp[Npreds+1]; // mean process Recoveries only (no deaths)
+  real<lower = 0.0, upper =1.0> Mpp[Npreds+1]; // mean process Mortalities
 
   // predicted observations
   for (i in 1:Nobs) {
