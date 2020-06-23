@@ -1,8 +1,7 @@
 
 ---
 
-# NOTE: As of 1 June 2020, I am reducing the frequency of updates to the results. This is because interest in the results is waning as provinces start relaxing distancing measures and closures. I will continue with local updates (Nova Scotia) for a little longer. Let me know if you would like me to update your province more frequently as well.
-
+# NOTE: As of 1 June 2020, I am reducing the frequency of updates (except for Nova Scotia).
 
 ---
 
@@ -31,7 +30,7 @@ Some advice: These assessments would be more informative for smaller areal units
 
 # Data
 
-The data are obtained from: https://github.com/ishaberry/Covid19Canada. This is a data repository maintained by:
+Currently, the data are obtained from: https://github.com/ishaberry/Covid19Canada. This is a data repository maintained by:
 
 Berry I, Soucy J-PR, Tuite A, Fisman D. Open access epidemiologic data and an interactive dashboard to monitor the COVID-19 outbreak in Canada. CMAJ. 2020 Apr 14;192(15):E420. doi: https://doi.org/10.1503/cmaj.75262
 
@@ -42,9 +41,9 @@ and assimilated in https://github.com/jae0/adapt/blob/master/R/data_provinces_of
 
 # Analytical model
 
-The number of cases are modelled as a latent state-space variable in a variant of the compartmental SIR model. This is a technique we often use in fishery status and estimation problems. We deviate from the SIR model in that Mortalities are separated from Recovered people and the infection rate parameter is modelled as an autoregressive AR(K=1) process. A K=1 day lag is used as there exists temporal autocorelation in disease progression which if ignored can introduce biased parameter estimates; this represents a functional balance between computational time and stabilization of the estimates. No claims are made that these are "true" rates, even though latent in formulation, as we do not have a good understanding of asymptomatic cases.
+The number of cases are modelled as a latent state-space variable in a variant of the compartmental SIR model. The former is a technique we often use in fishery status and estimation problems. We deviate from the standard SIR model in that Mortalities are separated from Recovered people and the infection rate parameter is modelled as an autoregressive AR(K=1) process. A K=1 day lag is used as there exists temporal autocorelation in disease progression which if ignored can introduce biased parameter estimates; this represents a functional balance between computational time and stabilization of the estimates. No claims are made that these are "true" rate parameters, even though latent in formulation, as we do not have a good understanding of asymptomatic cases.
 
-Nonetheless, they represent an "effective" (that is, a pragmatic and consistent) estimate of the observed state of disease progression where all dynamics are absorbed by a time-varying "effective" infection rate. We can assess this "effective" infection rate relative to the other "effective" rate processes (death and recovery) by examining the manner in which the "effective" Reproductive number evolves over time. If this is above 1, then it means it is spreading exponentially; if below 1, then it is decreasing exponentially; and if it is near 1, this  means the disease is steady where each new infetion is balanced by a recovery or death. Keeping this value low by wearing masks, social distancing, handwashing, etc. is critical and indeed can be reasonably used as an indicator of the success of such measures and eventually identification of hot and cold-spots of infection spread that require additional measures (to do next).
+Nonetheless, they represent an "effective" (that is, a pragmatic and consistent) estimate of the observed state of disease progression where all dynamics are absorbed by the time-varying "effective" infection rate. We can assess this "effective" infection rate relative to the other "effective" rate processes (death and recovery) by examining the manner in which the "effective" Reproductive number evolves over time. If this is greater than 1, then it means it is spreading exponentially; if below 1, then it is decreasing exponentially; and if it is near 1, this means the disease is steady where each new infection is balanced by a recovery or death. Keeping this value low by wearing masks, social distancing, handwashing, etc. is critical and indeed can be reasonably used as an indicator of the success of such measures and eventually identification of hot and cold-spots of infection spread that require additional measures (to do next).
 
 "Simple" projections (i.e., deterministic, "mean-field" predictions) from this recursive model are presented with 95% posterior credible intervals. A stochastic simulation from these parameters are also presented; these are based on a master equation formulation with a Gillespie approximation.
 
@@ -73,8 +72,11 @@ Alternatively, you can directly estimate the numbers required and manually creat
 
 Please note: No guarantees are being made here. There are always errors in models, programs that implement such models and in the data itself. However, this is a functional way of helping make sense of information such that we can engage in more informed discussions with your community on next steps in these trying times.
 
-Finally, computations require a lot of time. Currently, due to the length of the timeseries and the complexity of dynamics, it can take 10 hours to finish some provinces (on my 4 year old laptop). Shorter term models runs updating only the recent dynamics are likely better operationally. I will try to get this done soon.
+Finally, computations require a lot of time. Currently, due to the length of the timeseries and the complexity of dynamics in some provinces, it can take upwards of 10 hours to finish some estimates (on my 4 year old laptop). Shorter term models runs updating only the recent dynamics are likely better operationally and so you might want to truncate the timeseries. I will try to get this done soon.
 
+Please send a note if you are using it for your area of interest.
+
+Best wishes,
 Jae
 
 ---
