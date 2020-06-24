@@ -32,7 +32,8 @@ transformed data {
   int Ntimeall;
   int Nobs_1;
   real Npop_real = Npop *1.0;
-  real eps = 1e-12;
+  real eps = 1.0e-9;
+  real eps1 = 1.0/Npop_real;
   real sd_error = 0.01;
   real<lower = 0.0, upper =1.0> Sprop[Nobs]; // observed S in proportion of total pop
   real<lower = 0.0, upper =1.0> Iprop[Nobs]; // observed I
@@ -74,17 +75,17 @@ parameters {
   real<lower=0.0, upper =BETA_max> BETA[Nobs_1];  // == beta in SIR , here we do *not* separate out the Encounter Rate from the infection rate
   real<lower = -1.0, upper =1.0> BETAar[BNP];
   real<lower = -1.0, upper =1.0> BETAark;  // BETA of AR(0) >=0 is sensible
-  real<lower = eps, upper =BETA_max/5.0> BETAsd;
-  real<lower = eps, upper =sd_error>  Ssd;  // these are fractional .. i.e CV's  .. usually << 0.001
-  real<lower = eps, upper =sd_error>  Isd;
-  real<lower = eps, upper =sd_error>  Rsd;
-  real<lower = eps, upper =sd_error>  Msd;
+  real<lower = eps, upper =BETA_max/2.0> BETAsd;
+  real<lower = eps1, upper =sd_error>  Ssd;  // these are fractional .. i.e CV's  .. usually << 0.001
+  real<lower = eps1, upper =sd_error>  Isd;
+  real<lower = eps1, upper =sd_error>  Rsd;
+  real<lower = eps1, upper =sd_error>  Msd;
   real<lower = 0.0, upper =1.0> Smu[Nobs]; // mean process S
   real<lower = 0.0, upper =1.0> Imu[Nobs]; // mean process I
   real<lower = 0.0, upper =1.0> Rmu[Nobs]; // mean process Recoveries only (no deaths)
   real<lower = 0.0, upper =1.0> Mmu[Nobs]; // mean process Mortalities
-  real<lower = eps, upper =GAMMA_max/5.0 > GAMMAsd;
-  real<lower = eps, upper =EPSILON_max/5.0 > EPSILONsd;
+  real<lower = eps, upper =GAMMA_max/2.0 > GAMMAsd;
+  real<lower = eps, upper =EPSILON_max/2.0 > EPSILONsd;
 }
 
 model {
@@ -94,17 +95,17 @@ model {
   Rsd ~ normal(0.0, sd_error);
   Msd ~ normal(0.0, sd_error);
 
-  GAMMAsd ~ normal(0.0, GAMMA_max/5.0);  // assuming normal,  5*SD  -> most of the distrbution of the data on one-tail .. SD ~ 1/5 max right tail
+  GAMMAsd ~ normal(0.0, GAMMA_max/8.0);  // assuming normal,  5*SD  -> most of the distrbution of the data on one-tail .. SD ~ 1/5 max right tail
   GAMMA ~ normal(0.0, GAMMAsd);;  // recovery of I ... always < 1, shrinks towards 0
 
-  EPSILONsd ~ normal(0.0, EPSILON_max/5.0);
+  EPSILONsd ~ normal(0.0, EPSILON_max/8.0);
   EPSILON ~ normal(0.0, EPSILONsd);;  // recovery of I ... always < 1, shrinks towards 0
 
   // AR(k=BNP) model for BETA
   BETAar ~ normal( 0.0, 0.2 ); // autoregression (AR(k=BNP)) ..  shrink to 0
   BETAark ~ normal( 0.0, 0.2 ); //, shrinks towards 0
 
-  BETAsd ~ normal( 0.0, BETA_max/5.0 ); // , shrinks towards 0
+  BETAsd ~ normal( 0.0, BETA_max/8.0 ); // , shrinks towards 0
   BETA[1:BNP] ~ normal( 0.0, BETAsd );  //  centered on 0, shrink towards 0
 
   //set intial conditions
@@ -178,10 +179,10 @@ generated quantities {
     real dsi = BETA[Nobs_1] * Spp[i] * Ipp[i] ;
     real dir = GAMMA * Ipp[i] ;
     real dim = EPSILON * Ipp[i] ;
-    Spp[i+1] = fmax(eps, fmin( 1.0, Spp[i] - dsi ) )  ;
-    Ipp[i+1] = fmax(eps, fmin( 1.0, Ipp[i] + dsi - dir - dim  ));
-    Rpp[i+1] = fmax(eps, fmin( 1.0, Rpp[i] + dir )) ;
-    Mpp[i+1] = fmax(eps, fmin( 1.0, Mpp[i] + dim )) ;
+    Spp[i+1] = fmax(0.0, fmin( 1.0, Spp[i] - dsi ) )  ;
+    Ipp[i+1] = fmax(0.0, fmin( 1.0, Ipp[i] + dsi - dir - dim  ));
+    Rpp[i+1] = fmax(0.0, fmin( 1.0, Rpp[i] + dir )) ;
+    Mpp[i+1] = fmax(0.0, fmin( 1.0, Mpp[i] + dim )) ;
   }
 
   // predicted observations
