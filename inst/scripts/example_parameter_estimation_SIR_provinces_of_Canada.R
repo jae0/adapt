@@ -59,7 +59,7 @@ for (au in  provinces) {
     control.stan = list(adapt_delta = 0.9, max_treedepth=12 )
 
     if ("model" %in% tasks ) {
-      stan_results$stan_samples = rstan::sampling( stancode_compiled, data=stan_results$stan_inputs, chains=3, warmup=7000, iter=8000, control=control.stan  )
+      stan_results$stan_samples = rstan::sampling( stancode_compiled, data=stan_results$stan_inputs, chains=3, warmup=5000, iter=6000, control=control.stan  )
       save(stan_results, file=fn_model, compress=TRUE)
     } else {
       load(fn_model)
