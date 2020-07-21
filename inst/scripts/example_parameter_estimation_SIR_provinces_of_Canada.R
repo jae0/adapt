@@ -8,6 +8,9 @@ rstan_options(auto_write = TRUE)
 options(mc.cores = parallel::detectCores())
 require(SimInf)
 
+library(scales)
+
+
 # loadfunctions("adapt")
 # remotes::install_github( "jae0/adapt" )
 
