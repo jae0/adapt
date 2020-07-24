@@ -3,7 +3,9 @@
 
 # Current COVID-19 status for Quebec:
 
-*NOTE* It seems Quebec, in early July 2020, changed their definitions of "Infected" and "Recovered" in some manner, causing a major discontinuity in the timeseries that renders parameter estimates difficult. To adjust for this, a new set of parameters should be estimated for the two periods, pre- and post-discontinuity. I do not have time to do this, but it is really simple to do (adding another set of parameters for the vital rates). If you need to do this, let me know. 
+*NOTE* It seems Quebec, the reporting of Covid-19 changed from daily to weakly updates in late June 2020 (https://www.cbc.ca/news/canada/montreal/quebec-covid-19-death-1.5626260). But the underlying data are still recored on a daily basis by (https://github.com/ishaberry/Covid19Canada). The discontinuity observed in that time frame, therefore, suggests other changes in the reporting of "Infected" and "Recovered" cases. This renders parameter estimates (such as a the effective reproductive number) not useful in its current form. To adjust for this, a new set of parameters should be estimated for the two time periods, pre- and post-discontinuity. I do not have time to do this, but it is really simple to do (adding another set of parameters for the vital rates). If you need to do this, let me know. For now, I will continue with routine updates as the overall time trends are still informative.
+
+
 
 Here we show a few elements of COVID-19 status by province based on data compiled from publicly available information.
 

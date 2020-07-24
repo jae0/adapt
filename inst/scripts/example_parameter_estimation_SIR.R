@@ -1,7 +1,7 @@
 
 
 # ---------------------------------------
-# examples of various methods of parameter estimation
+# examples of various methods of parameter estimation  -- this is for testing
 
 
 # loadfunctions("adapt")
