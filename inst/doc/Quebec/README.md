@@ -3,6 +3,8 @@
 
 # Current COVID-19 status for Quebec:
 
+*NOTE* It seems Quebec, in early July 2020, changed their definitions of "Infected" and "Recovered" in some manner, causing a major discontinuity in the timeseries that renders parameter estimates difficult. To adjust for this, a new set of parameters should be estimated for the two periods, pre- and post-discontinuity. I do not have time to do this, but it is really simple to do (adding another set of parameters for the vital rates). If you need to do this, let me know. 
+
 Here we show a few elements of COVID-19 status by province based on data compiled from publicly available information.
 
 The figures are generated from https://github.com/jae0/adapt/blob/master/inst/scripts/example_parameter_estimation_SIR_provinces_of_Canada.R. More information about the models and data can be found on the ![main page](https://github.com/jae0/adapt/blob/master/README.md)
