@@ -32,15 +32,15 @@ sim = sim[subsample,]
 
 # data to pass to STAN
 stan_data = list(
-    Npop = Npop,
-    Nobs = Nobs,
-    Npreds = Npreds,   # here, only total number of predictions for output
-    Sobs = sim$Sobs,
-    Iobs = sim$Iobs,
-    Robs = sim$Robs,
-    time = as.integer(sim$time),
-    time_pred = c(0:max(sim$time, times) ),
-    t0 = -0.01
+  Npop = Npop,
+  Nobs = Nobs,
+  Npreds = Npreds,   # here, only total number of predictions for output
+  Sobs = sim$Sobs,
+  Iobs = sim$Iobs,
+  Robs = sim$Robs,
+  time = as.integer(sim$time),
+  time_pred = c(0:max(sim$time, times) ),
+  t0 = -0.01
 )
 
 
@@ -69,16 +69,16 @@ plot_model_fit( stan_data=stan_data, M=M )
 
 
 if (0) {
-    plot(f)
-    print(f)
-    traceplot(f)
-    e = rstan::extract(f, permuted = TRUE) # return a list of arrays
-    m2 = as.array(f)
-    traceplot(f, pars=c("params", "y0"))
-    traceplot(f, pars="lp__")
-    summary(f)$summary[,"Rhat"]
-    est=colMeans(M)
-    prob=apply(M,2,function(x) I(length(x[x>0.10])/length(x) > 0.8)*1)
+  plot(f)
+  print(f)
+  traceplot(f)
+  e = rstan::extract(f, permuted = TRUE) # return a list of arrays
+  m2 = as.array(f)
+  traceplot(f, pars=c("params", "y0"))
+  traceplot(f, pars="lp__")
+  summary(f)$summary[,"Rhat"]
+  est=colMeans(M)
+  prob=apply(M,2,function(x) I(length(x[x>0.10])/length(x) > 0.8)*1)
 }
 
 

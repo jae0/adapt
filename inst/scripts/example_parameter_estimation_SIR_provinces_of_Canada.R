@@ -24,7 +24,6 @@ tasks = c("download.data", "model", "plot", "forecast")
 
 
 
-
 if ("download.data" %in% tasks) res = data_provinces_of_canada( selection="download", fn=fn )
 
 can = data_provinces_of_canada(
