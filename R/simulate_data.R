@@ -32,7 +32,7 @@ simulate_data = function( selection="sir", Npop=1, inits=c(0.99, 0.01, 0), times
 
 
     if (!is.null(nsample)) {
-      if (is.null( sample_init)) sample_init = 1:max( trunc(length(times)/2), nsample )
+      if (is.null( sample_init)) sample_init = 1:max( floor(length(times)/2), nsample )
 
       tokeep = sort( sample( sample_init, nsample, replace=FALSE ) )
       ss = min( tokeep ) : max( tokeep )
@@ -128,7 +128,7 @@ simulate_data = function( selection="sir", Npop=1, inits=c(0.99, 0.01, 0), times
     )
 
     # initial state
-    I0 = trunc( Npop * inits[2] )
+    I0 = floor( Npop * inits[2] )
 
     infected = c(rep(1,I0),rep(0,Npop-I0))
     susceptible = 1-infected
@@ -228,7 +228,7 @@ simulate_data = function( selection="sir", Npop=1, inits=c(0.99, 0.01, 0), times
       c(1, 0, 0)      # S, I, R, proportions for adults
     )
 
-    I0 = trunc( Npop * inits[[1]][2] )
+    I0 = floor( Npop * inits[[1]][2] )
 
     # keep track of immune and naive individuals
     infected = c( rep(c(0,0,0,1), I0 ), rep(0, Npop-I0*4 )) %>% as.numeric

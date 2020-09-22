@@ -31,19 +31,19 @@ data_nova_scotia = function( output="stan_data", Npop=971395, Npreds=5, interpol
     j = which( !is.finite(daily$Robs) )
     if (length(j) > 0) {
       o = approx( x=daily$dayno , y=daily$Robs, xout = daily$dayno, method="linear")
-      daily$Robs[j] = trunc(o$y[j])
+      daily$Robs[j] = floor(o$y[j])
     }
 
     j = which( !is.finite(daily$Mobs) )
     if (length(j) > 0) {
       o = approx( x=daily$dayno , y=daily$Mobs, xout = daily$dayno, method="linear")
-      daily$Mobs[j] = trunc(o$y[j])
+      daily$Mobs[j] = floor(o$y[j])
     }
 
     j = which( !is.finite(daily$Sobs) )
     if (length(j) > 0) {
       o = approx( x=daily$dayno , y=daily$Sobs, xout = daily$dayno, method="linear")
-      daily$Sobs[j] = trunc(o$y[j])
+      daily$Sobs[j] = floor(o$y[j])
     }
 
     j = which( !is.finite(daily$Iobs) )

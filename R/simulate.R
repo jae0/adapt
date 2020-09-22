@@ -32,7 +32,7 @@ simulate = function(  stan_results, istart=NULL, nsims=1, nprojections=10, nthre
     )
 
     if (exists("Q", posteriors) ) {
-      u0$I = trunc( posteriors$I[iss, istart] * posteriors$Q[iss, istart-1] )
+      u0$I = floor( posteriors$I[iss, istart] * posteriors$Q[iss, istart-1] )
     } else {
       u0$I = posteriors$I[iss, istart]
     }

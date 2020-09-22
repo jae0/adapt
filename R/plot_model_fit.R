@@ -7,7 +7,6 @@ plot_model_fit = function( selection="default", stan_results=NULL,
   stan_data = stan_results$stan_inputs
   posteriors = rstan::extract( stan_results$stan_samples )  # posteriors = mcmc posteriors from STAN
 
-  # nx = stan_data$Nobs + trunc( stan_data$Npreds *0.2 )
   if (is.null (nx)) nx = stan_data$Nobs + stan_data$Npreds - 1
   ndat = stan_data$Nobs
   xrange = c(0, nx)
