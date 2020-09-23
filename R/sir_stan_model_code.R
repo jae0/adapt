@@ -2101,7 +2101,7 @@ transformed data {
 }
 
 parameters {
-  real<lower=1.0e-9, upper =0.1> GAMMA;  // probability of transition to recovered state = 1/( duration is γ units of time) .. ie., simple geometric
+  real<lower=1.0e-9, upper =0.1> GAMMA;  // probability of transition to recovered state = 1/( duration is \u03B3 (gamma) units of time) .. ie., simple geometric
   real <lower=0.0, upper  =1> BETA;  // == beta in SIR , here we do *not* separate out the Encounter Rate from the infection rate  // probability of an individual infecting another in 1 unit of time
 }
 
@@ -2172,7 +2172,7 @@ transformed data {
   }
 }
 parameters {
-  real<lower=1.0e-9> gamma;  // probability of transition to recovered state = 1/() duration is γ units of time) .. ie., simple geometric
+  real<lower=1.0e-9> gamma;  // probability of transition to recovered state = 1/() duration is \u03B3 (gamma) units of time) .. ie., simple geometric
   real lambda;  // probability of an individual infecting another in 1 unit of time
 }
 
