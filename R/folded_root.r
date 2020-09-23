@@ -1,4 +1,12 @@
-
+#' @title folded_root
+#' @description This is a placeholder for a description.
+#' @param x default is x
+#' @param p default is \code{1}. 
+#' @param inverse default is \code{NULL}. 
+#' @param ... other arguments passed to methods
+#' @return  This is a placeholder for what it returns.
+#' @author Jae Choi, \email{choi.jae.seok@gmail.com}
+#' @export
 folded_root = function(x, p=1, inverse=FALSE, ... ) {
   # as with Box-Cox transformation as (yp−1)/p,
   # limit when p→0, the logit function logit(p)=log(p)−log(1−p).
@@ -16,7 +24,7 @@ folded_root = function(x, p=1, inverse=FALSE, ... ) {
     for ( i in 1:length(Q)) {
       q = Q[i]
       out = c(out,
-        uniroot( function(z) { folded_root(z, p) - q} , interval=c(0, 1), extendInt="no", ...)$root
+              stats::uniroot( function(z) { folded_root(z, p) - q} , interval=c(0, 1), extendInt="no", ...)$root
       )
     }
     return(out)
