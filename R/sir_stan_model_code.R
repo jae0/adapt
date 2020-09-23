@@ -1,3 +1,9 @@
+#' @title sir_stan_model_code
+#' @description This is a placeholder for a description.
+#' @param selection default is \code{"default"}
+#' @return  This is a placeholder for what it returns.
+#' @author Jae Choi, \email{choi.jae.seok@gmail.com}
+#' @export
 sir_stan_model_code = function( selection="default"  ) {
 
 ## NOTE: poisson and binomial observation errors and gausian process errors tend to work well and fast ..current default is poisson
