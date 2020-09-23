@@ -1,7 +1,21 @@
-
+#' @title simulate_data
+#' @description This is a placeholder for a description.
+#' @param selection default is \code{"sir"}
+#' @param Npop default is \code{1}
+#' @param inits default is \code{c(0.99, 0.01, 0)}
+#' @param times default is \code{0:99}
+#' @param params default is \code{list(beta=0.6, gamma=0.1)}
+#' @param plotdata default is \code{TRUE}
+#' @param sample_init default is \code{NULL}
+#' @param nsample default is \code{NULL}
+#' @return  This is a placeholder for what it returns.
+#' @importFrom magrittr "%>%"
+#' @author Jae Choi, \email{choi.jae.seok@gmail.com}
+#' @export
 simulate_data = function( selection="sir", Npop=1, inits=c(0.99, 0.01, 0), times=0:99, params=list(beta=0.6, gamma=0.1), plotdata=TRUE, sample_init=NULL, nsample=NULL ) {
 
-
+subject <- status <- time <- start_shed <- NA
+. = NULL #this is to prevent build check from warning about valid dplyr use 
   if (selection=="sir") {
     # CREDIT to:
     # https://jrmihalj.github.io/estimating-transmission-by-fitting-mechanistic-models-in-Stan/
@@ -9,7 +23,7 @@ simulate_data = function( selection="sir", Npop=1, inits=c(0.99, 0.01, 0), times
     # inits = initial proportions in each SIR category (S0, I0, R0)
     # params = c( transmission and pathogen-induced death rates)
 
-    library(deSolve)
+    # library(deSolve)
 
     # ODE function
     delta_sir = function(t, y, params) {
@@ -23,7 +37,7 @@ simulate_data = function( selection="sir", Npop=1, inits=c(0.99, 0.01, 0), times
     }
 
     # Run the integration:
-    res = as.data.frame( ode(inits, times, delta_sir, params, method="ode45") )
+    res = as.data.frame( deSolve::ode(inits, times, delta_sir, params, method="ode45") )
     colnames(res) = c("time", "Sobs", "Iobs", "Robs")
     res[, c("Iobs", "Sobs", "Robs")] = Npop * res[, c("Iobs", "Sobs", "Robs")]
     res[, "Sobs" ] = as.integer( res[, "Sobs" ])
@@ -75,18 +89,18 @@ simulate_data = function( selection="sir", Npop=1, inits=c(0.99, 0.01, 0), times
 
     if (plotdata) {
 
-      plot(NA,NA, xlim=range(times), ylim=range( 0, max(1, Npop) ), xlab = "Time", ylab="Population")
+      graphics::plot(NA,NA, xlim=range(times), ylim=range( 0, max(1, Npop) ), xlab = "Time", ylab="Population")
 
-      lines(res$Sobs ~ res$time, col="black")
-      lines(res$Iobs ~ res$time, col="red")
-      lines(res$Robs ~ res$time, col="green")
+      graphics::lines(res$Sobs ~ res$time, col="black")
+      graphics::lines(res$Iobs ~ res$time, col="red")
+      graphics::lines(res$Robs ~ res$time, col="green")
 
       if (!is.null(nsample)) {
-        points(sim$Sobs ~ sim$time, col="black")
-        points(sim$Iobs ~ sim$time, col="red")
-        points(sim$Robs ~ sim$time, col="green")
+        graphics::points(sim$Sobs ~ sim$time, col="black")
+        graphics::points(sim$Iobs ~ sim$time, col="red")
+        graphics::points(sim$Robs ~ sim$time, col="green")
       }
-      legend(x = 0.3*max(res$time), y = 0.8*Npop, legend = c("Susceptible", "Infected", "Recovered"),
+      graphics::legend(x = 0.3*max(res$time), y = 0.8*Npop, legend = c("Susceptible", "Infected", "Recovered"),
             col = c("black", "red", "green"), lty = c(1, 1, 1), lwd=c(3,3,3), bty="n")
 
     }
@@ -111,19 +125,19 @@ simulate_data = function( selection="sir", Npop=1, inits=c(0.99, 0.01, 0), times
     # prob_infection = 0.001 # transmission probability (per person per 'close contact', per day)
     # time_shedding = 7 # mean I->R duration for an individual
 
-    require(dplyr)
-    require(ggplot2)
-    require(tidyr)
+    # require(dplyr)
+    # require(ggplot2)
+    # require(tidyr)
 
     prob_infection = params$prob_infection
     time_shedding = params$time_shedding
 
     #data frame to store results
-    data = expand.grid(subject = 1:Npop, time=times) %>% tbl_df()
+    data = expand.grid(subject = 1:Npop, time=times) %>% dplyr::tbl_df()
     wdata = data %>%
-      mutate(status = NA_character_) %>%
-      spread(subject,status) %>%
-      setNames(names(.) %>%
+      dplyr::mutate(status = NA_character_) %>%
+      tidyr::spread(subject,status) %>%
+      stats::setNames(names(.) %>%
       make.names
     )
 
@@ -150,23 +164,23 @@ simulate_data = function( selection="sir", Npop=1, inits=c(0.99, 0.01, 0), times
 
       pr.recovery =  1/time_shedding
 
-      s_to_i = intersect( s, which( rbinom(Npop, 1, pr.infection) == 1  ) )
+      s_to_i = intersect( s, which( stats::rbinom(Npop, 1, pr.infection) == 1  ) )
       if (length(s_to_i) > 0)  wdata[t+1,-1][ s_to_i ] = "I"
 
-      i_to_r = intersect( i, which( rbinom(Npop, 1, pr.recovery) == 1 ) )
+      i_to_r = intersect( i, which( stats::rbinom(Npop, 1, pr.recovery) == 1 ) )
       if (length(i_to_r) > 0)  wdata[t+1,-1][ i_to_r ] = "R"
     }
 
-    data = gather(wdata, subject, status, -time) %>% tbl_df()
+    data = tidyr::gather(wdata, subject, status, -time) %>% dplyr::tbl_df()
 
     data = data %>%
-      group_by(subject) %>%
-      mutate(start_shed = as.numeric(min(time[status == 'I']))) %>%
-      ungroup %>%
-      mutate(subject = reorder(subject,-start_shed), status=factor(status, levels = c('S','I','R'),ordered = T))
+      dplyr::group_by(subject) %>%
+      dplyr::mutate(start_shed = as.numeric(min(time[status == 'I']))) %>%
+      dplyr::ungroup %>%
+    dplyr::mutate(subject = stats::reorder(subject,-start_shed), status=factor(status, levels = c('S','I','R'),ordered = T))
 
-    sim = data %>% group_by(time) %>%
-      summarise(Sobs = sum(status =='S') %>% as.integer,
+    sim = data %>% dplyr::group_by(time) %>%
+      plyr::summarise(Sobs = sum(status =='S') %>% as.integer,
                 Iobs = sum(status =='I') %>% as.integer,
                 Robs = sum(status =='R') %>% as.integer)
 
@@ -174,10 +188,10 @@ simulate_data = function( selection="sir", Npop=1, inits=c(0.99, 0.01, 0), times
 
     if (plotdata) {
       #plot the SIR status for each individual over time:
-      ggplot( data, aes(x=time,y=as.numeric(subject),fill = status)) +
-        geom_tile() +
-        scale_fill_manual('Status',values = c('Sobs'='green3','Iobs'='indianred','Robs'='blue3')) +
-        ylab('Subject') + xlab('Time')
+      ggplot2::ggplot( data, ggplot2::aes(x=time,y=as.numeric(subject),fill = status)) +
+        ggplot2::geom_tile() +
+        ggplot2::scale_fill_manual('Status',values = c('Sobs'='green3','Iobs'='indianred','Robs'='blue3')) +
+        ggplot2::ylab('Subject') + ggplot2::xlab('Time')
     }
 
     return(sim)
@@ -194,11 +208,11 @@ simulate_data = function( selection="sir", Npop=1, inits=c(0.99, 0.01, 0), times
     # Npop = 300 # number of subjects
     # I0 = 25 # number of children initially infected
 
-    require(dplyr)
-    require(ggplot2)
-    require(tidyr)
-
-    require(Matrix)
+    # require(dplyr)
+    # require(ggplot2)
+    # require(tidyr)
+    # 
+    # require(Matrix)
 
     prob_infection = params$prob_infection
     time_shedding = params$time_shedding
@@ -208,23 +222,24 @@ simulate_data = function( selection="sir", Npop=1, inits=c(0.99, 0.01, 0), times
     # gamma_child = 10 # mean recovery duration for child (naive child)
     # gamma_adult = 3 # mean recovery duration for an adult (prior immunity)
 
-    fmat = bdiag( replicate( Npop/4, matrix(1,4,4), simplify = FALSE ) ) #matrix indicating family membership
+    fmat = Matrix::bdiag( replicate( Npop/4, matrix(1,4,4), simplify = FALSE ) ) #matrix indicating family membership
     diag(fmat) = 0
 
     adult = rep(c(1,1,0,0), Npop/4) # two adults and two children per HH
 
-    data = expand.grid(subject = 1:Npop, time=times) %>% tbl_df()
+    data = expand.grid(subject = 1:Npop, time=times) %>% dplyr::tbl_df()
 
     wdata = data %>%
-      mutate(status = NA_character_) %>%
-      spread(subject,status) %>%
-      setNames(names(.) %>%
+      dplyr::mutate(status = NA_character_) %>%
+      tidyr::spread(subject,status) %>%
+      stats::setNames(names(.) %>%
       make.names
     )
 
   # initial state
+    #MM - I0 was i0 - which was never defined.
     inits = list(
-      c(1-i0, i0, 0), # S, I, R, proportions for children
+      c(1-I0, I0, 0), # S, I, R, proportions for children 
       c(1, 0, 0)      # S, I, R, proportions for adults
     )
 
@@ -256,10 +271,10 @@ simulate_data = function( selection="sir", Npop=1, inits=c(0.99, 0.01, 0), times
 
       pr.recovery =  1/time_shedding
 
-      s_to_i = intersect( s, which( rbinom(Npop, 1, pr.infection) == 1  ) )
+      s_to_i = intersect( s, which( stats::rbinom(Npop, 1, pr.infection) == 1  ) )
       if (length(s_to_i) > 0)  wdata[t+1,-1][ s_to_i ] = "I"
 
-      i_to_r = intersect( i, which( rbinom(Npop, 1, pr.recovery) == 1 ) )
+      i_to_r = intersect( i, which( stats::rbinom(Npop, 1, pr.recovery) == 1 ) )
       if (length(i_to_r) > 0)  wdata[t+1,-1][ i_to_r ] = "R"
     }
 
@@ -273,19 +288,19 @@ simulate_data = function( selection="sir", Npop=1, inits=c(0.99, 0.01, 0), times
     )
 
     if (plotdata) {
-      out = gather(wdata,subject,status, -time) %>% tbl_df()
+      out = tidyr::gather(wdata,subject,status, -time) %>% dplyr::tbl_df()
 
-      out = out %>% group_by(subject) %>% mutate(start_shed = as.numeric(min(time[status == 'I']))) %>%
-        ungroup %>%
-        mutate(subject = reorder(subject,-start_shed), status = factor(status, levels = c('S','I','R'),ordered = T))
+      out = out %>% dplyr::group_by(subject) %>% dplyr::mutate(start_shed = as.numeric(min(time[status == 'I']))) %>%
+        dplyr::ungroup %>%
+        dplyr::mutate(subject = stats::reorder(subject,-start_shed), status = factor(status, levels = c('S','I','R'),ordered = T))
 
       out = as.data.frame(out)
 
       #plot the SIR status for each individual over time:
-      ggplot(out, aes(x=time,y=as.numeric(subject),fill = status)) +
-        geom_tile() +
-        scale_fill_manual('Status',values = c('Sobs'='green3','Iobs'='indianred','Robs'='blue3')) +
-        ylab('Subject') + xlab('Time')
+      ggplot2::ggplot(out, ggplot2::aes(x=time,y=as.numeric(subject),fill = status)) +
+        ggplot2::geom_tile() +
+        ggplot2::scale_fill_manual('Status',values = c('Sobs'='green3','Iobs'='indianred','Robs'='blue3')) +
+        ggplot2::ylab('Subject') + ggplot2::xlab('Time')
     }
 
     return(sim)
