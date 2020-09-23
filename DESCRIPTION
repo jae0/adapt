@@ -1,12 +1,34 @@
 Package: adapt
-Title: Areal Disease Analysis and Predicion Tools for COVID-19 epidemiological modelling and forecasting.
+Title: Areal Disease Analysis and Predicion Tools for COVID-19 epidemiological modelling and forecasting
 Version: 0.1
 Authors@R: c( person("Jae", "Choi", email="choi.jae.seok@gmail.com", role=c("aut", "cre")) )
 Description: Areal Disease Analysis and Predicion Tools assimilates disease spread data for COVID-19, and other similar diseases, in order to estimate model parameters of disease transmission. The model used here is an adaptation of a classical epidemiological model (SIR) using Bayesian methods (MCMC via STAN). Simulation/forcasting of disease progression is conducted using stochastic simulation approaches (via the Gillespie method). Small area-based approach using CAR/BYM models are also used to model and support spatial smoothing and analysis.
 Depends: R (>= 3.0.0)
-Imports: devtools
-Suggests: inla
-License: MIT
+License: MIT + file LICENSE
+Imports: 
+  coda,
+  curl,
+  dplyr,
+  emdbook,
+  deSolve,
+  devtools,
+  ggplot2,
+  GillespieSSA,
+  googlesheets4,
+  lubridate,
+  magrittr,
+  Matrix,
+  nimble, 
+  plyr,
+  reshape2,
+  rstan,
+  scales,
+  SimInf,
+  stats,
+  stringi,
+  tidyr
+Encoding: UTF-8
+Suggests: INLA
 LazyData: true
 URL: https://github.com/jae0/adapt/
-
+RoxygenNote: 7.1.0
