@@ -1,7 +1,19 @@
-
+#' @title simulate
+#' @description This is a placeholder for a description.
+#' @param stan_results default is 
+#' @param istart default is \code{NULL}.
+#' @param nsims default is \code{1}. 
+#' @param nprojections default is \code{10}
+#' @param nthreads default is \code{1}
+#' @param model default is \code{"stochastic.simulation.sir"}
+#' @importFrom ggplot2 %+%
+#' @return This is a placeholder for what it returns.
+#' @author Jae Choi, \email{choi.jae.seok@gmail.com}
+#' @export
 simulate = function(  stan_results, istart=NULL, nsims=1, nprojections=10, nthreads=1, model="stochastic.simulation.sir" ) {
 
-  require(SimInf)
+  n <- value <- NA
+  # require(SimInf)
 
   stan_data = stan_results$stan_inputs
   posteriors = rstan::extract( stan_results$stan_samples )  # posteriors = mcmc posteriors from STAN
@@ -39,7 +51,7 @@ simulate = function(  stan_results, istart=NULL, nsims=1, nprojections=10, nthre
 
     for (i in 1:nsims) {
 
-      sim[i,,]  = run( model=mparse(
+      sim[i,,]  = run( model=SimInf::mparse(
         transitions = ST,
         compartments = SC,
         gdata = c( BETA=u0$BETA[i], GAMMA=u0$GAMMA[i], EPSILON=u0$EPSILON[i] ),
@@ -94,7 +106,8 @@ simulate = function(  stan_results, istart=NULL, nsims=1, nprojections=10, nthre
 
     initial_conditions = data.frame( S=rep(99,n), I=rep(1,n), R=rep(0,n), M=rep(0,n) )
 
-    SIRMQ = mparse(
+    #MM - "events" is never defined?
+    SIRMQ = SimInf::mparse(
       transitions= transitions,
       compartments = statevars,  # susceptible, infected, recovered, mortality, quarantined
       gdata = params,
@@ -107,9 +120,9 @@ simulate = function(  stan_results, istart=NULL, nsims=1, nprojections=10, nthre
     res = run( model=SIRMQ, threads=1 )
     plot(res)
 
-
-    o = trajectories(res)
-
+    #MM - not sure if trajectories is a function - perhaps meant the function from SimInf?
+    #o = trajectories(res)
+    o = SimInf::trajectory(res)
 
       ###
 
@@ -124,10 +137,11 @@ simulate = function(  stan_results, istart=NULL, nsims=1, nprojections=10, nthre
 
 
 
-      library("plyr")     ## for rdply()
-      library("reshape2") ## for melt()
-      library("emdbook")  ## for lambertW()
-      library("ggplot2"); theme_set(theme_bw())
+      # library("plyr")     ## for rdply()
+      # library("reshape2") ## for melt()
+      # library("emdbook")  ## for lambertW()
+      #library("ggplot2"); theme_set(theme_bw())
+    ggplot2::theme_set(ggplot2::theme_bw())
 
       # Functions for computing the event rates and the transitions to be executed when the events occur:
 
@@ -161,7 +175,7 @@ simulate = function(  stan_results, istart=NULL, nsims=1, nprojections=10, nthre
           trans <- c(0,0)
           while (x["I"]>0 & it<itmax) {
               r <- ratefun(x,p)
-              t <- t+rexp(1,rate=sum(r))
+              t <- t+stats::rexp(1,rate=sum(r))
               w <- sample(length(r),size=1,prob=r)
               x <- transfun(x,w)
               if (ret=="all") rmat[it,] <- c(t,w)
@@ -178,8 +192,8 @@ simulate = function(  stan_results, istart=NULL, nsims=1, nprojections=10, nthre
       plot(trans~t,data=ex0)
 
       ## can use .progress="text" if running interactively
-      ex1 <- rdply(1e3,run())
-      ex2 <- rdply(1e3,run(p=c(beta=1.1,gamma=1,N=100)))
+      ex1 <- plyr::rdply(1e3,run())
+      ex2 <- plyr::rdply(1e3,run(p=c(beta=1.1,gamma=1,N=100)))
 
       # Some handy functions:
 
@@ -187,20 +201,20 @@ simulate = function(  stan_results, istart=NULL, nsims=1, nprojections=10, nthre
       ## fraction unaffected, time to extinction ...
 
       mm <- function(x) {
-          melt(x[c("S","t")],id.var=character(0))
+          reshape2::melt(x[c("S","t")],id.var=character(0))
       }
 
       ## analytic computation of expected final size
       ## from ?lambertW
 
       finalsize <- function(R0) {
-          1+1/R0*lambertW(-R0*exp(-R0))
+          1+1/R0*emdbook::lambertW(-R0*exp(-R0))
       }
 
       # Results with R0=2R0=2 (default) and R0=1.1R0=1.1:
 
-      (g0 <- ggplot(mm(ex1),aes(x=value))+geom_histogram()+
-          facet_wrap(~variable,scale="free"))
+      (g0 <- ggplot2::ggplot(mm(ex1),ggplot2::aes(x=value))+ggplot2::geom_histogram()+
+          ggplot2::facet_wrap(~variable,scale="free"))
 
       finalsize(2)  ## check final size (should add to plot)
 
@@ -215,8 +229,8 @@ simulate = function(  stan_results, istart=NULL, nsims=1, nprojections=10, nthre
 
       # SIR via GillespieSSA
 
-      library(GillespieSSA)
-      library(reshape2)
+      # library(GillespieSSA)
+      # library(reshape2)
       # set.seed(42)
 
       a <- c("beta*S*I","gamma*I")
@@ -225,12 +239,12 @@ simulate = function(  stan_results, istart=NULL, nsims=1, nprojections=10, nthre
       parms <- c(beta=0.1/1000,gamma=0.05)
       x0 <- c(S=999,I=1,R=0)
       tf <- 200
-      sir_out <- ssa(x0,a,nu,parms,tf=tf,simName="SIR")
+      sir_out <- GillespieSSA::ssa(x0,a,nu,parms,tf=tf,simName="SIR")
       while( sir_out$stats$nSteps==1 ){
-          sir_out <- ssa(x0,a,nu,parms,tf=tf,simName="SIR")
+          sir_out <- GillespieSSA::ssa(x0,a,nu,parms,tf=tf,simName="SIR")
       }
 
-      head(sir_out$data)
+      utils::head(sir_out$data)
       plot(sir_out$data[,c(1,3)])
 
 
@@ -262,9 +276,9 @@ simulate = function(  stan_results, istart=NULL, nsims=1, nprojections=10, nthre
         w1 = alpha * n_S * n_I / V
         w2 = beta * n_I
         W = w1 + w2
-        dt = -log(runif(1)) / W
+        dt = -log(stats::runif(1)) / W
         t = t + dt
-        if (runif(1) < (w1 / W) ) {
+        if (stats::runif(1) < (w1 / W) ) {
             n_S = n_S - 1
           n_I = n_I + 1
         } else {
