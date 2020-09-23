@@ -1,9 +1,19 @@
+#' @title data_nova_scotia
+#' @description This is a placeholder for a description.
+#' @param output default is \code{"stan_data"}
+#' @param Npop default is \code{971395}. 
+#' @param Npreds default is \code{5}. 
+#' @param interpolate_missing_data default is \code{FALSE}
+#' @param ... other arguments passed to methods
+#' @return  This is a placeholder for what it returns.
+#' @author Jae Choi, \email{choi.jae.seok@gmail.com}
+#' @export
 data_nova_scotia = function( output="stan_data", Npop=971395, Npreds=5, interpolate_missing_data=FALSE, ... ) {
 
   # install.packages("googlesheets4")
-  library(googlesheets4)
+  # library(googlesheets4)
 
-  gsdata = read_sheet( "https://docs.google.com/spreadsheets/d/1tgf2H9gDmRnGDGeQE-fC9IPhrmNxP8-JC7Nnnob_vuY/edit?usp=sharing" )
+  gsdata = googlesheets4::read_sheet( "https://docs.google.com/spreadsheets/d/1tgf2H9gDmRnGDGeQE-fC9IPhrmNxP8-JC7Nnnob_vuY/edit?usp=sharing" )
 
   gsdata$Iobs = gsdata$InfectedCurrently
   gsdata$Robs = gsdata$Recoveries + gsdata$Deaths  # note: recovered = deaths+recoveries
@@ -30,19 +40,19 @@ data_nova_scotia = function( output="stan_data", Npop=971395, Npreds=5, interpol
 
     j = which( !is.finite(daily$Robs) )
     if (length(j) > 0) {
-      o = approx( x=daily$dayno , y=daily$Robs, xout = daily$dayno, method="linear")
+      o = stats::approx( x=daily$dayno , y=daily$Robs, xout = daily$dayno, method="linear")
       daily$Robs[j] = floor(o$y[j])
     }
 
     j = which( !is.finite(daily$Mobs) )
     if (length(j) > 0) {
-      o = approx( x=daily$dayno , y=daily$Mobs, xout = daily$dayno, method="linear")
+      o = stats::approx( x=daily$dayno , y=daily$Mobs, xout = daily$dayno, method="linear")
       daily$Mobs[j] = floor(o$y[j])
     }
 
     j = which( !is.finite(daily$Sobs) )
     if (length(j) > 0) {
-      o = approx( x=daily$dayno , y=daily$Sobs, xout = daily$dayno, method="linear")
+      o = stats::approx( x=daily$dayno , y=daily$Sobs, xout = daily$dayno, method="linear")
       daily$Sobs[j] = floor(o$y[j])
     }
 
