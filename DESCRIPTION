@@ -2,8 +2,8 @@ Package: adapt
 Title: Areal Disease Analysis and Predicion Tools for COVID-19 epidemiological modelling and forecasting
 Version: 0.1
 Authors@R: 
-  c( person("Jae", "Choi", email="choi.jae.seok@gmail.com", role=c("aut", "cre"), 
-     person("Mike", "McMahon", email="Mike.McMahon@dfo-mpo.gc.ca", role=c("ctb"))
+  c( person("Jae", "Choi", email="choi.jae.seok@gmail.com", role=c("aut", "cre")), 
+     person("Mike", "McMahon", email="Mike.McMahon@dfo-mpo.gc.ca", role=c("ctb")))
 Description: Areal Disease Analysis and Predicion Tools assimilates disease spread data for COVID-19, and other similar diseases, in order to estimate model parameters of disease transmission. The model used here is an adaptation of a classical epidemiological model (SIR) using Bayesian methods (MCMC via STAN). Simulation/forcasting of disease progression is conducted using stochastic simulation approaches (via the Gillespie method). Small area-based approach using CAR/BYM models are also used to model and support spatial smoothing and analysis.
 Depends: R (>= 3.0.0)
 License: MIT + file LICENSE
