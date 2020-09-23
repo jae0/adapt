@@ -1,7 +1,13 @@
-
+#' @title simulate_add_noise
+#' @description This is a placeholder for a description.
+#' @param sim default is sim
+#' @param nobs default is \code{30}
+#' @return  This is a placeholder for what it returns.
+#' @author Jae Choi, \email{choi.jae.seok@gmail.com}
+#' @export
 simulate_add_noise = function( sim, nobs=30 ) {
 
-  subsample = sort( sample.int( length(1:50), Nobs, replace=FALSE ) )
+  subsample = sort( sample.int( length(1:50), nobs, replace=FALSE ) )
 
   # missing data
   missing = which(!is.finite(sim$S[subsample] ))
