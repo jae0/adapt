@@ -1,3 +1,12 @@
+#' @title data_provinces_of_canada
+#' @description This is a placeholder for a description.
+#' @param selection default is \code{"default"}
+#' @param fn default is \code{NULL} 
+#' @param Npreds default is \code{5}
+#' @param ... other arguments passed to methods
+#' @return  This is a placeholder for what it returns.
+#' @author Jae Choi, \email{choi.jae.seok@gmail.com}
+#' @export
 data_provinces_of_canada = function( selection="default", fn=NULL, Npreds=5, ... ) {
 
   # this accesses data from : https://github.com/ishaberry/Covid19Canada
@@ -11,7 +20,7 @@ data_provinces_of_canada = function( selection="default", fn=NULL, Npreds=5, ...
   fn_pop = file.path( dirname(fn), "POP_Canada.rdata")
 
   if (selection =="download_pop") {
-    pop = read.csv(curl(
+    pop = utils::read.csv(curl::curl(
     "https://www150.statcan.gc.ca/t1/tbl1/en/dtl!downloadDbLoadingData.action?pid=1710000901&latestN=0&startDate=20200101&endDate=20201001&csvLocale=en&selectedMembers=%5B%5B2%2C3%2C4%2C5%2C6%2C7%2C8%2C9%2C10%2C11%2C12%2C14%2C15%5D%5D&checkedLevels=0D1" ), header=TRUE)
     pop = pop[, c( "REF_DATE", "GEO", "VALUE")]
     names(pop) =c("date", "province", "Npop")
@@ -37,10 +46,10 @@ data_provinces_of_canada = function( selection="default", fn=NULL, Npreds=5, ...
 
   res = NULL
   if (selection =="download") {
-    library(curl)
-    cases = read.csv(curl("https://raw.githubusercontent.com/ishaberry/Covid19Canada/master/cases.csv"), header=TRUE)
-    mortality = read.csv(curl("https://raw.githubusercontent.com/ishaberry/Covid19Canada/master/mortality.csv"), header=TRUE)
-    recovered = read.csv(curl("https://raw.githubusercontent.com/ishaberry/Covid19Canada/master/recovered_cumulative.csv"), header=TRUE)
+    #library(curl)
+    cases = utils::read.csv(curl::curl("https://raw.githubusercontent.com/ishaberry/Covid19Canada/master/cases.csv"), header=TRUE)
+    mortality = utils::read.csv(curl::curl("https://raw.githubusercontent.com/ishaberry/Covid19Canada/master/mortality.csv"), header=TRUE)
+    recovered = utils::read.csv(curl::curl("https://raw.githubusercontent.com/ishaberry/Covid19Canada/master/recovered_cumulative.csv"), header=TRUE)
 
     res = list(timestamp=Sys.Date(), cases=cases, mortality=mortality, recovered=recovered)
     save( res, file=fn, compress=TRUE )
