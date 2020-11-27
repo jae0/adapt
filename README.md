@@ -1,7 +1,7 @@
 
 ---
 
-# NOTE: As of 1 June 2020, I am reducing the frequency of updates (except for Nova Scotia).
+# Updates have restarted due to the current outbreak in Nova Scotia.
 
 ---
 

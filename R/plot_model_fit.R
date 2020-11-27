@@ -12,7 +12,7 @@
 #' @export
 plot_model_fit = function( selection="default", stan_results=NULL,
   sim=NULL, nsimlines=2000, outdir="", nx=NULL, to.screen =FALSE ) {
-  
+
   # create variable that will be used
 sample_prop <- ts <- mod_time <- mod_median <- mod_high <- mod_low <-NA
   if (!dir.exists(outdir)) dir.create(outdir, showWarnings=FALSE, recursive=TRUE )
