@@ -1,7 +1,7 @@
 #' @title data_provinces_of_canada
 #' @description This is a placeholder for a description.
 #' @param selection default is \code{"default"}
-#' @param fn default is \code{NULL} 
+#' @param fn default is \code{NULL}
 #' @param Npreds default is \code{5}
 #' @param ... other arguments passed to methods
 #' @return  This is a placeholder for what it returns.

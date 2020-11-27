@@ -1,8 +1,8 @@
 #' @title folded_root
 #' @description This is a placeholder for a description.
 #' @param x default is x
-#' @param p default is \code{1}. 
-#' @param inverse default is \code{NULL}. 
+#' @param p default is \code{1}.
+#' @param inverse default is \code{NULL}.
 #' @param ... other arguments passed to methods
 #' @return  This is a placeholder for what it returns.
 #' @author Jae Choi, \email{choi.jae.seok@gmail.com}
@@ -16,7 +16,16 @@ folded_root = function(x, p=1, inverse=FALSE, ... ) {
   # if      p -> 0 .. ie.  expand scale from (0,1) to (-Inf, Inf),  .. ie. logit ..etc
 
   if (!inverse) {
-    if ( any(x < 0) | any(x>1) ) stop( "x is out of bounds")
+    i = which(x < 0)
+    if ( length(i) > 0 ) {
+      x[i] = 0
+      message( "folded_root:: x was less than 0; truncating to 0" )
+    }
+    i = which(x > 1)
+    if ( length(i) > 0 ) {
+      x[i] = 1
+      message( "folded_root:: x was greater than 1; truncating to 1" )
+    }
     (x^p - (1-x)^p)/p
   } else {
     out = NULL
@@ -24,7 +33,7 @@ folded_root = function(x, p=1, inverse=FALSE, ... ) {
     for ( i in 1:length(Q)) {
       q = Q[i]
       out = c(out,
-              stats::uniroot( function(z) { folded_root(z, p) - q} , interval=c(0, 1), extendInt="no", ...)$root
+        stats::uniroot( function(z) { folded_root(z, p) - q} , interval=c(0, 1), extendInt="no", ...)$root
       )
     }
     return(out)

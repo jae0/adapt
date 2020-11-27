@@ -38,14 +38,12 @@ can = data_provinces_of_canada(
 )
 
 provinces = names(can)
-
 # provinces = setdiff( provinces, c("Nova Scotia", "Quebec", "Ontario", "Alberta", "BC" ) )
-
 # provinces = c( "Nova Scotia", "New Brunswick", "Quebec", "Ontario", "BC")
 
 # compile code
-
-stancode_compiled = rstan::stan_model( model_code=sir_stan_model_code( selection="default" ) )  # compile the code
+# stancode_compiled = rstan::stan_model( model_code=sir_stan_model_code( selection="default" ) )
+stancode_compiled = rstan::stan_model( model_code=sir_stan_model_code( selection="default_asymptomatic" ) )
 
 to.screen = FALSE
 # to.screen = TRUE
