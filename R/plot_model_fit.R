@@ -299,7 +299,7 @@ sample_prop <- ts <- mod_time <- mod_median <- mod_high <- mod_low <-NA
 
       nxr = stan_data$Nobs + stan_data$Npreds - 4  # in case data are not upto-date
       rp = apply(posteriors$K[,1:nxr], 2, stats::median)
-      yrange = range(c(0, rp, posteriors$K[,1:nxr], 3))
+      yrange = c(0, min( quantile( c(rp, posteriors$K[,1:nxr]), probs=0.95), 50) )
 
       graphics::plot( rp ~ seq(1,nxr), type="l", lwd =3, col="slateblue", ylim=yrange, ylab="Reproductive number", xlab="Days" )
 
@@ -322,7 +322,7 @@ sample_prop <- ts <- mod_time <- mod_median <- mod_high <- mod_low <-NA
     days7 = graphics::hist( posteriors$K[,stan_data$Nobs-8] , breaks=brks, plot=FALSE )  # today's K
     yrange = range( c(days0$density, days1$density, days7$density))
     yrange[2] = yrange[2] * 1.15
-    xrange = range( c(0, days0$mides, days1$mids, days7$mids, 1.3))
+    xrange = c(0, min( quantile( c(days0$mides, days1$mids, days7$mids), probs=0.95), 50) )
     xrange[2] = xrange[2] * 1.15
 
     if (!to.screen) {

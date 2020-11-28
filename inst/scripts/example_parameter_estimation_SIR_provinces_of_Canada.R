@@ -43,13 +43,12 @@ provinces = names(can)
 
 # compile code
 # stancode_compiled = rstan::stan_model( model_code=sir_stan_model_code( selection="default" ) )
-stancode_compiled = rstan::stan_model( model_code=sir_stan_model_code( selection="default_asymptomatic" ) )
+stancode_compiled = rstan::stan_model( model_code=sir_stan_model_code( selection="default_asymptomatic" ) ) #
 
 to.screen = FALSE
 # to.screen = TRUE
 
 for (au in  provinces) {
-
     # au = "Nova Scotia"
 
     print(au)
@@ -80,7 +79,6 @@ for (au in  provinces) {
       sim = simulate( stan_results=stan_results, nsims=1400, nprojections=200, nthreads=1  ) # predictions are conditioned on beta estimates from t-1 by default
       plot_model_fit( selection="forecasts", stan_results=stan_results, sim=sim, outdir=outdir,
         to.screen=to.screen )
-
     }
 
 }
