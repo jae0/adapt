@@ -43,7 +43,11 @@ data_health_regions_of_canada = function( selection="default", fn=NULL, Npreds=5
     )
     save( pop, file=fn_pop, compress=TRUE )  # default to current work directory
   }
-  load( fn_pop )
+  if (!file.exists(fn_pop)) {
+    pop = data_health_regions_of_canada( selection="download_pop", fn=fn )
+  } else {
+    load( fn_pop )
+  }
 
 
   fn_pop_by_health_region = file.path( dirname(fn), "POP_Canada_health_regions.rdata")
@@ -60,7 +64,11 @@ data_health_regions_of_canada = function( selection="default", fn=NULL, Npreds=5
     pop_hr$AU = paste( pop_hr$province, pop_hr$health_region, sep=" __ ")
     save( pop_hr, file=fn_pop_by_health_region, compress=TRUE )  # default to current work directory
   }
-  load(fn_pop_by_health_region )
+  if (!file.exists(fn_pop_by_health_region)) {
+    pop_hr = data_health_regions_of_canada( selection="download_pop_health_regions", fn=fn )
+  } else {
+    load(fn_pop_by_health_region )
+  }
   pop_hr = pop_hr[ pop_hr$date== 2019, ]
 
   res = NULL
@@ -75,8 +83,11 @@ data_health_regions_of_canada = function( selection="default", fn=NULL, Npreds=5
     return(res)
   }
 
-  if (!file.exists(fn)) res = data_health_regions_of_canada( selection="download", fn=fn )
-  if (!exists("res")) res = data_health_regions_of_canada( selection="download", fn=fn )
+  if (!file.exists(fn)) {
+    res = data_health_regions_of_canada( selection="download", fn=fn )
+  } else {
+    load (fn )
+  }
 
   if (res$timestamp != Sys.Date() )  res = data_health_regions_of_canada( selection="download", fn=fn )
 
@@ -130,24 +141,17 @@ data_health_regions_of_canada = function( selection="default", fn=NULL, Npreds=5
     D_daily[j,k] = 0
   }}
 
+  I_daily[ which(!is.finite(I_daily))] = 0
+  I_daily[ which(I_daily < 0)] = 0  ## in case of data entry errors
 
-  # convert daily new deaths to cummulative sums for Mortalities
   D_daily[ which(!is.finite(D_daily))] = 0
   D_daily[ which(D_daily < 0)] = 0  ## in case of data entry errors
+
+  # convert daily new deaths to cummulative sums for Mortalities
   D_cumsum = D_daily[] * 0
   for (k in 1:length(aus)) {
     D_cumsum[,k] = cumsum(D_daily[,k])
   }
-
-  # compute infecteds
-  I_daily[ which(!is.finite(I_daily))] = 0
-  I_daily[ which(I_daily < 0)] = 0  ## in case of data entry errors
-  I_current = I_daily[] * 0
-  for (k in 1:length(aus)) {
-  for (j in 1:(length(tus)-1)) {
-#    I_current[j+1,k] = I_current[j,k]   + I_daily[j,k] - D_daily[j,k] - R_daily[j,k]
-    I_current[j+1,k] = I_current[j,k] + I_daily[j,k]  - D_daily[j,k]  # - R_daily[j,k] to be removed later after it is computed
-  }}
 
 
   # RECOVERED .... recovered data only exist by province but we want it by health region:
@@ -272,11 +276,11 @@ data_health_regions_of_canada = function( selection="default", fn=NULL, Npreds=5
   recovered = merge( infected_hr_cumm, recovered, by=c("tu", "province"), all.x=TRUE, all.y=FALSE )
   recovered$fraction_infected[ which( !is.finite( recovered$fraction_infected)) ] = 0
 
-  recovered$recovered_estimated = recovered$fraction_infected * recovered$cumulative_recovered
+  recovered$recovered_estimated = round( recovered$fraction_infected * recovered$cumulative_recovered )
   recovered$au_index = match( recovered$au, aus )
   recovered$tu_index = match( recovered$tu, tus )
 
-  R_cumsum = array( NA, dim=c( length(tus), length(aus)  ) )
+  R_cumsum = array( 0, dim=c( length(tus), length(aus)  ) )
   R_cumsum[ cbind( recovered$tu_index, recovered$au_index ) ] = recovered$recovered
 
   R_daily = R_cumsum[] * 0
@@ -284,18 +288,14 @@ data_health_regions_of_canada = function( selection="default", fn=NULL, Npreds=5
   R_daily[ which(R_daily < 0)] = 0  ## there is a typo in Alberta 19-05-2020       Alberta                 5854
   R_daily[ which( !is.finite(R_daily))] = 0
 
-  # update, removing R_daily
+  I_current = I_daily[] * 0
   for (k in 1:length(aus)) {
   for (j in 1:(length(tus)-1)) {
-    I_current[j+1,k] = I_current[j+1,k] - R_daily[j,k]  # finish computation of I_current
+    I_current[j+1,k] = max(0, I_current[j,k] + I_daily[j,k]  - D_daily[j,k] - R_daily[j,k] )
   }}
-
-
 
   # compute Susceptibles
   # fill with initial pop
-
-
 
 
 # note: Stats Can and Covid19 name regions and provinces differently ... using lookup defined in: au_lookup_canada.R
@@ -306,7 +306,7 @@ data_health_regions_of_canada = function( selection="default", fn=NULL, Npreds=5
   S_cumsum[1,] = Npop[aus]  # start of data
   for (k in 1:length(aus)) {
   for (j in 1:(length(tus)-1) ) {
-    S_cumsum[j+1,k] = S_cumsum[j,k] - sum( I_cumsum[j,k] + R_cumsum[j,k] + D_cumsum[j,k], na.rm=TRUE )
+    S_cumsum[j+1,k] = S_cumsum[j,k] - sum( I_current[j,k] + R_cumsum[j,k] + D_cumsum[j,k], na.rm=TRUE )
   }}
 
     # default is to return this:

@@ -26,6 +26,16 @@ tasks = c("download.data", "model", "plot", "forecast")
 
 if ("download.data" %in% tasks) res = data_health_regions_of_canada( selection="download", fn=fn )
 
+
+### NOTE:: many health regions are not represented in the Covid19 data,
+### hopefully because they did not experience any covid
+### where they have the same names,  not all seem to have the same names as StatsCan
+### total population size can be wrong ... they are approximate ...
+### also, as recoveries are not specified by health region,
+### the proportion of incidence in each health region is used to
+### compute recoveries in each health region
+
+
 healthregions = data_health_regions_of_canada(
   fn = fn,
   Npreds = 7,   # number of days for ode-based forward projections
@@ -43,11 +53,11 @@ hr = c(
   "Nova Scotia __ Zone 1 - Western",
   "Nova Scotia __ Zone 2 - Northern",
   "Nova Scotia __ Zone 3 - Eastern",
-  "Nova Scotia __ Zone 4 - Central"
-  "Ontario __ Toronto",
-  "Quebec __ Montréal",
+  "Nova Scotia __ Zone 4 - Central",
   "New Brunswick __ Zone 1 (Moncton area)",
-  "New Brunswick __ Zone 3 (Fredericton area)"
+  "New Brunswick __ Zone 3 (Fredericton area)",
+  "Ontario __ Toronto",
+  "Quebec __ Montréal"
 )
 
 # compile code
@@ -59,10 +69,10 @@ to.screen = FALSE
 
 for (au in  hr) {
 
-    # au = "Nova Scotia"
+    # au = "Nova Scotia __ Zone 4 - Central"
 
     print(au)
-    stan_results = list( stan_inputs=can[[au]] )
+    stan_results = list( stan_inputs=healthregions[[au]] )
     fn_model = file.path( workdir, paste( au, stan_results$stan_inputs$modelname, "rdata", sep=".") )
     outdir = file.path( "~", "bio", "adapt", "inst", "doc", au)
     control.stan = list(adapt_delta = 0.9, max_treedepth=12 )
@@ -97,7 +107,7 @@ for (au in  hr) {
 
 ## Comparisons across provinces: normalize to unit population
 fn.summary = file.path( workdir, "Covid19Canada_summary.rdata")
-modelname = can[[1]]$modelname
+modelname = healthregions[[1]]$modelname
 
 res = summary_adapt( "summary.create", aus=provinces, fn=fn.summary, workdir=workdir, modelname=modelname )
 

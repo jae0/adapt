@@ -42,7 +42,11 @@ data_provinces_of_canada = function( selection="default", fn=NULL, Npreds=5, ...
     )
     save( pop, file=fn_pop, compress=TRUE )  # default to current work directory
   }
-  load( fn_pop )
+  if (!file.exists(fn_pop)) {
+    pop = data_health_regions_of_canada( selection="download_pop", fn=fn )
+  } else {
+    load( fn_pop )
+  }
 
   res = NULL
   if (selection =="download") {
@@ -55,9 +59,11 @@ data_provinces_of_canada = function( selection="default", fn=NULL, Npreds=5, ...
     save( res, file=fn, compress=TRUE )
     return(res)
   }
-
-  if (!file.exists(fn)) res = data_provinces_of_canada( selection="download", fn=fn )
-  if (!exists("res")) res = data_provinces_of_canada( selection="download", fn=fn )
+  if (!file.exists(fn)) {
+    res = data_provinces_of_canada( selection="download", fn=fn )
+  } else {
+    load (fn )
+  }
   if (res$timestamp != Sys.Date() )  res = data_provinces_of_canada( selection="download", fn=fn )
 
   infected = as.data.frame.table( tapply( 1:nrow(res$cases), INDEX=list( date=res$cases$date_report, province=res$cases$province ), length ) )
