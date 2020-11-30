@@ -2,6 +2,8 @@
 
 export(data_nova_scotia)
 export(data_provinces_of_canada)
+export(data_health_regions_of_canada)
+export(au_lookup_canada)
 export(folded_root)
 export(plot_model_fit)
 export(simulate)

@@ -75,10 +75,10 @@ data_health_regions_of_canada = function( selection="default", fn=NULL, Npreds=5
     return(res)
   }
 
-  if (!file.exists(fn)) res = data_provinces_of_canada( selection="download", fn=fn )
-  if (!exists("res")) res = data_provinces_of_canada( selection="download", fn=fn )
+  if (!file.exists(fn)) res = data_health_regions_of_canada( selection="download", fn=fn )
+  if (!exists("res")) res = data_health_regions_of_canada( selection="download", fn=fn )
 
-  if (res$timestamp != Sys.Date() )  res = data_provinces_of_canada( selection="download", fn=fn )
+  if (res$timestamp != Sys.Date() )  res = data_health_regions_of_canada( selection="download", fn=fn )
 
 
   daterange = range( c(
