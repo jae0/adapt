@@ -24,9 +24,9 @@ tasks = c("download.data", "model", "plot", "forecast")
 
 
 
-if ("download.data" %in% tasks) res = data_provinces_of_canada( selection="download", fn=fn )
+if ("download.data" %in% tasks) res = data_health_regions_of_canada( selection="download", fn=fn )
 
-healthregions = health_regions_of_canada(
+healthregions = data_health_regions_of_canada(
   fn = fn,
   Npreds = 7,   # number of days for ode-based forward projections
   BNP = 1,       # beta dynamics is AR(BNP) ; also the number of days to average for forward ode-based projections (incubation time is ~ 5-7 days) .. higher than 1 can cause problems ... high var in reporting causes + and - corrs

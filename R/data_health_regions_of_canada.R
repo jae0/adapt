@@ -1,4 +1,4 @@
-#' @title health_regions_of_canada
+#' @title data_health_regions_of_canada
 #' @description This is a placeholder for a description.
 #' @param selection default is \code{"default"}
 #' @param fn default is \code{NULL}
@@ -313,7 +313,7 @@ data_health_regions_of_canada = function( selection="default", fn=NULL, Npreds=5
   data_au = list()
   for ( i in 1:length(aus) ) {
     au = aus[i]
-    au_statscan = au_lookup_canada( aus[i] )
+    au_statscan = au_lookup_canada( covid19=aus[i] )
     if (is.na(au_statscan)) next()  # no match
     stan_data = NULL
     stan_data  = list(
@@ -334,7 +334,7 @@ data_health_regions_of_canada = function( selection="default", fn=NULL, Npreds=5
     )
 
 
-    stan_data = c( stan_data, list(...) )
+    #stan_data = c( stan_data, list(...) )
     if (!exists("modelname", stan_data)) stan_data$modelname="default"
     # add a few more flags for discrete_variable_encounter_rate and
     if (!exists("BETA_max", stan_data)) stan_data$BETA_max = 0.5
