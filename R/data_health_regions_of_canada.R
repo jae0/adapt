@@ -266,6 +266,9 @@ data_health_regions_of_canada = function( selection="default", fn=NULL, Npreds=5
 
   R_cumsum = array( 0, dim=c( length(tus), length(aus)  ) )
   R_cumsum[ cbind( recovered$tu_index, recovered$au_index ) ] = recovered$recovered
+  R_cumsum[ which(R_cumsum < 0)] = 0  ## there is a typo in Alberta 19-05-2020       Alberta                 5854
+  R_cumsum[ which( !is.finite(R_cumsum))] = 0
+
 
   R_daily = R_cumsum[] * 0
   R_daily[2:length(tus),] = R_cumsum[ 2:length(tus),] - R_cumsum[ 1:(length(tus)-1),]

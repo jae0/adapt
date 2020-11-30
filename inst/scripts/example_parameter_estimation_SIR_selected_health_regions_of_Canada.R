@@ -47,6 +47,7 @@ healthregions = data_health_regions_of_canada(
   modelname="default"
 )
 
+# available and matching areal units
 ( hr = names(healthregions) )
 
 hr = c(
