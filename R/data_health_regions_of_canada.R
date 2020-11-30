@@ -133,14 +133,6 @@ data_health_regions_of_canada = function( selection="default", fn=NULL, Npreds=5
   D_daily = array( NA, dim=c( length(tus), length(aus)  ) )
   D_daily[ cbind( death$tu_index, death$au_index ) ] = death$death
 
-  # fill start of TS with 0 until first case is observed
-  for (k in 1:length(aus)) {
-  for (j in 1:length(tus)) {
-    if (any( is.finite( c( I_daily[j,k], D_daily[j,k]) ))) break()
-    I_daily[j,k] = 0
-    D_daily[j,k] = 0
-  }}
-
   I_daily[ which(!is.finite(I_daily))] = 0
   I_daily[ which(I_daily < 0)] = 0  ## in case of data entry errors
 
@@ -149,15 +141,12 @@ data_health_regions_of_canada = function( selection="default", fn=NULL, Npreds=5
 
   # convert daily new deaths to cummulative sums for Mortalities
   D_cumsum = D_daily[] * 0
-  for (k in 1:length(aus)) {
-    D_cumsum[,k] = cumsum(D_daily[,k])
-  }
+  for (k in 1:length(aus))  D_cumsum[,k] = cumsum(D_daily[,k])
 
 
   # RECOVERED .... recovered data only exist by province but we want it by health region:
   # we can estimate by health region based upon the fraction of incidence in a health region to the total incidence in a province
   # use infected as the au X time template and fill with INF_LOCAL and INF_PROV
-
 
   # newly reported daily by province as a matrix
   infected_province = as.data.frame.table( tapply( 1:nrow(res$cases), INDEX=list( date=res$cases$date_report, province=res$cases$province ), length ), stringsAsFactors=FALSE  )
@@ -187,46 +176,41 @@ data_health_regions_of_canada = function( selection="default", fn=NULL, Npreds=5
   recovered_province$province_index = match(recovered_province$province, provinces )
 
 
-  I_daily_province = array( NA, dim=c( length(tus), length(provinces)  ) )
+  I_daily_province = array( 0, dim=c( length(tus), length(provinces)  ) )
   I_daily_province[ cbind( infected_province$tu_index, infected_province$province_index) ] = infected_province$infected
+  I_daily_province[ which(!is.finite(I_daily_province))] = 0
+  I_daily_province[ which(I_daily_province < 0)] = 0  ## in case of data entry errors
 
   # newly reported daily as a matrix
-  D_daily_province = array( NA, dim=c( length(tus), length(provinces)  ) )
+  D_daily_province = array( 0, dim=c( length(tus), length(provinces)  ) )
   D_daily_province[ cbind( death_province$tu_index, death_province$province_index ) ] = death_province$death
+  D_daily_province[ which(!is.finite(D_daily_province))] = 0
+  D_daily_province[ which(D_daily_province < 0)] = 0  ## in case of data entry errors
 
-  R_cumsum_province = array( NA, dim=c( length(tus), length(provinces)  ) )
+  R_cumsum_province = array( 0, dim=c( length(tus), length(provinces)  ) )
   R_cumsum_province[ cbind( recovered_province$tu_index, recovered_province$province_index ) ] = recovered_province$recovered
-
-  for (k in 1:length(provinces)) {
-  for (j in 1:length(tus)) {
-    if (any( is.finite( c( I_daily_province[j,k] )))) break()
-    I_daily_province[j,k] = 0
-    R_cumsum_province[j,k] = 0
-    D_daily_province[j,k] = 0
-  }}
+  R_cumsum_province[ which(!is.finite(R_cumsum_province))] = 0
+  R_cumsum_province[ which(R_cumsum_province < 0)] = 0  ## in case of data entry errors
 
 
   Ntimes = length(tus)
-  R_cumsum_province[ which( !is.finite(R_cumsum_province))] = 0
   R_daily_province = R_cumsum_province[] * 0
   R_daily_province[2:Ntimes,] = R_cumsum_province[ 2:Ntimes,] - R_cumsum_province[ 1:(Ntimes-1),]
   R_daily_province[ which(R_daily_province < 0)] = 0  ## there is a typo in Alberta 19-05-2020       Alberta                 5854
   R_daily_province[ which( !is.finite(R_daily_province))] = 0
 
-  # convert daily new deaths to cummulative sums for Mortalities
-  D_daily_province[ which(!is.finite(D_daily_province))] = 0
-  D_daily_province[ which(D_daily_province < 0)] = 0  ## in case of data entry errors
-  D_cumsum_province = D_daily_province[] * 0
-  for (k in 1:length(provinces)) {
-    D_cumsum_province[,k] = cumsum(D_daily_province[,k])
-  }
 
-  I_daily_province[ which(!is.finite(I_daily_province))] = 0
-  I_daily_province[ which(I_daily_province < 0)] = 0  ## in case of data entry errors
-  I_current_province = I_daily_province[] * 0
+  # convert daily new deaths to cummulative sums for Mortalities
+  D_cumsum_province = D_daily_province[] * 0
+  for (k in 1:length(provinces))  D_cumsum_province[,k] = cumsum(D_daily_province[,k])
+  D_cumsum_province[ which(!is.finite(D_cumsum_province))] = 0
+  D_cumsum_province[ which(D_cumsum_province < 0)] = 0  ## in case of data entry errors
+
+
+  I_active_province = I_daily_province[] * 0
   for (k in 1:length(provinces)) {
   for (j in 1:(length(tus)-1)) {
-    I_current_province[j+1,k] = I_current_province[j,k] + I_daily_province[j,k]  - D_daily_province[j,k]  - R_daily_province[j,k]
+    I_active_province[j+1,k] = max(0, I_active_province[j,k] + I_daily_province[j,k]  - D_daily_province[j,k]  - R_daily_province[j,k] )
   }}
 
 
@@ -288,10 +272,10 @@ data_health_regions_of_canada = function( selection="default", fn=NULL, Npreds=5
   R_daily[ which(R_daily < 0)] = 0  ## there is a typo in Alberta 19-05-2020       Alberta                 5854
   R_daily[ which( !is.finite(R_daily))] = 0
 
-  I_current = I_daily[] * 0
+  I_active = I_daily[] * 0
   for (k in 1:length(aus)) {
   for (j in 1:(length(tus)-1)) {
-    I_current[j+1,k] = max(0, I_current[j,k] + I_daily[j,k]  - D_daily[j,k] - R_daily[j,k] )
+    I_active[j+1,k] = max(0, I_active[j,k] + I_daily[j,k]  - D_daily[j,k] - R_daily[j,k] )
   }}
 
   # compute Susceptibles
@@ -306,7 +290,7 @@ data_health_regions_of_canada = function( selection="default", fn=NULL, Npreds=5
   S_cumsum[1,] = Npop[aus]  # start of data
   for (k in 1:length(aus)) {
   for (j in 1:(length(tus)-1) ) {
-    S_cumsum[j+1,k] = S_cumsum[j,k] - sum( I_current[j,k] + R_cumsum[j,k] + D_cumsum[j,k], na.rm=TRUE )
+    S_cumsum[j+1,k] = S_cumsum[j,k] - I_daily[j,k]
   }}
 
     # default is to return this:
@@ -321,7 +305,7 @@ data_health_regions_of_canada = function( selection="default", fn=NULL, Npreds=5
       Nobs = length(tus),
       Npreds = Npreds,
       Sobs = floor( S_cumsum[,i] ),
-      Iobs = floor( I_current[,i] ),
+      Iobs = floor( I_active[,i] ),
       Robs = floor( R_cumsum[,i] ),
       Mobs = D_cumsum[,i],
       daterange = daterange,

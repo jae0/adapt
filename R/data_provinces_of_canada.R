@@ -77,97 +77,91 @@ data_provinces_of_canada = function( selection="default", fn=NULL, Npreds=5, ...
 
   recovered = res$recovered
   colnames(recovered) = c("date", "province", "recovered")  # cummulative recovered
-  recovered$date = lubridate::dmy( recovered$date_recovered )
+  recovered$date = lubridate::dmy( recovered$date )
 
   daterange = range( c(death$date, recovered$date, infected$date), na.rm=TRUE )
-  daynos = 1:(diff(daterange)+1)
+  tus = 1:(diff(daterange)+1)
 
-  au = sort( unique( res$cases$province))
-  au = setdiff(au,  "Repatriated")  # not clear what to do with these .. droppoing for now
-  au = c(setdiff( au, c("Ontario", "Quebec") ), c("Ontario", "Quebec"))  # do Ontario and Quebec last as they are slow
+  aus = sort( unique( res$cases$province))
+  aus = setdiff(aus,  "Repatriated")  # not clear what to do with these .. droppoing for now
+  aus = c(setdiff( aus, c("Ontario", "Quebec") ), c("Ontario", "Quebec"))  # do Ontario and Quebec last as they are slow
 
-  infected = infected[ infected$province %in% au , ]
-  death = death[ death$province %in% au , ]
-  recovered = recovered[ recovered$province %in% au , ]
-
-  daily = array( NA, dim=c( length(daynos), length(au), 4 ) )  # SIRD (D=death)
+  infected = infected[ infected$province %in% aus , ]
+  death = death[ death$province %in% aus , ]
+  recovered = recovered[ recovered$province %in% aus , ]
 
   infected$dayno = infected$date - daterange[1] + 1
   recovered$dayno = recovered$date - daterange[1] + 1
   death$dayno = death$date - daterange[1] + 1
 
-  daily[ cbind( match(infected$dayno, daynos ), match(infected$province, au), rep(2, nrow(infected) ) ) ] = infected$infected
-  daily[ cbind( match(recovered$dayno, daynos ), match(recovered$province, au), rep(3, nrow(recovered) ) ) ] = recovered$recovered
-  daily[ cbind( match(death$dayno, daynos ), match(death$province, au), rep(4, nrow(death) ) ) ] = death$death
+  Ntimes = length(tus)
+
+
+  I_daily = array( 0, dim=c( length(tus), length(aus)  ) )  # SIRD (D=death)
+  I_daily[ cbind( match(infected$dayno, tus ), match(infected$province, aus) ) ] = infected$infected
+  I_daily[ which(!is.finite(I_daily))] = 0
+  I_daily[ which(I_daily < 0)] = 0  ## in case of data entry errors
+
+  D_daily = array( 0, dim=c( length(tus), length(aus)  ) )  # SIRD (D=death)
+  D_daily[ cbind( match(death$dayno, tus ), match(death$province, aus) ) ] = death$death
+  D_daily[ which(!is.finite(D_daily))] = 0
+  D_daily[ which(D_daily < 0)] = 0  ## in case of data entry errors
+
+  R_daily = array( 0, dim=c( length(tus), length(aus)  ) )  # SIRD (D=death)
+  R_cumsum = array( 0, dim=c( length(tus), length(aus)  ) )  # SIRD (D=death)
+  R_cumsum[ cbind( match(recovered$dayno, tus ), match(recovered$province, aus) ) ] = recovered$recovered
+  R_cumsum[ which( !is.finite(R_cumsum))] = 0
+
 
   Npop = pop$Npop
   names(Npop) = pop$au
 
-  if (selection=="daily_data") return (daily)
-
-  Ntimes = dim(daily)[1]
-
-  # fill start of TS with 0 until first case is observed
-  for (k in 1:length(au)) {
-  for (j in 1:Ntimes) {
-    if (any(is.finite( daily[j,k,2:4] ))) break()
-    daily[j,k,2:4] = 0
-  }}
-
-  totalRecoveries = daily[ ,,3]
-  newRecoveries = totalRecoveries[] * 0
-  totalRecoveries[ which( !is.finite(totalRecoveries))] = 0
-  newRecoveries[2:Ntimes,] = totalRecoveries[ 2:Ntimes,] - totalRecoveries[ 1:(Ntimes-1),]
-  newRecoveries[ which(newRecoveries < 0)] = 0  ## there is a typo in Alberta 19-05-2020       Alberta                 5854
-  newRecoveries[ which( !is.finite(newRecoveries))] = 0
+  R_daily[2:Ntimes,] = R_cumsum[ 2:Ntimes,] - R_cumsum[ 1:(Ntimes-1),]
+  R_daily[ which(R_daily < 0)] = 0  ## there is a typo in Alberta 19-05-2020       Alberta                 5854
+  R_daily[ which( !is.finite(R_daily))] = 0
 
   # cummulative sums for Mortalities
-  newDeaths = daily[ ,, 4]
-  newDeaths[ which(!is.finite(newDeaths))] = 0
-  newDeaths[ which(newDeaths < 0)] = 0  ## in case of data entry errors
-  daily[ , , 4] = 0
-  for (k in 1:length(au)) {
-    daily[,k,4] = cumsum(newDeaths[,k])
-  }
-
-  # compute infecteds
-  newInfecteds = daily[ ,, 2]
-  newInfecteds[ which(!is.finite(newInfecteds))] = 0
-  newInfecteds[ which(newInfecteds < 0)] = 0  ## in case of data entry errors
-  daily[ , , 2] = 0
-  for (k in 1:length(au)) {
-  for (j in 1:(Ntimes-1)) {
-    daily[j+1,k,2] = daily[j,k,2] + newInfecteds[j,k] - newRecoveries[j,k] - newDeaths[j,k]
-  }}
+  D_cumsum = D_daily[] * 0
+  for (k in 1:length(aus)) D_cumsum[,k] = cumsum( D_daily[,k])
 
   # compute Susceptibles
   # fill with initial pop
-  daily[1,,1] = Npop[au]  # start of data
-  for (k in 1:length(au)) {
+  S_cumsum = array( 0, dim=c( length(tus), length(aus)  ) )  # SIRD (D=death)
+  S_cumsum[1,] = Npop[aus]  # start of data
+  for (k in 1:length(aus)) {
   for (j in 1:(Ntimes-1) ) {
-    daily[j+1,k,1] =  daily[j,k,1] - sum(daily[j,k,2:4], na.rm=TRUE )
+    S_cumsum[j+1,k] =  S_cumsum[j,k] - I_daily[j,k]
   }}
+  S_cumsum[ which(!is.finite(S_cumsum))] = 0
+  S_cumsum[ which(S_cumsum < 0)] = 0  ## in case of data entry errors
 
-  daily [ !is.finite(daily)] = -1
+
+  I_active = I_daily[] * 0
+  for (k in 1:length(aus)) {
+  for (j in 1:(length(tus)-1)) {
+    I_active[j+1,k] = max(0, I_active[j,k] + I_daily[j,k]  - D_daily[j,k] - R_daily[j,k] )
+  }}
+  I_active[ which(!is.finite(I_active))] = 0
+  I_active[ which(I_active < 0)] = 0  ## in case of data entry errors
 
     # default is to return this:
   data_province = list()
-  for ( i in 1:length(au) ) {
-    prov = au[i]
+  for ( i in 1:length(aus) ) {
+    prov = aus[i]
     stan_data = NULL
     stan_data  = list(
       Npop = Npop[[ prov ]],
       Nobs = Ntimes,
       Npreds = Npreds,
-      Sobs = daily[,i,1],
-      Iobs = daily[,i,2],
-      Robs = daily[,i,3],
-      Mobs = daily[,i,4],
+      Sobs = S_cumsum[,i],
+      Iobs = I_active[,i],
+      Robs = R_cumsum[,i],
+      Mobs = D_cumsum[,i],
       daterange = daterange,
-      daynos = daynos,
+      tus = tus,
       au = prov,
       statevars = c("susceptible", "infected", "recovered", "dead"),  # names of last dim of "daily"
-      time = daynos,
+      time = tus,
       time_start = daterange[1],
       timestamp = max( lubridate::as_date( daterange ) )
     )
