@@ -56,8 +56,6 @@ data_provinces_of_canada = function( selection="default", fn=NULL, Npreds=5, ...
     return(res)
   }
 
-  load(fn)
-
   if (!file.exists(fn)) res = data_provinces_of_canada( selection="download", fn=fn )
   if (!exists("res")) res = data_provinces_of_canada( selection="download", fn=fn )
   if (res$timestamp != Sys.Date() )  res = data_provinces_of_canada( selection="download", fn=fn )
@@ -73,7 +71,7 @@ data_provinces_of_canada = function( selection="default", fn=NULL, Npreds=5, ...
 
   recovered = res$recovered
   colnames(recovered) = c("date", "province", "recovered")  # cummulative recovered
-  recovered$date = lubridate::dmy( recovered$date )
+  recovered$date = lubridate::dmy( recovered$date_recovered )
 
   daterange = range( c(death$date, recovered$date, infected$date), na.rm=TRUE )
   daynos = 1:(diff(daterange)+1)
@@ -93,9 +91,7 @@ data_provinces_of_canada = function( selection="default", fn=NULL, Npreds=5, ...
   death$dayno = death$date - daterange[1] + 1
 
   daily[ cbind( match(infected$dayno, daynos ), match(infected$province, au), rep(2, nrow(infected) ) ) ] = infected$infected
-
   daily[ cbind( match(recovered$dayno, daynos ), match(recovered$province, au), rep(3, nrow(recovered) ) ) ] = recovered$recovered
-
   daily[ cbind( match(death$dayno, daynos ), match(death$province, au), rep(4, nrow(death) ) ) ] = death$death
 
   Npop = pop$Npop
