@@ -1,7 +1,7 @@
 
 ---
 
-# Current COVID-19 status for Prince Edward Island:
+# Current COVID-19 status for Nunavut:
 
 Here we show a few elements of COVID-19 status by StatsCan health unit, based on data compiled from publicly available information.
 

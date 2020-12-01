@@ -25,6 +25,7 @@ inst/doc/Nova Scotia __ Zone 1 - Western/README.md
 - ![Newfoundland and Labrador](./inst/doc/NL/README.md)
 - ![Northwest Territories](./inst/doc/NWT/README.md)
 - ![Nova Scotia](./inst/doc/Nova%20Scotia/README.md)
+- ![Nunavut](./inst/doc/Nunanvut/README.md)
 - ![Ontario](./inst/doc/Ontario/README.md)
 - ![Prince Edward Island](./inst/doc/PEI/README.md)
 - ![Saskatchewan](./inst/doc/Saskatchewan/README.md)
