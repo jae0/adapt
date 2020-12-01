@@ -14,7 +14,7 @@ inst/doc/Nova Scotia __ Zone 1 - Western/README.md
 - ![Nova Scotia Zone 3 Eastern](./inst/doc/Nova%20Scotia%20__%20Zone%201%20-%20Eastern/README.md)
 - ![Nova Scotia Zone 4 Central](./inst/doc/Nova%20Scotia%20__%20Zone%201%20-%20Central/README.md)
 - ![New Brunswick Zone 1 Moncton](./inst/doc/New%20Brunswick%20__%20Zone%201%20(Moncton%20area)%2FREADME.md)
-- ![New Brunswick Zone 3 Fredricton](./inst/doc/New%20Brunswick%20__%20Zone%203%20(Fredericton%20area)/%2README.md)
+- ![New Brunswick Zone 3 Fredricton](./inst/doc/New%20Brunswick%20__%20Zone%203%20(Fredericton%20area)%2FREADME.md)
 - ![Ontario Toronto Health Unit](./inst/doc/Ontario%20__%20Toronto/README.md)
 - ![Quebec Montréal Health Unit](./inst/doc/Quebec%20__%20Montr%C3%A9al/README.md)
 
