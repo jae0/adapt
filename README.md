@@ -5,9 +5,18 @@
 
 ---
 
-# Current COVID-19 status by province in Canada, based on an *adapt* analysis:
+# Current COVID-19 status by a few selected StatsCan health units and province in Canada, based on an *adapt* analysis:
 
 You can see *adapt*'s assessement of the current status of COVID-19 by choosing from the links below.
+
+- ![Nova Scotia Zone 1 Western](./inst/doc/Nova%20Scotia/%20__%20Zone%201%20-%20Western)
+- ![Nova Scotia Zone 2 Northern](./inst/doc/Nova%20Scotia/%20__%20Zone%201%20-%20Northern)
+- ![Nova Scotia Zone 3 Eastern](./inst/doc/Nova%20Scotia/%20__%20Zone%201%20-%20Eastern)
+- ![Nova Scotia Zone 4 Central](./inst/doc/Nova%20Scotia/%20__%20Zone%201%20-%20Central)
+- ![New Brunswick Zone 1 Moncton](./inst/doc/New%20Brunswick%20__%20Zone%201%20(Moncton%20area)",
+- ![New Brunswick Zone 3 Fredricton](./inst/doc/New%20Brunswick%20__%20Zone%203%20(Fredericton%20area)",
+- ![Ontario Toronto Health Unit](./inst/doc/Ontario/Ontario%20__%20Toronto",
+- ![Quebec Montréal Health Unit](./inst/doc/Quebec/Quebec%20__%20Montr%C3%A9al"
 
 - ![Alberta](./inst/doc/Alberta/README.md)
 - ![British Columbia](./inst/doc/BC/README.md)
