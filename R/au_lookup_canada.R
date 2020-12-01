@@ -78,7 +78,7 @@ au_lookup_canada = function( returntable=FALSE, statscan=NULL, covid19=NULL) {
     "75",	"Ontario __ Wellington-Dufferin-Guelph Health Unit",	"Ontario __ Wellington Dufferin Guelph",
     "76",	"Ontario __ Windsor-Essex County Health Unit",	"Ontario __ Windsor-Essex",
     "77",	"Ontario __ York Regional Health Unit",	"Ontario __ York",
-    "78",	"Ontario  __ Oxford Elgin St. Thomas Health Unit",	"",
+    "78",	"Ontario __ Oxford Elgin St. Thomas Health Unit",	"",
     "79",	"Ontario __ City of Toronto Health Unit",	"Ontario __ Toronto",
     "80",	"Manitoba __ Winnipeg Regional Health Authority",	"Manitoba __ Winnipeg",
     "81",	"Manitoba __ Prairie Mountain Health",	"Manitoba __ Prairie Mountain",

@@ -42,7 +42,7 @@ sample_prop <- ts <- mod_time <- mod_median <- mod_high <- mod_low <-NA
       ))
       # Median and 95% Credible Interval
       ggplot2::ggplot(df_sample, ggplot2::aes(x=ts, y=sample_prop)) +
-        ggplot2::geom_point(col="black", shape = 19, size = 1.5) +
+        ggplot2::geom_point(col="slategray", shape = 19, size = 1.5) +
         ggplot2::geom_line(data = df_fit, ggplot2::aes(x=mod_time, y=mod_median), color = "red") +
         ggplot2::geom_line(data = df_fit, ggplot2::aes(x=mod_time, y=mod_high), color = "red", linetype=3) +
         ggplot2::geom_line(data = df_fit, ggplot2::aes(x=mod_time, y=mod_low), color = "red", linetype=3) +
@@ -50,19 +50,19 @@ sample_prop <- ts <- mod_time <- mod_median <- mod_high <- mod_low <-NA
         ggplot2::scale_x_continuous(limits=c(0, dim(posteriors$I)[2]), breaks=c(0,25,50, 75, 100)) +
         ggplot2::scale_y_continuous(limits=c(0, max(df_fit$mod_high) ), breaks=c(0,.2, .4, .6, .8, 1)) +
         ggplot2::theme_classic() +
-        ggplot2::theme(axis.line.x = ggplot2::element_line(color="black"),
-              axis.line.y = ggplot2::element_line(color="black")
+        ggplot2::theme(axis.line.x = ggplot2::element_line(color="slategray"),
+              axis.line.y = ggplot2::element_line(color="slategray")
       )
     } else {
       # Median and 95% Credible Interval
       ggplot2::ggplot(df_sample, ggplot2::aes(x=ts, y=sample_prop)) +
-        ggplot2::geom_point(col="black", shape = 19, size = 1.5) +
+        ggplot2::geom_point(col="slategray", shape = 19, size = 1.5) +
         ggplot2::labs(x = "Time (days)", y = "Proportion Infected") +
         ggplot2::scale_x_continuous(limits=c(0, 50), breaks=c(0,25,50)) +
         ggplot2::scale_y_continuous(limits=c(0,1), breaks=c(0,.5,1)) +
         ggplot2::theme_classic() +
-        ggplot2::theme(axis.line.x = ggplot2::element_line(color="black"),
-              axis.line.y = ggplot2::element_line(color="black")
+        ggplot2::theme(axis.line.x = ggplot2::element_line(color="slategray"),
+              axis.line.y = ggplot2::element_line(color="slategray")
       )
     }
   }
@@ -73,7 +73,7 @@ sample_prop <- ts <- mod_time <- mod_median <- mod_high <- mod_low <-NA
     ap = (posteriors$R + posteriors$I+ posteriors$M)[,1:ndat]
     ip = posteriors$I[,1:ndat]
 
-    col_palette = scales::alpha( rep(c( "slateblue", "darkgreen", "cyan", "lightgray", "gray", "darkorange" ), length.out=nx), 0.02 )
+    col_palette = scales::alpha( rep( rainbow(21), length.out=nx), 0.01 )
     cols = matrix( col_palette, ncol=nx, nrow=nrow(ip), byrow=TRUE )
     xrange = c(0, log10( max( ap, na.rm=TRUE) ) )
     yrange = c(0, log10( max( ip[,1:ndat], na.rm=TRUE) ) )
@@ -89,12 +89,12 @@ sample_prop <- ts <- mod_time <- mod_median <- mod_high <- mod_low <-NA
     } else {
       grDevices::dev.new()
     }
-    graphics::plot( 0 , 0, xlim=xrange, ylim=yrange, ylab="Infected", xlab="Total affected", type="n", axes=FALSE )
-      graphics::points( log10(ip) ~ log10(ap), col=cols, cex=0.8, pch=19 )
-      graphics::lines( log10(apply( ip, 2, median)) ~ log10( apply( ap, 2,stats::median) ), col="orange", lty="solid", lwd=2 )
-      graphics::title( main= stan_data$au, sub=paste( "Start: ", stan_data$time_start, "  Current date: ", stan_data$timestamp ) )
-      graphics::axis( 1, at=xticks, labels=xvals )
-      graphics::axis( 2, at=yticks, labels=yvals )
+    plot( 0 , 0, xlim=xrange, ylim=yrange, ylab="Infected", xlab="Total affected", type="n", axes=FALSE )
+      points( log10(ip) ~ log10(ap), col=cols, cex=0.8, pch=19 )
+      lines( log10(apply( ip, 2, median)) ~ log10( apply( ap, 2,stats::median) ), col="lightslategrey", lty="solid", lwd=2 )
+      title( main= stan_data$au, sub=paste( "Start: ", stan_data$time_start, "  Current date: ", stan_data$timestamp ) )
+      axis( 1, at=xticks, labels=xvals )
+      axis( 2, at=yticks, labels=yvals )
 
     if (!to.screen) grDevices::dev.off()
   }
@@ -103,30 +103,30 @@ sample_prop <- ts <- mod_time <- mod_median <- mod_high <- mod_low <-NA
   if (selection=="susceptible") {
     so = stan_data$Sobs
     so[so < 0] = NA
-    sp = apply(posteriors$S, 2, stats::median)[1:nx]
+    sp = apply(posteriors$S, 2, mean)[1:nx]
     xrange = range(1:nx)
-    yrange = range( c(so, sp[1:ndat]), na.rm=TRUE)
-    yrange = c(yrange[1], yrange[2] )
+    yrange = range( c(so, quantile(posteriors$S, probs=c(0.0001, 0.9999) ) ), na.rm=TRUE)
+
     if (!to.screen) {
       grDevices::png(filename = file.path(outdir, "fit_with_projections_susceptible.png"))
     } else {
       grDevices::dev.new()
     }
-      cols = scales::alpha( "lightgray", 0.005 )
-      graphics::plot( so ~ stan_data$time, xlim=xrange, ylim=yrange, ylab="Susceptible", xlab="Days", type="n" )
-      graphics::lines( sp ~ seq(1,nx), lwd = 3, col="slateblue" )
+      cols = scales::alpha( "gray30", 0.005 )
+      plot( so ~ stan_data$time, xlim=xrange, ylim=yrange, ylab="Susceptible", xlab="Days", type="n" )
+      lines( sp ~ seq(1,nx), lwd = 3, col="slateblue" )
 
       nr = nrow(posteriors$S)
       ny = min( nr, 1000)
 
       for (i in sample.int(nr, ny)) {
-        graphics::points( posteriors$S [i,1:nx] ~ c(1:nx) , col=cols, cex=0.8, pch=19 )
+        points( posteriors$S [i,1:nx] ~ c(1:nx) , col=cols, cex=0.8, pch=19 )
       }
-      graphics::lines( apply(posteriors$S, 2, stats::quantile, probs=0.025)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
-      graphics::lines( apply(posteriors$S, 2, stats::quantile, probs=0.975)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
-      graphics::points( so ~ stan_data$time, col="darkgray", cex=1.2 )
-      graphics::abline( v=stan_data$time[stan_data$Nobs], lwd=2, col="grey", lty="dashed" )
-      graphics::title( main= stan_data$au, sub=paste( "Start: ", stan_data$time_start, "  Current date: ", stan_data$timestamp ) )
+      lines( apply(posteriors$S, 2, stats::quantile, probs=0.025)[1:nx] ~ seq(1,nx), col="slategray", lty="dashed", lwd = 1 )
+      lines( apply(posteriors$S, 2, stats::quantile, probs=0.975)[1:nx] ~ seq(1,nx), col="slategray", lty="dashed", lwd = 1 )
+      points( so ~ stan_data$time, col="orange", cex=1.2 )
+      abline( v=stan_data$time[stan_data$Nobs], lwd=2, col="grey", lty="dashed" )
+      title( main= stan_data$au, sub=paste( "Start: ", stan_data$time_start, "  Current date: ", stan_data$timestamp ) )
     if (!to.screen) grDevices::dev.off()
   }
 
@@ -153,13 +153,13 @@ sample_prop <- ts <- mod_time <- mod_median <- mod_high <- mod_low <-NA
       grDevices::dev.new()
     }
 
-      graphics::plot( io ~ stan_data$time, xlim=xrange, ylim=yrange, ylab="Effective nmber of infected", xlab="Days", type="n" )
-      graphics::lines( ipm ~ seq(1,nx), lwd =3, col="slateblue" )
-      graphics::lines( ipu ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
-      graphics::lines( ipl ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
-      graphics::points( io ~ stan_data$time, col="darkgray", cex=1.2 )
-      graphics::abline( v=stan_data$time[stan_data$Nobs], lwd=2, col="grey", lty="dashed" )
-      graphics::title( main= stan_data$au, sub=paste( "Start: ", stan_data$time_start, "  Current date: ", stan_data$timestamp ) )
+      plot( io ~ stan_data$time, xlim=xrange, ylim=yrange, ylab="Effective nmber of infected", xlab="Days", type="n" )
+      lines( ipm ~ seq(1,nx), lwd =3, col="slateblue" )
+      lines( ipu ~ seq(1,nx), col="slategray", lty="dashed", lwd = 1 )
+      lines( ipl ~ seq(1,nx), col="slategray", lty="dashed", lwd = 1 )
+      points( io ~ stan_data$time, col="darkgray", cex=1.2 )
+      abline( v=stan_data$time[stan_data$Nobs], lwd=2, col="grey", lty="dashed" )
+      title( main= stan_data$au, sub=paste( "Start: ", stan_data$time_start, "  Current date: ", stan_data$timestamp ) )
    if (!to.screen) grDevices::dev.off()
   }
 
@@ -170,28 +170,28 @@ sample_prop <- ts <- mod_time <- mod_median <- mod_high <- mod_low <-NA
 
     ip = apply(posteriors$I, 2, stats::median)[1:nx]
 
-    yrange = range( c(io, posteriors$I[,1:ndat]), na.rm=TRUE)
-    yrange = c(yrange[1], yrange[2])
+    yrange = range( c(0, io, quantile( posteriors$I, probs=0.999 ) ), na.rm=TRUE)
+    yrange[2] = yrange[2] *1.5
     if (!to.screen) {
       grDevices::png(filename = file.path(outdir, "fit_with_projections_infected.png"))
     } else {
       grDevices::dev.new()
     }
-      cols = scales::alpha( "lightgray", 0.005 )
-      graphics::plot( io ~ stan_data$time, xlim=xrange, ylim=yrange, ylab="Infected", xlab="Days", type="n" )
+      cols = scales::alpha( "gray30", 0.005 )
+      plot( io ~ stan_data$time, xlim=xrange, ylim=yrange, ylab="Infected", xlab="Days", type="n" )
 
       nr = nrow(posteriors$I)
       ny = min( nr, 1000)
 
       for (i in sample.int(nr, ny)) {
-        graphics::points( posteriors$I[i,1:nx] ~ c(1:nx) , col=cols, cex=1, pch=19 )
+        points( posteriors$I[i,1:nx] ~ c(1:nx) , col=cols, cex=1, pch=19 )
       }
-      graphics::lines( ip ~ seq(1,nx), lwd =3, col="lightblue" )
-      graphics::lines( apply(posteriors$I, 2, stats::quantile, probs=0.025)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
-      graphics::lines( apply(posteriors$I, 2, stats::quantile, probs=0.975)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
-      graphics::points( io ~ stan_data$time, col="darkgray", cex=1.2 )
-      graphics::abline( v=stan_data$time[stan_data$Nobs], lwd=2, col="grey", lty="dashed" )
-      graphics::title( main= stan_data$au, sub=paste( "Start: ", stan_data$time_start, "  Current date: ", stan_data$timestamp ) )
+      lines( ip ~ seq(1,nx), lwd =3, col="slateblue" )
+      lines( apply(posteriors$I, 2, stats::quantile, probs=0.025)[1:nx] ~ seq(1,nx), col="slategray", lty="dashed", lwd = 1 )
+      lines( apply(posteriors$I, 2, stats::quantile, probs=0.975)[1:nx] ~ seq(1,nx), col="slategray", lty="dashed", lwd = 1 )
+      points( io ~ stan_data$time, col="orange", cex=1.2 )
+      abline( v=stan_data$time[stan_data$Nobs], lwd=2, col="grey", lty="dashed" )
+      title( main= stan_data$au, sub=paste( "Start: ", stan_data$time_start, "  Current date: ", stan_data$timestamp ) )
    if (!to.screen) grDevices::dev.off()
   }
 
@@ -200,30 +200,30 @@ sample_prop <- ts <- mod_time <- mod_median <- mod_high <- mod_low <-NA
     ro[ro < 0] = NA
     rp = apply(posteriors$R, 2, stats::median)[1:nx]
 
-    yrange = range( c(ro, rp[1:ndat]),  na.rm=TRUE)
-    yrange = c(yrange[1], yrange[2])
+    yrange = range( c(ro, quantile(posteriors$R, probs=0.001, 0.999) ),  na.rm=TRUE)
+    yrange[2] = yrange[2] *1.5
 
     if (!to.screen) {
       grDevices::png(filename = file.path(outdir, "fit_with_projections_recovered.png"))
     } else {
       grDevices::dev.new()
     }
-      cols = scales::alpha( "lightgray", 0.002 )
+      cols = scales::alpha( "gray30", 0.002 )
 
-      graphics::plot( ro ~ stan_data$time, xlim=xrange, ylim=yrange, ylab="Recovered", xlab="Days", type="n" )
+      plot( ro ~ stan_data$time, xlim=xrange, ylim=yrange, ylab="Recovered", xlab="Days", type="n" )
 
       nr = nrow(posteriors$R)
       ny = min( nr, 1000)
 
       for (i in sample.int(nr, ny)) {
-        graphics::points( posteriors$R[i,1:nx] ~ c(1:nx) , col=cols, cex=0.8, pch=19 )
+        points( posteriors$R[i,1:nx] ~ c(1:nx) , col=cols, cex=0.8, pch=19 )
       }
-      graphics::lines( rp ~ seq(1,nx), lwd =3, col="slateblue" )
-      graphics::lines( apply(posteriors$R, 2, stats::quantile, probs=0.025)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
-      graphics::lines( apply(posteriors$R, 2, stats::quantile, probs=0.975)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
-      graphics::points( ro ~ stan_data$time, col="darkgray", cex=1.2 )
-      graphics::abline( v=stan_data$time[stan_data$Nobs], lwd=2, col="grey", lty="dashed" )
-      graphics::title( main= stan_data$au, sub=paste( "Start: ", stan_data$time_start, "  Current date: ", stan_data$timestamp ) )
+      lines( rp ~ seq(1,nx), lwd =3, col="slateblue" )
+      lines( apply(posteriors$R, 2, stats::quantile, probs=0.025)[1:nx] ~ seq(1,nx), col="slategray", lty="dashed", lwd = 1 )
+      lines( apply(posteriors$R, 2, stats::quantile, probs=0.975)[1:nx] ~ seq(1,nx), col="slategray", lty="dashed", lwd = 1 )
+      points( ro ~ stan_data$time, col="orange", cex=1.2 )
+      abline( v=stan_data$time[stan_data$Nobs], lwd=2, col="grey", lty="dashed" )
+      title( main= stan_data$au, sub=paste( "Start: ", stan_data$time_start, "  Current date: ", stan_data$timestamp ) )
     if (!to.screen) grDevices::dev.off()
   }
 
@@ -232,29 +232,30 @@ sample_prop <- ts <- mod_time <- mod_median <- mod_high <- mod_low <-NA
     mo = stan_data$Mobs
     mo[mo < 0] = NA
     mp = apply(posteriors$M, 2, stats::median)[1:nx]
-    yrange = range( c(mo, mp[1:ndat]), na.rm=TRUE)
-    yrange = c(yrange[1], yrange[2])
+    yrange = range( c(0, mo, quantile(posteriors$M, probs=0.999 )), na.rm=TRUE)
+    yrange[2] = yrange[2] *1.5
+
     if (!to.screen) {
       grDevices::png(filename = file.path(outdir, "fit_with_projections_mortalities.png"))
     } else {
       grDevices::dev.new()
     }
-      cols = scales::alpha( "lightgray", 0.002 )
+      cols = scales::alpha( "gray30", 0.002 )
 
-      graphics::plot( mo ~ stan_data$time, xlim=xrange, ylim=yrange, ylab="Mortalities", xlab="Days", type="n" )
+      plot( mo ~ stan_data$time, xlim=xrange, ylim=yrange, ylab="Mortalities", xlab="Days", type="n" )
 
       nr = nrow(posteriors$M)
       ny = min( nr, 1000)
 
       for (i in sample.int(nr, ny)) {
-        graphics::points( posteriors$M[i,1:nx] ~ c(1:nx) , col=cols, cex=0.8, pch=19 )
+        points( posteriors$M[i,1:nx] ~ c(1:nx) , col=cols, cex=0.8, pch=19 )
       }
-      graphics::lines( mp ~ seq(1,nx), lwd =3, col="slateblue" )
-      graphics::lines( apply(posteriors$M, 2, stats::quantile, probs=0.025)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
-      graphics::lines( apply(posteriors$M, 2, stats::quantile, probs=0.975)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
-      graphics::points( mo ~ stan_data$time, col="darkgray", cex=1.2 )
-      graphics::abline( v=stan_data$time[stan_data$Nobs], lwd=2, col="grey", lty="dashed" )
-      graphics::title( main= stan_data$au, sub=paste( "Start: ", stan_data$time_start, "  Current date: ", stan_data$timestamp ) )
+      lines( mp ~ seq(1,nx), lwd =3, col="slateblue" )
+      lines( apply(posteriors$M, 2, stats::quantile, probs=0.025)[1:nx] ~ seq(1,nx), col="slategray", lty="dashed", lwd = 1 )
+      lines( apply(posteriors$M, 2, stats::quantile, probs=0.975)[1:nx] ~ seq(1,nx), col="slategray", lty="dashed", lwd = 1 )
+      points( mo ~ stan_data$time, col="orange", cex=1.2 )
+      abline( v=stan_data$time[stan_data$Nobs], lwd=2, col="grey", lty="dashed" )
+      title( main= stan_data$au, sub=paste( "Start: ", stan_data$time_start, "  Current date: ", stan_data$timestamp ) )
     if (!to.screen) grDevices::dev.off()
   }
 
@@ -275,12 +276,12 @@ sample_prop <- ts <- mod_time <- mod_median <- mod_high <- mod_low <-NA
     yrange = range( posteriors$Q )
     # yrange = c(0.5, 1.5)  #range( c(ipm) ) #, ipl, ipu) )
 
-    graphics::plot( ipm ~ dr, type="l", lwd =3, col="slateblue", ylim=yrange, ylab="Effective number (proportion of infected)", xlab="Days" )
-    graphics::lines( ipl ~ dr, col="darkorange", lty="dashed" )
-    graphics::lines( ipu ~ dr, col="darkorange", lty="dashed" )
-    graphics::abline( v=stan_data$time[stan_data$Nobs], lwd=2, col="grey", lty="dashed", lwd=2 )
-    graphics::abline( h=1, col="grey", lty="dashed", lwd=2 )
-    graphics::title( main= stan_data$au, sub=paste( "Start: ", stan_data$time_start, "  Current date: ", stan_data$timestamp ) )
+    plot( ipm ~ dr, type="l", lwd =3, col="slateblue", ylim=yrange, ylab="Effective number (proportion of infected)", xlab="Days" )
+    lines( ipl ~ dr, col="slategray", lty="dashed" )
+    lines( ipu ~ dr, col="slategray", lty="dashed" )
+    abline( v=stan_data$time[stan_data$Nobs], lwd=2, col="grey", lty="dashed", lwd=2 )
+    abline( h=1, col="grey", lty="dashed", lwd=2 )
+    title( main= stan_data$au, sub=paste( "Start: ", stan_data$time_start, "  Current date: ", stan_data$timestamp ) )
     if (!to.screen) grDevices::dev.off()
   }
 
@@ -292,52 +293,52 @@ sample_prop <- ts <- mod_time <- mod_median <- mod_high <- mod_low <-NA
     } else {
       grDevices::dev.new()
     }
-      cols = scales::alpha( "lightgray", 0.002 )
+      cols = scales::alpha( "gray30", 0.002 )
 
       nr = nrow(posteriors$K)
       ny = min( nr, 1200)
 
       nxr = stan_data$Nobs + stan_data$Npreds - 4  # in case data are not upto-date
       rp = apply(posteriors$K[,1:nxr], 2, stats::median)
-      yrange = c(0, min( quantile( c(rp, posteriors$K[,1:nxr]), probs=0.99), 50) )
+      yrange = c(0, min( quantile( c(rp, posteriors$K[,1:nxr]), probs=0.999), 40) )
 
-      graphics::plot( rp ~ seq(1,nxr), type="l", lwd =3, col="slateblue", ylim=yrange, ylab="Reproductive number", xlab="Days" )
+      plot( rp ~ seq(1,nxr), type="l", lwd =3, col="slateblue4", ylim=yrange, ylab="Reproductive number", xlab="Days" )
 
       for (i in sample.int(nr, ny)) {
-        graphics::points( posteriors$K[i,1:nxr] ~ c(1:nxr) , col=cols, cex=0.8, pch=19 )
+        points( posteriors$K[i,1:nxr] ~ c(1:nxr) , col=cols, cex=0.8, pch=19 )
       }
 
-      graphics::lines( apply(posteriors$K, 2, stats::quantile, probs=0.025)[1:nxr] ~ seq(1,nxr), col="darkorange", lty="dashed" )
-      graphics::lines( apply(posteriors$K, 2, stats::quantile, probs=0.975)[1:nxr] ~ seq(1,nxr), col="darkorange", lty="dashed" )
-      graphics::abline( h=1, col="red", lwd=2 )
-      graphics::abline( v=stan_data$time[stan_data$Nobs], lwd=2, col="grey", lty="dashed" )
-      graphics::title( main= stan_data$au, sub=paste( "Start: ", stan_data$time_start, "  Current date: ", stan_data$timestamp ) )
+      lines( apply(posteriors$K, 2, stats::quantile, probs=0.025)[1:nxr] ~ seq(1,nxr), col="slategray", lty="dashed" )
+      lines( apply(posteriors$K, 2, stats::quantile, probs=0.975)[1:nxr] ~ seq(1,nxr), col="slategray", lty="dashed" )
+      abline( h=1, col="darkred", lwd=2 )
+      abline( v=stan_data$time[stan_data$Nobs], lwd=2, col="grey", lty="dashed" )
+      title( main= stan_data$au, sub=paste( "Start: ", stan_data$time_start, "  Current date: ", stan_data$timestamp ) )
     if (!to.screen) grDevices::dev.off()
   }
 
   if (selection=="reproductive_number_histograms") {
     brks = 30
-    days0 = graphics::hist( posteriors$K[,stan_data$Nobs-1] , breaks=brks, plot=FALSE)  # "today" is actually today-1 as K has no data to condition for estimation
-    days1 = graphics::hist( posteriors$K[,stan_data$Nobs-2] , breaks=brks, plot=FALSE )  # today's K
-    days7 = graphics::hist( posteriors$K[,stan_data$Nobs-8] , breaks=brks, plot=FALSE )  # today's K
+    days0 = hist( posteriors$K[,stan_data$Nobs-1] , breaks=brks, plot=FALSE)  # "today" is actually today-1 as K has no data to condition for estimation
+    days1 = hist( posteriors$K[,stan_data$Nobs-2] , breaks=brks, plot=FALSE )  # today's K
+    days7 = hist( posteriors$K[,stan_data$Nobs-8] , breaks=brks, plot=FALSE )  # today's K
     yrange = range( c(days0$density, days1$density, days7$density))
-    yrange[2] = yrange[2] * 1.15
+    yrange[2] = yrange[2] * 1.25
     xrange = c(0, min( quantile( c(days0$mides, days1$mids, days7$mids), probs=0.95), 50) )
-    xrange[2] = xrange[2] * 1.15
+    xrange[2] = xrange[2] * 1.25
 
     if (!to.screen) {
       grDevices::png(filename = file.path(outdir, "reproductive_number_today.png"))
     } else {
       grDevices::dev.new()
     }
-      graphics::plot(  days0$density ~ days0$mids, col="green", lwd=3, xlab="Reproductive number", ylab="Probability density", main="", xlim=xrange, ylim=yrange, type ="l")
-      graphics::lines( days1$density ~ days1$mids, col="slateblue", lwd=3, lty="dotted")
-      graphics::lines( days7$density ~ days7$mids, col="darkorange", lwd=3, lty="dashed")
-      graphics::abline( v=1, col="red", lwd=3 )
-      graphics::abline( h=0, col="gray", lwd=1 )
-      graphics::legend( "topright", "", paste( "Current date: ", stan_data$timestamp, " "), bty="n")
-      graphics::legend( "topleft", legend=c("Current", "Yesterday", "7 days ago"), lty=c("solid", "dotted", "dashed"), col=c("green", "slateblue", "darkorange"), lwd=c(3,3,3), bty="n")
-      graphics::title( main= paste( stan_data$au, "  Current date: ", stan_data$timestamp ) )
+      plot(  days0$density ~ days0$mids, col="green", lwd=3, xlab="Reproductive number", ylab="Probability density", main="", xlim=xrange, ylim=yrange, type ="l")
+      lines( days1$density ~ days1$mids, col="deepskyblue", lwd=3, lty="dotted")
+      lines( days7$density ~ days7$mids, col="darkslateblue", lwd=3, lty="dashed" )
+      abline( v=1, col="darkred", lwd=3 )
+      abline( h=0, col="gray", lwd=1 )
+      legend( "topright", "", paste( "Current date: ", stan_data$timestamp, " "), bty="n")
+      legend( "topleft", legend=c("Current", "Yesterday", "7 days ago"), lty=c("solid", "dotted", "dashed"), col=c("green", "deepskyblue", "darkslateblue"), lwd=c(3,3,3), bty="n")
+      title( main=stan_data$au, sub=paste( "  Current date: ", stan_data$timestamp ) )
     if (!to.screen) grDevices::dev.off()
 
   }
@@ -355,15 +356,15 @@ sample_prop <- ts <- mod_time <- mod_median <- mod_high <- mod_low <-NA
       ip = apply(posteriors$I, 2, stats::median)[1:nx]
       yrange = range( c(io, ip), na.rm=TRUE)
       yrange[2] = yrange[2] * 3
-      graphics::plot( io ~ stan_data$time, xlim=xrange, ylim=yrange,  type="n", ylab="Infected", xlab="Days")
+      plot( io ~ stan_data$time, xlim=xrange, ylim=yrange,  type="n", ylab="Infected", xlab="Days")
       nsimlines = min( nsimlines, dim(sim)[1])
-      for ( i in 1:min( dim(sim)[1], nsimlines)) graphics::lines( sim[i,2,] ~ simxval, col=scales::alpha("slategray", 0.1), lty="solid" )
-      graphics::lines( ip ~ seq(1,nx), lwd = 3, col="slateblue" )
-      graphics::lines( apply(posteriors$I, 2, stats::quantile, probs=0.025)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
-      graphics::lines( apply(posteriors$I, 2, stats::quantile, probs=0.975)[1:nx] ~ seq(1,nx), col="darkorange", lty="dashed", lwd = 2 )
-      graphics::points( io ~ stan_data$time, xlim=xrange, ylim=yrange, col="darkgray", cex=1.2 )
-      graphics::abline( v=stan_data$time[stan_data$Nobs], lwd=2, col="grey", lty="dashed" )
-      graphics::title( main= stan_data$au, sub=paste( "Start: ", stan_data$time_start, "  Current date: ", stan_data$timestamp ) )
+      for ( i in 1:min( dim(sim)[1], nsimlines)) lines( sim[i,2,] ~ simxval, col=scales::alpha("slategray", 0.1), lty="solid" )
+      lines( ip ~ seq(1,nx), lwd = 3, col="slateblue" )
+      lines( apply(posteriors$I, 2, stats::quantile, probs=0.025)[1:nx] ~ seq(1,nx), col="slategray", lty="dashed", lwd = 1 )
+      lines( apply(posteriors$I, 2, stats::quantile, probs=0.975)[1:nx] ~ seq(1,nx), col="slategray", lty="dashed", lwd = 1 )
+      points( io ~ stan_data$time, xlim=xrange, ylim=yrange, col="orange", cex=1.2 )
+      abline( v=stan_data$time[stan_data$Nobs], lwd=2, col="grey", lty="dashed" )
+      title( main= stan_data$au, sub=paste( "Start: ", stan_data$time_start, "  Current date: ", stan_data$timestamp ) )
     if (!to.screen) grDevices::dev.off()
 
   }

@@ -290,11 +290,17 @@ data_health_regions_of_canada = function( selection="default", fn=NULL, Npreds=5
   names(Npop) = pop_hr$AU
 
   S_cumsum = array( NA, dim=c( length(tus), length(aus)  ) )
-  S_cumsum[1,] = Npop[aus]  # start of data
+
   for (k in 1:length(aus)) {
-  for (j in 1:(length(tus)-1) ) {
-    S_cumsum[j+1,k] = S_cumsum[j,k] - I_daily[j,k]
-  }}
+    au = aus[k]
+    au_statscan = au_lookup_canada( covid19=au )
+    if ( au_statscan %in% names(Npop)) {
+      S_cumsum[1,k] = Npop[[au_statscan]]  # start of data
+      for (j in 1:(length(tus)-1) ) {
+        S_cumsum[j+1,k] = S_cumsum[j,k] - I_daily[j,k]
+      }
+    }
+  }
 
     # default is to return this:
   data_au = list()
