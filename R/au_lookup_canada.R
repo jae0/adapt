@@ -1,10 +1,9 @@
 @title au_lookup_canada
 #' @description Lookup tables between StatsCan areal units and Covid19's.
-#' @param x default is x
-#' @param p default is \code{1}.
-#' @param inverse default is \code{NULL}.
-#' @param ... other arguments passed to methods
-#' @return  This is a placeholder for what it returns.
+#' @param returntable default is FALSE
+#' @param statscan vector of statscan health units, forcing return of matching Covid19 areal units.
+#' @param covid19 vector of Covid19 areal units, forcing return of matching statscan health units.
+#' @return  Lookup tables between StatsCan areal units and Covid19's.
 #' @author Jae Choi, \email{choi.jae.seok@gmail.com}
 #' @export
 au_lookup_canada = function( returntable=FALSE, statscan=NULL, covid19=NULL) {

@@ -56,6 +56,7 @@ hr = c(
   "Nova Scotia __ Zone 3 - Eastern",
   "Nova Scotia __ Zone 4 - Central",
   "New Brunswick __ Zone 1 (Moncton area)",
+  "New Brunswick __ Zone 2 (Saint John area)",
   "New Brunswick __ Zone 3 (Fredericton area)",
   "Ontario __ Toronto",
   "Quebec __ Montréal"
