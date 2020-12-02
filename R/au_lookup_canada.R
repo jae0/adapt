@@ -1,3 +1,12 @@
+@title au_lookup_canada
+#' @description Lookup tables between StatsCan areal units and Covid19's.
+#' @param x default is x
+#' @param p default is \code{1}.
+#' @param inverse default is \code{NULL}.
+#' @param ... other arguments passed to methods
+#' @return  This is a placeholder for what it returns.
+#' @author Jae Choi, \email{choi.jae.seok@gmail.com}
+#' @export
 au_lookup_canada = function( returntable=FALSE, statscan=NULL, covid19=NULL) {
 
   au_look =  as.data.frame( matrix( c(
