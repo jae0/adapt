@@ -51,10 +51,10 @@ healthregions = data_health_regions_of_canada(
 ( hr = names(healthregions) )
 
 hr = c(
+  "Nova Scotia __ Zone 4 - Central",
   "Nova Scotia __ Zone 1 - Western",
   "Nova Scotia __ Zone 2 - Northern",
   "Nova Scotia __ Zone 3 - Eastern",
-  "Nova Scotia __ Zone 4 - Central",
   "New Brunswick __ Zone 1 (Moncton area)",
   "New Brunswick __ Zone 2 (Saint John area)",
   "New Brunswick __ Zone 3 (Fredericton area)",
