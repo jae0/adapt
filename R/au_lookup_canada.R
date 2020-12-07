@@ -1,4 +1,4 @@
-@title au_lookup_canada
+#' @title au_lookup_canada
 #' @description Lookup tables between StatsCan areal units and Covid19's.
 #' @param returntable default is FALSE
 #' @param statscan vector of statscan health units, forcing return of matching Covid19 areal units.
