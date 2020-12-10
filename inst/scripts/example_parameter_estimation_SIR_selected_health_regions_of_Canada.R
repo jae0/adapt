@@ -64,7 +64,7 @@ hr = c(
 
 # compile code
 # stancode_compiled = rstan::stan_model( model_code=sir_stan_model_code( selection="testing" ) )  # compile the code
-stancode_compiled = rstan::stan_model( model_code=sir_stan_model_code( selection="default" ) )  # compile the code
+stancode_compiled = rstan::stan_model( model_code=sir_stan_model_code( selection="default_asymptomatic" ) )  # compile the code
 
 to.screen = FALSE
 # to.screen = TRUE
