@@ -5,7 +5,7 @@
 
 Here we show a few elements of COVID-19 status by StatsCan health unit, based on data compiled from publicly available information.
 
-The figures are generated from https://github.com/jae0/adapt/blob/master/inst/scripts/example_parameter_estimation_SIR_selected_health_regions_of_Canada.R. More information about the models and data can be found on the ![main page](https://github.com/jae0/adapt/blob/master/README.md)
+The figures are generated from https://github.com/jae0/adapt/blob/master/inst/scripts/parameter_estimation_SIR_provinces_of_Canada.R. More information about the models and data can be found on the ![main page](https://github.com/jae0/adapt/blob/master/README.md)
 
 Please note that these results are generated from an automated process. There might be problems due to unforeseen issues. I will keep tweaking and updating this as much as possible.
 

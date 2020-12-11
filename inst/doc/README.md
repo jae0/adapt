@@ -14,6 +14,7 @@ inst/doc/Nova Scotia __ Zone 1 - Western/README.md
 - ![Nova Scotia Zone 3 Eastern](./inst/doc/Nova%20Scotia%20__%20Zone%203%20-%20Eastern/README.md)
 - ![Nova Scotia Zone 4 Central](./inst/doc/Nova%20Scotia%20__%20Zone%204%20-%20Central/README.md)
 - ![New Brunswick Zone 1 Moncton](./inst/doc/New%20Brunswick%20__%20Zone%201%20(Moncton%20area)%2FREADME.md)
+- ![New Brunswick Zone 1 Saint John](./inst/doc/New%20Brunswick%20__%20Zone%201%20(Saint%20John%20area)%2FREADME.md)
 - ![New Brunswick Zone 3 Fredricton](./inst/doc/New%20Brunswick%20__%20Zone%203%20(Fredericton%20area)%2FREADME.md)
 - ![Ontario Toronto Health Unit](./inst/doc/Ontario%20__%20Toronto/README.md)
 - ![Quebec Montréal Health Unit](./inst/doc/Quebec%20__%20Montr%C3%A9al/README.md)
@@ -25,7 +26,7 @@ inst/doc/Nova Scotia __ Zone 1 - Western/README.md
 - ![Newfoundland and Labrador](./inst/doc/NL/README.md)
 - ![Northwest Territories](./inst/doc/NWT/README.md)
 - ![Nova Scotia](./inst/doc/Nova%20Scotia/README.md)
-- ![Nunavut](./inst/doc/Nunanvut/README.md)
+- ![Nunavut](./inst/doc/Nunavut/README.md)
 - ![Ontario](./inst/doc/Ontario/README.md)
 - ![Prince Edward Island](./inst/doc/PEI/README.md)
 - ![Saskatchewan](./inst/doc/Saskatchewan/README.md)
@@ -44,7 +45,7 @@ Currently, the data are obtained from: https://github.com/ishaberry/Covid19Canad
 
 Berry I, Soucy J-PR, Tuite A, Fisman D. Open access epidemiologic data and an interactive dashboard to monitor the COVID-19 outbreak in Canada. CMAJ. 2020 Apr 14;192(15):E420. doi: https://doi.org/10.1503/cmaj.75262
 
-and assimilated in https://github.com/jae0/adapt/blob/master/R/data_provinces_of_canada.R .
+and assimilated in https://github.com/jae0/adapt/blob/master/R/data_provinces_of_canada.R and https://github.com/jae0/adapt/blob/master/R/data_health_regions_of_canada.R.  The latter makes an assumptions that the cummulative number of recovered people in a health unit is proportional to the cummulative number of people infected in the same health unit ( relative to provinicial counts). This assumption is required as the recovered counts are only provided at the provincial level of spatial aggregation and missing for the individual health units.
 
 
 ---
@@ -59,7 +60,9 @@ Nonetheless, they represent an "effective" (that is, a pragmatic and consistent)
 
 The model options and main results are created by running:
 
-  https://github.com/jae0/adapt/blob/master/inst/scripts/example_parameter_estimation_SIR_provinces_of_Canada.R.
+  https://github.com/jae0/adapt/blob/master/inst/scripts/parameter_estimation_SIR_provinces_of_Canada.R.
+
+  https://github.com/jae0/adapt/blob/master/inst/scripts/parameter_estimation_SIR_selected_health_regions_of_Canada.R.
 
 
 
@@ -82,7 +85,7 @@ Alternatively, you can directly estimate the numbers required and manually creat
 
 Please note: No guarantees are being made here. There are always errors in models, programs that implement such models and in the data itself. However, this is a functional way of helping make sense of information such that we can engage in more informed discussions with your community on next steps in these trying times.
 
-Finally, computations require a lot of time. Currently, due to the length of the timeseries and the complexity of dynamics in some provinces, it can take upwards of 10 hours to finish some estimates (on my 4 year old laptop). Shorter term models runs updating only the recent dynamics are likely better operationally and so you might want to truncate the timeseries. I will try to get this done soon.
+Finally, computations require a lot of time. Currently, due to the length of the timeseries and the complexity of dynamics in some areal units, it can take upwards of 10 hours to finish some estimates (on my 4 year old laptop). Shorter term models runs updating only the recent dynamics are likely better operationally and so you might want to truncate the timeseries. I will try to get this done soon.
 
 Please send a note if you are using it for your area of interest.
 
@@ -96,12 +99,13 @@ Jae
 To install you need to install R, and then bootstrap from github directly:
 
 ```
+  install.packages( "remotes" )
   remotes::install_github( "jae0/adapt" )
 ```
 
-and also the Rpackages, "rstan" and "SimInf". They will pull in their own dependencies.
+and also the Rpackages, "rstan" and "SimInf". They will pull in their own dependencies. They have external dependencies as well ( STAN: https://mc-stan.org/), SimInf: https://github.com/stewid/SimInf).
 
-Ultimately, you just need to create a data list with the information required: number of infected people on a daily basis ("InfectedCurrently" in the spreadsheet) as well as the cummulative number of "Recoveries" and "Deaths" on a daily basis. You will also need the total population size of your area of interest. Look inside the function (https://github.com/jae0/adapt/blob/master/R/data_nova_scotia.R) to see how it is done here. Use the Nova Scotia example as a template. Thereafter, you can probably run the short code in https://github.com/jae0/adapt/blob/master/inst/scripts/example_parameter_estimation_SIR_nova_scotia.R with minimal modification.
+Ultimately, you just need to create a data list with the information required: number of infected people on a daily basis ("InfectedCurrently" in the spreadsheet) as well as the cummulative number of "Recoveries" and "Deaths" on a daily basis. You will also need the total population size of your area of interest. Look inside the function (https://github.com/jae0/adapt/blob/master/R/data_nova_scotia.R) to see how it is done here. Use the Nova Scotia example as a template. Thereafter, you can probably run the short code in https://github.com/jae0/adapt/blob/master/inst/scripts/test_example_parameter_estimation_SIR_nova_scotia.R with minimal modification.
 
 
 Here is an example of the data structure that is expected in "stan_data":
