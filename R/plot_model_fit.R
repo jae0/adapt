@@ -14,11 +14,12 @@ plot_model_fit = function( selection="default", stan_results=NULL,
   sim=NULL, nsimlines=2000, outdir="", nx=NULL, to.screen =FALSE ) {
 
   # create variable that will be used
-sample_prop <- ts <- mod_time <- mod_median <- mod_high <- mod_low <-NA
+  sample_prop <- ts <- mod_time <- mod_median <- mod_high <- mod_low <-NA
+  
   if (!dir.exists(outdir)) dir.create(outdir, showWarnings=FALSE, recursive=TRUE )
 
   stan_data = stan_results$stan_inputs
-  posteriors = rstan::extract( stan_results$stan_samples )  # posteriors = mcmc posteriors from STAN
+  posteriors = stan_results$posteriors   # posteriors = mcmc posteriors from STAN
 
   # nx = stan_data$Nobs + trunc( stan_data$Npreds *0.2 )
   if (is.null (nx)) nx = stan_data$Nobs + stan_data$Npreds - 1

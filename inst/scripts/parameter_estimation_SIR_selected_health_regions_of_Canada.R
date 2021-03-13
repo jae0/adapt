@@ -3,8 +3,11 @@
 # ---------------------------------------
 
 require(adapt)
-require(rstan)
-rstan_options(auto_write = TRUE)
+require(cmdstanr )
+require(posterior )
+require(bayesplot)
+
+
 options(mc.cores = parallel::detectCores())
 require(SimInf)
 
@@ -63,8 +66,10 @@ hr = c(
 )
 
 # compile code
-# stancode_compiled = rstan::stan_model( model_code=sir_stan_model_code( selection="testing" ) )  # compile the code
-stancode_compiled = rstan::stan_model( model_code=sir_stan_model_code( selection="default_asymptomatic" ) )  # compile the code
+
+stancode = stan_initialize( stan_code=sir_stan_model_code( selection="default_asymptomatic" ) )
+stancode$compile()
+
 
 to.screen = FALSE
 # to.screen = TRUE
@@ -77,10 +82,19 @@ for (au in  hr) {
     stan_results = list( stan_inputs=healthregions[[au]] )
     fn_model = file.path( workdir, paste( au, stan_results$stan_inputs$modelname, "rdata", sep=".") )
     outdir = file.path( "~", "bio", "adapt", "inst", "doc", au)
-    control.stan = list(adapt_delta = 0.9, max_treedepth=12 )
 
     if ("model" %in% tasks ) {
-      stan_results$stan_samples = rstan::sampling( stancode_compiled, data=stan_results$stan_inputs, chains=3, warmup=5000, iter=6000, control=control.stan  )
+      fit = stancode$sample(
+        data=stan_results$stan_inputs, 
+        chains=3, 
+        warmup=5000, 
+        iter=6000, 
+        adapt_delta = 0.9, 
+        max_treedepth=12
+      )        
+
+      stan_results$posteriors = stan_extract( as_draws_df( fit$draws() ) )
+        
       save(stan_results, file=fn_model, compress=TRUE)
     } else {
       load(fn_model)

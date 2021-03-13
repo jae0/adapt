@@ -16,7 +16,7 @@ simulate = function(  stan_results, istart=NULL, nsims=1, nprojections=10, nthre
   # require(SimInf)
 
   stan_data = stan_results$stan_inputs
-  posteriors = rstan::extract( stan_results$stan_samples )  # posteriors = mcmc posteriors from STAN
+  posteriors = stan_results$posteriors  # posteriors = mcmc posteriors from STAN
 
   if (is.null(istart)) istart = stan_data$Nobs-1
 

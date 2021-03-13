@@ -9,8 +9,11 @@
 
 # remotes::install_github( "jae0/adapt" )
 require(adapt)
-require(rstan)
-rstan_options(auto_write = TRUE)
+require(cmdstanr )
+require(posterior )
+require(bayesplot)
+
+
 options(mc.cores = parallel::detectCores())
 
 # loadfunctions("adapt")
@@ -31,22 +34,50 @@ stan_results = list( stan_inputs =  data_nova_scotia(
 time_relaxation = as.numeric(stan_results$stan_inputs$time_relaxation - stan_results$stan_inputs$time_start)
 time_distancing = as.numeric(stan_results$stan_inputs$time_distancing - stan_results$stan_inputs$time_start)
 
+stancode = stan_initialize( stan_code=sir_stan_model_code( selection=stan_results$stan_inputs$modelname ) )
+stancode$compile()
 
-stancode_compiled = rstan::stan_model( model_code=sir_stan_model_code( selection=stan_results$stan_inputs$modelname ) )  # compile the code
+fit = stancode$sample(        
+  data=stan_results$stan_inputs, 
+  iter_warmup = 7000,
+  iter_sampling = 3000,
+  seed = 123,
+  chains = 3,
+  parallel_chains = 3,  # The maximum number of MCMC chains to run in parallel.
+  max_treedepth = 15,
+  adapt_delta = 0.95,
+  refresh = 500
+ )
 
+fit$save_object( file = fnfit )   #  save this way due to R-lazy loading
+fit = readRDS( fnfit )
 
-
-stan_results$stan_samples = rstan::sampling( stancode_compiled, data=stan_results$stan_inputs, chains=3, warmup=7000, iter=10000, control= list(adapt_delta = 0.95, max_treedepth=15 ))
 
 
 if (0) {
+  
   fn = file.path("~", "tmp", paste( stan_results$stan_inputs$modelname, "rdata", sep="."))
   save( stan_results, file=fn, compress=TRUE)
   load(fn)
+
+  fit$cmdstan_diagnose()
+  fit$cmdstan_summary()
+
+  # (penalized) maximum likelihood estimate (MLE) 
+  fit_mle =  stancode$$optimize(data =p$fishery_model$standata, seed = 123)
+  fit_mle$summary( c("K", "r", "q") )
+
+  mcmc_hist(fit$draws("K")) + vline_at(fit_mle$mle(), size = 1.5)
+
+  # Variational Bayes  
+  fit_vb = stancode$$variational(data =p$fishery_model$standata, seed = 123, output_samples = 4000)
+  fit_vb$summary(c("K", "r", "q"))
+
 }
 
-  posteriors = extract(stan_results$stan_samples)
-
+  stan_results$posteriors = stan_extract( as_draws_df( fit$draws() ) )
+ 
+ 
   province = "Nova Scotia"
   outdir = file.path( "~", "bio", "adapt", "inst", "doc", province )
   to.screen = TRUE
@@ -65,22 +96,4 @@ if (0) {
 sim = simulate( stan_results, nsims=2000, nprojections=150 )
 plot_model_fit( selection="forecasts", stan_results=stan_results, outdir=outdir, sim=sim )
 
-
-if (0) {
-
-    plot(stan_results$stan_samples)
-    plot(stan_results$stan_samples, pars="I")
-    print(stan_results$stan_samples)
-
-    traceplot(stan_results$stan_samples)
-    e = rstan::extract(stan_results$stan_samples, permuted = TRUE) # return a list of arrays
-    m2 = as.array(stan_results$stan_samples)
-    traceplot(stan_results$stan_samples, pars=c("GAMMA"))
-    traceplot(stan_results$stan_samples, pars=c("MSErrorI"))
-    traceplot(stan_results$stan_samples, pars=c("MSErrorR"))
-    traceplot(stan_results$stan_samples, pars="lp__")
-    summary(stan_results$stan_samples)$summary[,"K1"]
-    est=colMeans(posteriors)
-    prob=apply(posteriors,2,function(x) I(length(x[x>0.10])/length(x) > 0.8)*1)
-
-}
+ 

@@ -31,7 +31,7 @@ summary_adapt = function( selection="summary.load", aus, fn=NULL, workdir=getwd(
 
       load(fn_model)
 
-      posteriors = rstan::extract( stan_results$stan_samples )  # posteriors = mcmc posteriors from STAN
+      posteriors = stan_results$posteriors  # posteriors = mcmc posteriors from STAN
 
       res[[au]]$timestamp = stan_results$stan_inputs$timestamp
       res[[au]]$time = stan_results$stan_inputs$time
@@ -199,7 +199,7 @@ summary_adapt = function( selection="summary.load", aus, fn=NULL, workdir=getwd(
 
           load(fn_model)
 
-          posteriors = rstan::extract( stan_results$stan_samples )  # posteriors = mcmc posteriors from STAN
+          posteriors = stan_results$posteriors  # posteriors = mcmc posteriors from STAN
 
           ooo = (posteriors$I + posteriors$R + posteriors$M) / stan_results$stan_inputs$Npop
           xrg0 = stats::quantile( ooo[ooo>0] , probs=c(0.001, 0.95), na.rm=TRUE )
@@ -232,7 +232,7 @@ summary_adapt = function( selection="summary.load", aus, fn=NULL, workdir=getwd(
 
           load(fn_model)
 
-          posteriors = rstan::extract( stan_results$stan_samples )  # posteriors = mcmc posteriors from STAN
+          posteriors = stan_results$posteriors  # posteriors = mcmc posteriors from STAN
 
           oo = ( posteriors$I + posteriors$R + posteriors$M) / stan_results$stan_inputs$Npop
 

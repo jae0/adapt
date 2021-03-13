@@ -103,7 +103,7 @@ To install you need to install R, and then bootstrap from github directly:
   remotes::install_github( "jae0/adapt" )
 ```
 
-and also the Rpackages, "rstan" and "SimInf". They will pull in their own dependencies. They have external dependencies as well ( STAN: https://mc-stan.org/), SimInf: https://github.com/stewid/SimInf).
+and also the Rpackages, "cmdstanr" and "SimInf". They will pull in their own dependencies. They have external dependencies as well ( STAN: https://mc-stan.org/), SimInf: https://github.com/stewid/SimInf).
 
 Ultimately, you just need to create a data list with the information required: number of infected people on a daily basis ("InfectedCurrently" in the spreadsheet) as well as the cummulative number of "Recoveries" and "Deaths" on a daily basis. You will also need the total population size of your area of interest. Look inside the function (https://github.com/jae0/adapt/blob/master/R/data_nova_scotia.R) to see how it is done here. Use the Nova Scotia example as a template. Thereafter, you can probably run the short code in https://github.com/jae0/adapt/blob/master/inst/scripts/test_example_parameter_estimation_SIR_nova_scotia.R with minimal modification.
 
