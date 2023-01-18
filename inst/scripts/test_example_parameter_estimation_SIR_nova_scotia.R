@@ -53,28 +53,7 @@ fit$save_object( file = fnfit )   #  save this way due to R-lazy loading
 fit = readRDS( fnfit )
 
 
-
-if (0) {
-  
-  fn = file.path("~", "tmp", paste( stan_results$stan_inputs$modelname, "rdata", sep="."))
-  save( stan_results, file=fn, compress=TRUE)
-  load(fn)
-
-  fit$cmdstan_diagnose()
-  fit$cmdstan_summary()
-
-  # (penalized) maximum likelihood estimate (MLE) 
-  fit_mle =  stancode$$optimize(data =p$fishery_model$standata, seed = 123)
-  fit_mle$summary( c("K", "r", "q") )
-
-  mcmc_hist(fit$draws("K")) + vline_at(fit_mle$mle(), size = 1.5)
-
-  # Variational Bayes  
-  fit_vb = stancode$$variational(data =p$fishery_model$standata, seed = 123, output_samples = 4000)
-  fit_vb$summary(c("K", "r", "q"))
-
-}
-
+ 
   stan_results$posteriors = stan_extract( as_draws_df( fit$draws() ) )
  
  
