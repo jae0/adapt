@@ -23,7 +23,6 @@ Imports:
   nimble,
   plyr,
   reshape2,
-  cmdstanr,
   posterior,
   bayesplot,
   term,
